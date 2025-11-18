@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "gh-smartContracts-backend": {
+      "candid": "src/gh-smartContracts-backend/gh-smartContracts-backend.did",
+      "package": "gh-smartContracts-backend",
+      "type": "rust"
+    },
+    "gh-smartContracts-frontend": {
+      "dependencies": [
+        "gh-smartContracts-backend"
+      ],
+      "source": [
+        "src/gh-smartContracts-frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "gh-smartContracts-frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
