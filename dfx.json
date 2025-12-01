@@ -1,19 +1,44 @@
 {
   "canisters": {
-    "gh-smartContracts-backend": {
-      "candid": "src/gh-smartContracts-backend/gh-smartContracts-backend.did",
-      "package": "gh-smartContracts-backend",
-      "type": "rust"
+    "internet_identity": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz",
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      }
     },
-    "gh-smartContracts-frontend": {
-      "dependencies": [
-        "gh-smartContracts-backend"
-      ],
-      "source": [
-        "src/gh-smartContracts-frontend/dist"
-      ],
-      "type": "assets",
-      "workspace": "gh-smartContracts-frontend"
+    "ghc_ledger": {
+      "type": "custom",
+      "candid": "https://raw.githubusercontent.com/dfinity/ic/d87954601e4b22972899e9957e800406a0a6b929/rs/rosetta-api/icrc1/ledger/ledger.did",
+      "wasm": "https://download.dfinity.systems/ic/d87954601e4b22972899e9957e800406a0a6b929/canisters/ic-icrc1-ledger.wasm.gz",
+      "remote": {
+        "id": {
+          "ic": "mxzaz-hqaaa-aaaar-qaada-cai"
+        }
+      }
+    },
+    "staking_hub": {
+      "type": "rust",
+      "candid": "src/staking_hub/staking_hub.did",
+      "package": "staking_hub"
+    },
+    "operational_governance": {
+      "type": "rust",
+      "candid": "src/operational_governance/operational_governance.did",
+      "package": "operational_governance"
+    },
+    "content_governance": {
+      "type": "rust",
+      "candid": "src/content_governance/content_governance.did",
+      "package": "content_governance"
+    },
+    "learning_engine": {
+      "type": "rust",
+      "candid": "src/learning_engine/learning_engine.did",
+      "package": "learning_engine"
     }
   },
   "defaults": {

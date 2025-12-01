@@ -1,5 +1,13 @@
 [workspace]
 members = [
-    "src/gh-smartContracts-backend"
+    "src/staking_hub",
+    "src/operational_governance",
+    "src/content_governance",
+    "src/learning_engine",
 ]
 resolver = "2"
+
+[profile.release]
+lto = true
+opt-level = 'z'
+codegen-units = 1

@@ -1,0 +1,14 @@
+type GlobalStats = record {
+  cumulative_reward_index : nat;
+  total_staked : nat64;
+  interest_pool : nat64;
+};
+type InitArgs = record { ledger_id : principal };
+service : (InitArgs) -> {
+  distribute_interest : () -> (variant { Ok : text; Err : text });
+  get_global_stats : () -> (GlobalStats) query;
+  get_user_stats : (principal) -> (nat64, nat64) query;
+  get_voting_power : (principal) -> (nat64) query;
+  stake_rewards : (principal, nat64) -> ();
+  unstake : (nat64) -> (variant { Ok : nat64; Err : text });
+}
