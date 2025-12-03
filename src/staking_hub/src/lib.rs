@@ -44,6 +44,14 @@ struct GlobalStats {
     total_staked: u64,
     interest_pool: u64,
     cumulative_reward_index: u128, // Scaled by 1e18
+    total_unstaked: u64,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct GlobalStatsV1 {
+    total_staked: u64,
+    interest_pool: u64,
+    cumulative_reward_index: u128,
 }
 
 impl Storable for GlobalStats {
@@ -52,7 +60,22 @@ impl Storable for GlobalStats {
     }
 
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
+        // Try decoding as current version
+        if let Ok(stats) = Decode!(bytes.as_ref(), Self) {
+            return stats;
+        }
+        
+        // Try decoding as V1 (migration)
+        if let Ok(v1) = Decode!(bytes.as_ref(), GlobalStatsV1) {
+            return Self {
+                total_staked: v1.total_staked,
+                interest_pool: v1.interest_pool,
+                cumulative_reward_index: v1.cumulative_reward_index,
+                total_unstaked: 0, // Initialize new field
+            };
+        }
+
+        panic!("Failed to decode GlobalStats");
     }
 
     const BOUND: Bound = Bound::Bounded {
@@ -80,6 +103,7 @@ thread_local! {
                 total_staked: 0,
                 interest_pool: 0,
                 cumulative_reward_index: 0,
+                total_unstaked: 0,
             }
         ).unwrap()
     );
@@ -200,6 +224,7 @@ async fn unstake(amount: u64) -> Result<u64, String> {
         let mut stats = cell.get().clone();
         stats.total_staked -= amount;
         stats.interest_pool += penalty; // Add penalty to pool
+        stats.total_unstaked += amount;
         cell.set(stats).expect("Failed to update global stats");
     });
 
@@ -242,6 +267,7 @@ async fn unstake(amount: u64) -> Result<u64, String> {
                 let mut stats = cell.get().clone();
                 stats.total_staked += amount;
                 stats.interest_pool -= penalty;
+                stats.total_unstaked -= amount;
                 cell.set(stats).expect("Failed to rollback global stats");
             });
             

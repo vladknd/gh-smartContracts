@@ -26,6 +26,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'get_proposal' : IDL.Func([IDL.Nat64], [IDL.Opt(Proposal)], ['query']),
+    'get_total_spent' : IDL.Func([], [IDL.Nat64], ['query']),
     'vote' : IDL.Func(
         [IDL.Nat64, IDL.Bool],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],

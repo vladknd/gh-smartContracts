@@ -29,6 +29,7 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'get_proposal' : ActorMethod<[bigint], [] | [Proposal]>,
+  'get_total_spent' : ActorMethod<[], bigint>,
   'vote' : ActorMethod<[bigint, boolean], { 'Ok' : null } | { 'Err' : string }>,
 }
 export declare const idlFactory: IDL.InterfaceFactory;

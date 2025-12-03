@@ -3,6 +3,7 @@ export const idlFactory = ({ IDL }) => {
   const GlobalStats = IDL.Record({
     'cumulative_reward_index' : IDL.Nat,
     'total_staked' : IDL.Nat64,
+    'total_unstaked' : IDL.Nat64,
     'interest_pool' : IDL.Nat64,
   });
   return IDL.Service({

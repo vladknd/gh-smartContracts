@@ -1,6 +1,7 @@
 type GlobalStats = record {
   cumulative_reward_index : nat;
   total_staked : nat64;
+  total_unstaked : nat64;
   interest_pool : nat64;
 };
 type InitArgs = record { ledger_id : principal };

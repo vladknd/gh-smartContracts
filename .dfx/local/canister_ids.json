@@ -1,6 +1,6 @@
 {
   "__Candid_UI": {
-    "local": "ucwa4-rx777-77774-qaada-cai"
+    "local": "ufxgi-4p777-77774-qaadq-cai"
   },
   "content_governance": {
     "local": "uxrrr-q7777-77774-qaaaq-cai"
@@ -9,15 +9,15 @@
     "local": "u6s2n-gx777-77774-qaaba-cai"
   },
   "internet_identity": {
-    "local": "ufxgi-4p777-77774-qaadq-cai"
-  },
-  "learning_engine": {
     "local": "uzt4z-lp777-77774-qaabq-cai"
   },
-  "operational_governance": {
+  "learning_engine": {
     "local": "umunu-kh777-77774-qaaca-cai"
   },
-  "staking_hub": {
+  "operational_governance": {
     "local": "ulvla-h7777-77774-qaacq-cai"
+  },
+  "staking_hub": {
+    "local": "ucwa4-rx777-77774-qaada-cai"
   }
 }

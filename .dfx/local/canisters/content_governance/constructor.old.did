@@ -1,3 +1,0 @@
-service : {
-    "get_book_count": () -> (nat64) query;
-}

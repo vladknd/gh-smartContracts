@@ -89,6 +89,13 @@ thread_local! {
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(4)))
         )
     );
+
+    static TOTAL_SPENT: RefCell<StableCell<u64, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(5))),
+            0
+        ).unwrap()
+    );
 }
 
 #[init]
@@ -228,6 +235,13 @@ async fn execute_proposal(proposal_id: u64) -> Result<(), String> {
                     map.insert(proposal_id, prop);
                 }
             });
+            
+            TOTAL_SPENT.with(|t| {
+                let mut cell = t.borrow_mut();
+                let current = *cell.get();
+                cell.set(current + proposal.amount).expect("Failed to update total spent");
+            });
+
             Ok(())
         }
         Err(e) => Err(format!("Ledger transfer error: {:?}", e)),
@@ -237,6 +251,11 @@ async fn execute_proposal(proposal_id: u64) -> Result<(), String> {
 #[query]
 fn get_proposal(id: u64) -> Option<Proposal> {
     PROPOSALS.with(|p| p.borrow().get(&id))
+}
+
+#[query]
+fn get_total_spent() -> u64 {
+    TOTAL_SPENT.with(|t| *t.borrow().get())
 }
 
 ic_cdk::export_candid!();

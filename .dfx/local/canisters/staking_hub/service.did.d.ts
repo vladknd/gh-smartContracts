@@ -5,6 +5,7 @@ import type { IDL } from '@dfinity/candid';
 export interface GlobalStats {
   'cumulative_reward_index' : bigint,
   'total_staked' : bigint,
+  'total_unstaked' : bigint,
   'interest_pool' : bigint,
 }
 export interface InitArgs { 'ledger_id' : Principal }

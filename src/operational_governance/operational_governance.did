@@ -20,4 +20,5 @@ service : (InitArgs) -> {
     "vote": (nat64, bool) -> (variant { Ok: null; Err: text });
     "execute_proposal": (nat64) -> (variant { Ok: null; Err: text });
     "get_proposal": (nat64) -> (opt Proposal) query;
+    "get_total_spent": () -> (nat64) query;
 }

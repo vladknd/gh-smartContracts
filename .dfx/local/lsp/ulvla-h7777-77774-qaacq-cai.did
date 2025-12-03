@@ -1,14 +1,21 @@
-type GlobalStats = record {
-  cumulative_reward_index : nat;
-  total_staked : nat64;
-  interest_pool : nat64;
+type InitArgs = record { ledger_id : principal; staking_hub_id : principal };
+type Proposal = record {
+  id : nat64;
+  votes_no : nat64;
+  recipient : principal;
+  description : text;
+  created_at : nat64;
+  proposer : principal;
+  votes_yes : nat64;
+  executed : bool;
+  amount : nat64;
 };
-type InitArgs = record { ledger_id : principal };
 service : {
-  distribute_interest : () -> (variant { Ok : text; Err : text });
-  get_global_stats : () -> (GlobalStats) query;
-  get_user_stats : (principal) -> (nat64, nat64) query;
-  get_voting_power : (principal) -> (nat64) query;
-  stake_rewards : (principal, nat64) -> ();
-  unstake : (nat64) -> (variant { Ok : nat64; Err : text });
+  create_proposal : (principal, nat64, text) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  execute_proposal : (nat64) -> (variant { Ok; Err : text });
+  get_proposal : (nat64) -> (opt Proposal) query;
+  get_total_spent : () -> (nat64) query;
+  vote : (nat64, bool) -> (variant { Ok; Err : text });
 }
