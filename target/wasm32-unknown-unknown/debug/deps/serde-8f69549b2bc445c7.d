@@ -1,0 +1,14 @@
+/mnt/c/LIB/CODE/gh-smartContracts/target/wasm32-unknown-unknown/debug/deps/serde-8f69549b2bc445c7.d: /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /mnt/c/LIB/CODE/gh-smartContracts/target/wasm32-unknown-unknown/debug/build/serde-dfdb02c2d21ec6ea/out/private.rs
+
+/mnt/c/LIB/CODE/gh-smartContracts/target/wasm32-unknown-unknown/debug/deps/libserde-8f69549b2bc445c7.rlib: /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /mnt/c/LIB/CODE/gh-smartContracts/target/wasm32-unknown-unknown/debug/build/serde-dfdb02c2d21ec6ea/out/private.rs
+
+/mnt/c/LIB/CODE/gh-smartContracts/target/wasm32-unknown-unknown/debug/deps/libserde-8f69549b2bc445c7.rmeta: /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /mnt/c/LIB/CODE/gh-smartContracts/target/wasm32-unknown-unknown/debug/build/serde-dfdb02c2d21ec6ea/out/private.rs
+
+/home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/home/vozni/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/mnt/c/LIB/CODE/gh-smartContracts/target/wasm32-unknown-unknown/debug/build/serde-dfdb02c2d21ec6ea/out/private.rs:
+
+# env-dep:OUT_DIR=/mnt/c/LIB/CODE/gh-smartContracts/target/wasm32-unknown-unknown/debug/build/serde-dfdb02c2d21ec6ea/out

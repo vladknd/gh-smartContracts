@@ -14,119 +14,97 @@ npm install @dfinity/agent @dfinity/candid @dfinity/principal @dfinity/auth-clie
 
 | Canister Name | Description | Key Features |
 |---|---|---|
-| **Learning Engine** | Manages quizzes and learning progress. | Submit quizzes, check completion status. |
-| **Staking Hub** | Manages user rewards and staking. | Claim rewards, stake, unstake, view balances. |
-| **Operational Governance** | Manages DAO proposals and voting. | Create proposals, vote, execute proposals. |
+| **User Profile (Sharded)** | **Primary User Interface**. Manages user state, quizzes, and balances. | Submit quizzes, check progress, unstake tokens. |
+| **Learning Engine** | **Stateless Content Provider**. Stores quizzes and verifies answers. | Fetch learning units. |
+| **Staking Hub** | **Central Bank**. Manages global stats and treasury. | View global stats. (Users rarely interact directly). |
+| **Operational Governance** | Manages DAO proposals and voting. | Create proposals, vote. |
 | **GHC Ledger** | The ICRC-1 Token Ledger. | Transfer tokens, check wallet balances. |
 
 ## 3. Deployed Canister IDs (Local Network)
 
-Use these IDs when configuring your frontend agent.
+*Note: IDs may change upon redeployment. Check `dfx canister id <name>`.*
 
 | Canister Name | Canister ID |
 |---|---|
-| **Learning Engine** | `uzt4z-lp777-77774-qaabq-cai` |
-| **Staking Hub** | `ulvla-h7777-77774-qaacq-cai` |
-| **Operational Governance** | `umunu-kh777-77774-qaaca-cai` |
+| **User Profile** | `ufxgi-4p777-77774-qaadq-cai` |
+| **Learning Engine** | `umunu-kh777-77774-qaaca-cai` |
+| **Staking Hub** | `ucwa4-rx777-77774-qaada-cai` |
+| **Operational Governance** | `ulvla-h7777-77774-qaacq-cai` |
 | **GHC Ledger** | `u6s2n-gx777-77774-qaaba-cai` |
 | **Content Governance** | `uxrrr-q7777-77774-qaaaq-cai` |
-| **Internet Identity** | `ufxgi-4p777-77774-qaadq-cai` |
+| **Internet Identity** | `uzt4z-lp777-77774-qaabq-cai` |
 
 ---
 
 ## 4. Canister API Reference
 
-### A. Learning Engine (`learning_engine`)
+### A. User Profile (`user_profile`)
 
-**Purpose**: Handles the "Learn to Earn" mechanics.
+**Purpose**: The main entry point for user interactions. Handles "Learn to Earn" and "Micro-Bank" balances.
 
 #### Methods
 
-1.  **`submit_quiz(quiz_id: nat64, answers: vec text) -> Result<nat64, text>`**
+1.  **`submit_quiz(unit_id: text, answers: blob) -> Result<nat64, text>`**
     *   **Type**: Update
-    *   **Description**: Submits answers for a specific quiz.
-    *   **Returns**: `Ok(reward_amount)` if successful (e.g., 500_000_000 for 5 GHC), or `Err(message)`.
+    *   **Description**: Submits answers for a specific quiz unit.
+    *   **Returns**: `Ok(reward_amount)` (e.g., 100_000_000 for 1 GHC), or `Err(message)`.
     *   **Usage**: Call when user clicks "Submit" on a quiz.
-
-3.  **`get_learning_units_metadata() -> vec LearningUnitMetadata`**
-    *   **Type**: Query
-    *   **Description**: Returns a list of all available learning units with basic metadata (ID, Title, Chapter).
-    *   **Returns**: `vec { record { unit_id; unit_title; chapter_id; chapter_title } }`.
-    *   **Usage**: Call this on app load to build the curriculum menu/navigation.
-
-4.  **`get_user_daily_status(user: principal) -> DailyStatus`**
-    *   **Type**: Query
-    *   **Description**: Returns the user's daily progress.
-    *   **Returns**: `record { quizzes_taken: nat8; daily_limit: nat8; tokens_earned: nat64 }`.
-    *   **Usage**: Display "Quizzes Today: X/5" and "Earned Today: Y GHC".
-
-5.  **`is_quiz_completed(user: principal, quiz_id: nat64) -> bool`**
-    *   **Type**: Query
-    *   **Description**: Checks if a user has already completed a quiz.
-    *   **Returns**: `true` if completed, `false` otherwise.
-    *   **Usage**: Use to disable the "Submit" button or show a "Completed" badge.
-
----
-
-### B. Staking Hub (`staking_hub`)
-
-**Purpose**: Central hub for rewards and staking.
-
-#### Methods
-
-1.  **`get_user_stats(user: principal) -> (nat64, nat64)`**
-    *   **Type**: Query
-    *   **Description**: Gets the user's current virtual balance and any pending rewards (from interest) that haven't been credited yet.
-    *   **Returns**: `(current_balance, pending_interest)`.
-    *   **Usage**: Display "Total Staked" as `current_balance + pending_interest`.
 
 2.  **`unstake(amount: nat64) -> Result<nat64, text>`**
     *   **Type**: Update
-    *   **Description**: Unstakes a specific amount. **Applies a 10% penalty.**
+    *   **Description**: Unstakes a specific amount from the user's local balance. **Applies a 10% penalty.**
     *   **Returns**: `Ok(amount_received)` (90% of requested) or `Err(message)`.
-    *   **Usage**: Call when user wants to withdraw funds. **Warn them about the 10% fee!**
+    *   **Usage**: Call when user wants to withdraw funds to their main wallet.
 
-3.  **`get_voting_power(user: principal) -> nat64`**
+3.  **`get_profile(user: principal) -> opt UserProfile`**
     *   **Type**: Query
-    *   **Description**: Gets the user's voting power (currently 1:1 with staked balance + pending interest).
-    *   **Usage**: Display in the Governance section.
+    *   **Description**: Returns the user's profile and **Staked Balance**.
+    *   **Returns**: `record { email; name; staked_balance; ... }`.
+    *   **Usage**: Display "Staked Balance" from this record.
 
-4.  **`get_global_stats() -> GlobalStats`**
+4.  **`get_user_daily_status(user: principal) -> UserDailyStats`**
     *   **Type**: Query
-    *   **Description**: Returns total staked amount and current interest pool size.
-    *   **Usage**: Display "Total Value Locked" or "Next Dividend Pool".
+    *   **Description**: Returns the user's daily progress.
+    *   **Returns**: `record { quizzes_taken; tokens_earned; ... }`.
+    *   **Usage**: Display "Quizzes Today: X/5".
+
+5.  **`is_quiz_completed(user: principal, unit_id: text) -> bool`**
+    *   **Type**: Query
+    *   **Description**: Checks if a user has already completed a quiz.
+    *   **Usage**: Disable "Submit" button if true.
+
+6.  **`debug_force_sync() -> Result<null, text>`**
+    *   **Type**: Update
+    *   **Description**: **DEV ONLY**. Forces the shard to sync pending stats with the Staking Hub immediately.
+    *   **Usage**: Call this after `submit_quiz` if you need to verify Global Stats updates immediately during testing.
 
 ---
 
-### C. Operational Governance (`operational_governance`)
+### B. Learning Engine (`learning_engine`)
 
-**Purpose**: DAO functionality for managing the ecosystem.
+**Purpose**: Stores educational content.
 
 #### Methods
 
-1.  **`create_proposal(recipient: principal, amount: nat64, description: text) -> Result<nat64, text>`**
-    *   **Type**: Update
-    *   **Description**: Creates a new proposal to transfer funds from the Governance canister to a recipient.
-    *   **Returns**: `Ok(proposal_id)` or `Err(message)`.
-    *   **Usage**: Call from a "Create Proposal" form.
-
-2.  **`vote(proposal_id: nat64, approve: bool) -> Result<null, text>`**
-    *   **Type**: Update
-    *   **Description**: Casts a vote (Yes/No) on a proposal.
-    *   **Returns**: `Ok(null)` or `Err(message)`.
-    *   **Usage**: Call when user clicks "Vote Yes" or "Vote No".
-
-3.  **`execute_proposal(proposal_id: nat64) -> Result<null, text>`**
-    *   **Type**: Update
-    *   **Description**: Executes a passed proposal (transfers funds).
-    *   **Returns**: `Ok(null)` or `Err(message)`.
-    *   **Usage**: Call via an "Execute" button (visible if `votes_yes > votes_no`).
-
-4.  **`get_proposal(id: nat64) -> opt Proposal`**
+1.  **`get_learning_units_metadata() -> vec LearningUnitMetadata`**
     *   **Type**: Query
-    *   **Description**: Fetches details of a specific proposal.
-    *   **Returns**: `Some(Proposal)` or `None`.
-    *   **Usage**: Display proposal details (Description, Votes, Status).
+    *   **Description**: Returns a list of all available learning units.
+    *   **Usage**: Build the curriculum menu.
+
+---
+
+### C. Staking Hub (`staking_hub`)
+
+**Purpose**: Central Treasury and Global Stats.
+
+**Note on Eventual Consistency**: Global stats (`total_staked`, `total_mined`) are updated in **batches** by the User Profile shards. You may not see immediate changes after a single quiz submission. This is by design for scalability.
+
+#### Methods
+
+1.  **`get_global_stats() -> GlobalStats`**
+    *   **Type**: Query
+    *   **Description**: Returns total staked amount, total mined, and interest pool.
+    *   **Usage**: Display "Total Value Locked" or "Global Stats".
 
 ---
 
@@ -139,54 +117,49 @@ Use these IDs when configuring your frontend agent.
 1.  **`icrc1_balance_of(account: Account) -> nat64`**
     *   **Type**: Query
     *   **Description**: Checks the liquid (wallet) balance of a user.
-    *   **Input**: `record { owner = principal; subaccount = null }`
     *   **Usage**: Display "Wallet Balance".
 
 2.  **`icrc1_transfer(args: TransferArg) -> Result<nat64, TransferError>`**
     *   **Type**: Update
     *   **Description**: Transfers tokens to another user.
-    *   **Usage**: Standard token transfer feature.
 
 ---
 
 ## 5. Integration Example (React)
 
-Here is a simplified example of how to connect and call a method.
-
 ```javascript
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
-import { idlFactory as learningIdl } from "./declarations/learning_engine";
+// Import IDL from your generated declarations
+import { idlFactory as userProfileIdl } from "./declarations/user_profile";
 
 // 1. Authenticate User
 const authClient = await AuthClient.create();
 await authClient.login({
-  identityProvider: "http://ufxgi-4p777-77774-qaadq-cai.localhost:4943/",
+  identityProvider: "http://uzt4z-lp777-77774-qaabq-cai.localhost:4943/",
   onSuccess: () => {
     const identity = authClient.getIdentity();
-    const principal = identity.getPrincipal();
-    console.log("Logged in as:", principal.toText());
     
-    // 2. Create Actor
+    // 2. Create Actor for User Profile
     const agent = new HttpAgent({ identity });
-    // Only for local dev:
-    await agent.fetchRootKey(); 
+    await agent.fetchRootKey(); // Only for local dev
 
-    const learningActor = Actor.createActor(learningIdl, {
+    const userActor = Actor.createActor(userProfileIdl, {
       agent,
-      canisterId: "uzt4z-lp777-77774-qaabq-cai", // Use actual ID
+      canisterId: "ufxgi-4p777-77774-qaadq-cai",
     });
 
-    // 3. Call Method
-    submitQuiz(learningActor);
+    // 3. Submit Quiz
+    submitQuiz(userActor);
   },
 });
 
 async function submitQuiz(actor) {
   try {
-    const quizId = "1.0"; // String ID
-    const answers = [0]; // Vector of u8 indices
-    const result = await actor.submit_quiz(quizId, answers);
+    const unitId = "unit_1";
+    const answers = [0]; // Vector of u8 indices (Blob/Vec<u8>)
+    // Note: 'answers' might need to be passed as a Uint8Array or number[] depending on codegen
+    const result = await actor.submit_quiz(unitId, answers);
     
     if ('Ok' in result) {
       console.log("Success! Reward:", result.Ok);
@@ -198,12 +171,3 @@ async function submitQuiz(actor) {
   }
 }
 ```
-
-## 6. Common Error Handling
-
-| Error Message | Cause | Solution |
-|---|---|---|
-| `Quiz already completed` | User tries to submit the same quiz twice. | Disable the submit button if `is_quiz_completed` returns true. |
-| `Insufficient balance` | User tries to unstake more than they have. | Validate input amount against `get_user_stats`. |
-| `No interest to distribute` | Admin calls `distribute_interest` with empty pool. | Check `get_global_stats` first. |
-

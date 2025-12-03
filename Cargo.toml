@@ -4,6 +4,7 @@ members = [
     "src/operational_governance",
     "src/content_governance",
     "src/learning_engine",
+    "src/user_profile",
 ]
 resolver = "2"
 

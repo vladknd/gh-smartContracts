@@ -1,6 +1,6 @@
 {
   "__Candid_UI": {
-    "local": "ufxgi-4p777-77774-qaadq-cai"
+    "local": "vizcg-th777-77774-qaaea-cai"
   },
   "content_governance": {
     "local": "uxrrr-q7777-77774-qaaaq-cai"
@@ -19,5 +19,8 @@
   },
   "staking_hub": {
     "local": "ucwa4-rx777-77774-qaada-cai"
+  },
+  "user_profile": {
+    "local": "ufxgi-4p777-77774-qaadq-cai"
   }
 }

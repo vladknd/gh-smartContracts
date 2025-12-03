@@ -45,6 +45,7 @@ struct GlobalStats {
     interest_pool: u64,
     cumulative_reward_index: u128, // Scaled by 1e18
     total_unstaked: u64,
+    total_mined: u64, // Tracked against MAX_SUPPLY
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
@@ -72,6 +73,7 @@ impl Storable for GlobalStats {
                 interest_pool: v1.interest_pool,
                 cumulative_reward_index: v1.cumulative_reward_index,
                 total_unstaked: 0, // Initialize new field
+                total_mined: 0, // Initialize new field
             };
         }
 
@@ -104,16 +106,19 @@ thread_local! {
                 interest_pool: 0,
                 cumulative_reward_index: 0,
                 total_unstaked: 0,
+                total_mined: 0,
             }
         ).unwrap()
     );
 
-    static USER_STATE: RefCell<StableBTreeMap<Principal, UserState, Memory>> = RefCell::new(
+    static ALLOWED_MINTERS: RefCell<StableBTreeMap<Principal, bool, Memory>> = RefCell::new(
         StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(2)))
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(3)))
         )
     );
 }
+
+const MAX_SUPPLY: u64 = 4_200_000_000 * 100_000_000; // 4.2B Tokens
 
 #[init]
 fn init(args: InitArgs) {
@@ -122,55 +127,64 @@ fn init(args: InitArgs) {
     });
 }
 
-// Helper: Calculate pending rewards for a user based on index growth
-fn calculate_rewards(user_state: &UserState, current_index: u128) -> u64 {
-    if current_index <= user_state.last_reward_index {
-        return 0;
-    }
-    let index_diff = current_index - user_state.last_reward_index;
-    // Rewards = Balance * (IndexDiff / 1e18)
-    // We do (Balance * IndexDiff) / 1e18
-    let rewards = (user_state.balance as u128 * index_diff) / 1_000_000_000_000_000_000;
-    rewards as u64
-}
-
-// Helper: Update user state with pending rewards and new index
-fn update_user_state(user: Principal) -> UserState {
-    let current_index = GLOBAL_STATS.with(|s| s.borrow().get().cumulative_reward_index);
-    
-    USER_STATE.with(|map| {
-        let mut m = map.borrow_mut();
-        let mut state = m.get(&user).unwrap_or(UserState {
-            balance: 0,
-            last_reward_index: current_index,
-        });
-
-        let rewards = calculate_rewards(&state, current_index);
-        if rewards > 0 {
-            state.balance += rewards;
-        }
-        state.last_reward_index = current_index;
-        
-        // We return the updated state but don't save it yet, caller decides
-        state
-    })
+#[update]
+fn add_allowed_minter(principal: Principal) {
+    // In production, add admin check here!
+    ALLOWED_MINTERS.with(|m| m.borrow_mut().insert(principal, true));
 }
 
 #[update]
-fn stake_rewards(user: Principal, amount: u64) {
-    // In production, check caller is Learning Engine!
+fn remove_allowed_minter(principal: Principal) {
+    // In production, add admin check here!
+    ALLOWED_MINTERS.with(|m| m.borrow_mut().remove(&principal));
+}
+
+// Replaces report_stats: Handles both stats reporting and allowance requests
+#[update]
+fn sync_shard(staked_delta: i64, unstaked_delta: u64, requested_allowance: u64) -> Result<u64, String> {
+    let caller = ic_cdk::caller();
     
-    let mut state = update_user_state(user);
-    state.balance += amount;
-    
-    USER_STATE.with(|map| map.borrow_mut().insert(user, state));
+    // Check if caller is an allowed minter (shard)
+    let is_allowed = ALLOWED_MINTERS.with(|m| m.borrow().contains_key(&caller));
+    if !is_allowed {
+        return Err("Unauthorized: Caller is not an allowed shard".to_string());
+    }
     
     GLOBAL_STATS.with(|s| {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
-        stats.total_staked += amount;
+        
+        // 1. Update Stats (Batch Reporting)
+        if staked_delta > 0 {
+            stats.total_staked += staked_delta as u64;
+        } else {
+            let abs_delta = staked_delta.abs() as u64;
+            if stats.total_staked >= abs_delta {
+                stats.total_staked -= abs_delta;
+            } else {
+                stats.total_staked = 0;
+            }
+        }
+        stats.total_unstaked += unstaked_delta;
+
+        // 2. Handle Allowance Request (Hard Cap Check)
+        let granted_allowance = if requested_allowance > 0 {
+            let remaining = MAX_SUPPLY.saturating_sub(stats.total_mined);
+            let to_grant = if remaining >= requested_allowance {
+                requested_allowance
+            } else {
+                remaining // Give whatever is left
+            };
+            
+            stats.total_mined += to_grant;
+            to_grant
+        } else {
+            0
+        };
+        
         cell.set(stats).expect("Failed to update global stats");
-    });
+        Ok(granted_allowance)
+    })
 }
 
 #[update]
@@ -200,29 +214,37 @@ fn distribute_interest() -> Result<String, String> {
     })
 }
 
+// Renamed from unstake: Now called by Shards, not Users directly
 #[update]
-async fn unstake(amount: u64) -> Result<u64, String> {
-    let user = ic_cdk::caller();
+async fn process_unstake(user: Principal, amount: u64) -> Result<u64, String> {
+    let caller = ic_cdk::caller();
     
-    // 1. Update user state (claim pending rewards first)
-    let mut state = update_user_state(user);
-    
-    if state.balance < amount {
-        return Err(format!("Insufficient balance. Available: {}", state.balance));
+    // 1. Verify Caller is a valid Shard
+    let is_allowed = ALLOWED_MINTERS.with(|m| m.borrow().contains_key(&caller));
+    if !is_allowed {
+        return Err("Unauthorized: Caller is not an allowed shard".to_string());
     }
 
-    // 2. Calculate Split
+    // 2. Calculate Split (Penalty Logic is now here, centralized)
     let penalty = amount / 10; // 10%
     let return_amount = amount - penalty;
 
-    // 3. Update Internal State
-    state.balance -= amount;
-    USER_STATE.with(|map| map.borrow_mut().insert(user, state));
-
+    // 3. Update Global Stats
     GLOBAL_STATS.with(|s| {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
-        stats.total_staked -= amount;
+        // Note: Total Staked reduction is handled via report_stats or here?
+        // Let's say Shard reduces local balance, then calls this.
+        // But wait, Shard doesn't know about penalty.
+        // Better: Shard reduces User Balance by `amount`.
+        // Shard calls `report_stats(-amount)`.
+        // Shard calls `process_unstake(user, amount)`.
+        // Here we just handle the Transfer and Penalty Pool.
+        // We do NOT touch total_staked here if report_stats handles it.
+        // BUT, to be atomic, maybe we should do it here.
+        // Let's assume Shard handles the "Staked Balance" accounting.
+        // We just handle the "Real Token" accounting.
+        
         stats.interest_pool += penalty; // Add penalty to pool
         stats.total_unstaked += amount;
         cell.set(stats).expect("Failed to update global stats");
@@ -231,8 +253,6 @@ async fn unstake(amount: u64) -> Result<u64, String> {
     // 4. Ledger Transfer (Real Settlement)
     let ledger_id = LEDGER_ID.with(|id| *id.borrow().get());
     
-    // Transfer from Hub Main (Subaccount None) to User Main (Subaccount None)
-    // Note: In this model, we assume Hub holds all tokens in its main account.
     let user_account = Account {
         owner: user,
         subaccount: None,
@@ -256,50 +276,27 @@ async fn unstake(amount: u64) -> Result<u64, String> {
     match result {
         Ok(_) => Ok(return_amount),
         Err(e) => {
-            // Rollback state if transfer fails (Critical!)
-            // Re-fetch state to be safe
-            let mut state = update_user_state(user);
-            state.balance += amount; // Give it back
-            USER_STATE.with(|map| map.borrow_mut().insert(user, state));
-            
-            GLOBAL_STATS.with(|s| {
+            // If transfer fails, we must tell Shard to rollback?
+            // This is complex. For now, return Err and let Shard handle rollback.
+            // We should rollback our local stats change (penalty).
+             GLOBAL_STATS.with(|s| {
                 let mut cell = s.borrow_mut();
                 let mut stats = cell.get().clone();
-                stats.total_staked += amount;
                 stats.interest_pool -= penalty;
                 stats.total_unstaked -= amount;
                 cell.set(stats).expect("Failed to rollback global stats");
             });
-            
             Err(format!("Ledger transfer failed: {:?}", e))
         }
     }
 }
 
-#[query]
-fn get_user_stats(user: Principal) -> (u64, u64) {
-    // Returns (Current Balance, Pending Rewards not yet credited)
-    let current_index = GLOBAL_STATS.with(|s| s.borrow().get().cumulative_reward_index);
-    
-    USER_STATE.with(|map| {
-        if let Some(state) = map.borrow().get(&user) {
-            let pending = calculate_rewards(&state, current_index);
-            (state.balance, pending)
-        } else {
-            (0, 0)
-        }
-    })
-}
+// Removed get_user_stats and get_voting_power
+// These must now be queried from the User Profile Shards directly.
 
 #[query]
 fn get_global_stats() -> GlobalStats {
     GLOBAL_STATS.with(|s| s.borrow().get().clone())
-}
-
-#[query]
-fn get_voting_power(user: Principal) -> u64 {
-    let (balance, pending) = get_user_stats(user);
-    balance + pending
 }
 
 ic_cdk::export_candid!();

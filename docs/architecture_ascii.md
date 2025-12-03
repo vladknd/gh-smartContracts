@@ -1,4 +1,3 @@
-```text
 +-------------------------------------------------------+       +-------------------------------------------------------+
 |                operational_governance                 |       |                  content_governance                   |
 |           (Controls Treasury: 3.6B GHC)               |       |              (Manages Content Updates)                |
@@ -16,31 +15,47 @@
                            v                                                                v
             +---------------------------------------------------------------------------------------------+
             |                                         staking_hub                                         |
-            |                                 (Holds 4.1B Utility Tokens)                                 |
+            |                                 (The Central Bank & Treasury)                               |
             |                                                                                             |
             |  [STORES]                                                                                   |
-            |   - User Virtual Balances (Staked + Pending Rewards)                                        |
-            |   - Global Stats (Total Staked, Interest Pool, Total Unstaked)                              |
+            |   - Global Stats (Total Staked, Total Mined, Interest Pool)                                 |
+            |   - Allowed Minters (List of trusted User Profile Shards)                                   |
+            |   - MAX_SUPPLY (4.2B Hard Cap)                                                              |
             |                                                                                             |
             |  [READS]                                                                                    |
-            |   - get_user_stats(user) -> (Balance, Pending)                                              |
-            |   - get_global_stats() -> (Staked, Pool, Unstaked)                                          |
-            |   - get_voting_power(user)                                                                  |
+            |   - get_global_stats()                                                                      |
+            |                                                                                             |
+            |  [ACTIONS]                                                                                  |
+            |   - sync_shard(stats, request_allowance) -> Grants Allowance                                |
+            |   - process_unstake(user, amount) -> Sends Real Tokens                                      |
             +-------------+---------------------------------------------------------------+---------------+
                           |                                                               ^
-                          | (unstakes / transfers real tokens)                            | (stakes rewards / mints virtual tokens)
+                          | (grants allowance / receives stats)                           | (reports stats / requests allowance)
                           v                                                               |
 +-------------------------------------------------------+       +-------------------------+-----------------------------+
-|                      ghc_ledger                       |       |                      learning_engine                  |
-|               (ICRC-1 Token Standard)                 |       |                 (User Education Platform)             |
+|                      ghc_ledger                       |       |               user_profile (SHARDED)                  |
+|               (ICRC-1 Token Standard)                 |       |             (The Retail Bank & User State)            |
 |                                                       |       |                                                       |
 |  [STORES]                                             |       |  [STORES]                                             |
-|   - Real Token Balances (Founders, Treasury, Hub)     |       |   - Learning Units (Content, Quizzes)                 |
-|   - Transaction History                               |       |   - User Progress (Completed Quizzes)                 |
-|                                                       |       |   - Daily Stats (Attempts, Earned)                    |
-|                                                       |       |                                                       |
-|  [READS]                                              |       |  [READS]                                              |
-|   - icrc1_balance_of(account)                         |       |   - get_learning_unit(id)                             |
-|   - icrc1_total_supply()                              |       |   - get_user_daily_status(user)                       |
-+-------------------------------------------------------+       +-------------------------------------------------------+
-```
+|   - Real Token Balances (Founders, Treasury, Hub)     |       |   - User Profile (Email, Name, etc.)                  |
+|   - Transaction History                               |       |   - User Balance (Staked + Pending Rewards)           |
+|                                                       |       |   - Minting Allowance (Local Batch)                   |
+|  [READS]                                              |       |                                                       |
+|   - icrc1_balance_of(account)                         |       |  [ACTIONS]                                            |
+|   - icrc1_total_supply()                              |       |   - submit_quiz() -> Updates Local Balance            |
+|                                                       |       |   - sync_with_hub() -> Batches Updates                |
++-------------------------------------------------------+       +-------------------------+-----------------------------+
+                                                                                          |
+                                                                                          | (verifies answers)
+                                                                                          v
+                                                                +-------------------------+-----------------------------+
+                                                                |                  learning_engine                      |
+                                                                |             (Stateless Content Oracle)                |
+                                                                |                                                       |
+                                                                |  [STORES]                                             |
+                                                                |   - Learning Units (Content, Quizzes)                 |
+                                                                |                                                       |
+                                                                |  [READS]                                              |
+                                                                |   - get_learning_unit(id)                             |
+                                                                |   - verify_quiz(answers) -> (Pass/Fail)               |
+                                                                +-------------------------------------------------------+

@@ -1,0 +1,1221 @@
+Creating identities...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
+Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
+Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+Creating canisters...
+content_governance canister was already created and has canister id: uxrrr-q7777-77774-qaaaq-cai
+ghc_ledger canister was already created and has canister id: u6s2n-gx777-77774-qaaba-cai
+internet_identity canister was already created and has canister id: uzt4z-lp777-77774-qaabq-cai
+learning_engine canister was already created and has canister id: umunu-kh777-77774-qaaca-cai
+operational_governance canister was already created and has canister id: ulvla-h7777-77774-qaacq-cai
+staking_hub canister was already created and has canister id: ucwa4-rx777-77774-qaada-cai
+user_profile canister was already created and has canister id: ufxgi-4p777-77774-qaadq-cai
+Ledger: u6s2n-gx777-77774-qaaba-cai
+Staking Hub: ucwa4-rx777-77774-qaada-cai
+Internet Identity: uzt4z-lp777-77774-qaabq-cai
+Deploying Internet Identity...
+Deploying: internet_identity
+All canisters have already been created.
+Building canister 'internet_identity'.
+Module hash 18bd7e5f51aab7c4048aaa9fce25fe12565930173a055db6c5106bc83bf7a880 is already installed.
+Upgraded code for canister internet_identity, with canister ID uzt4z-lp777-77774-qaabq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Ledger...
+Deploying: ghc_ledger
+All canisters have already been created.
+Building canister 'ghc_ledger'.
+Module hash 9ab4baff988fb961d5fc216a887514d55f98bc959b5931325a63087ee882d66f is already installed.
+Upgraded code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Staking Hub...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+warning: unused import: `Subaccount`
+  --> src/staking_hub/src/lib.rs:10:50
+   |
+10 | ...account::{Account, Subaccount};
+   |                       ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserState` is never constructed
+  --> src/staking_hub/src/lib.rs:22:8
+   |
+22 | struct UserState {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `staking_hub` (lib) generated 2 warnings (run `cargo fix --lib -p staking_hub` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 2.76s
+Module hash dcd500e407dfb8e63a3e6410ddfe7a370a29fe6a6e9cef13e2e3d1de3d7be8e0 is already installed.
+Upgraded code for canister staking_hub, with canister ID ucwa4-rx777-77774-qaada-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Operational Governance...
+Deploying: operational_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'operational_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p operational_governance --locked
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> src/operational_governance/src/lib.rs:31:17
+   |
+31 |     fn to_bytes(&self) -> Cow<[u8]> {
+   |                 ^^^^^     ^^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+31 |     fn to_bytes(&self) -> Cow<'_, [u8]> {
+   |                               +++
+
+warning: `operational_governance` (lib) generated 1 warning (run `cargo fix --lib -p operational_governance` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 2.86s
+Module hash 2c6c7795f942aeaa7ee9b13a0f49fc621e276bdd4c687cf06929c33db132d864 is already installed.
+Upgraded code for canister operational_governance, with canister ID ulvla-h7777-77774-qaacq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Content Governance...
+Deploying: content_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'content_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p content_governance --locked
+    Finished `release` profile [optimized] target(s) in 2.42s
+Module hash edf49906ead2f7915d949abc71a2440ebf7cbd2f4a501107732903c06cfb1d74 is already installed.
+Upgraded code for canister content_governance, with canister ID uxrrr-q7777-77774-qaaaq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Learning Engine...
+Deploying: learning_engine
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'learning_engine'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
+    Finished `release` profile [optimized] target(s) in 2.89s
+Module hash 2a00baf99fb2be3019621ff293af18d33c65358d67038ae437004a24fafc2102 is already installed.
+Upgraded code for canister learning_engine, with canister ID umunu-kh777-77774-qaaca-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying User Profile...
+Deploying: user_profile
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'user_profile'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
+   Compiling user_profile v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/user_profile)
+    Finished `release` profile [optimized] target(s) in 8.30s
+WARNING!
+Candid interface compatibility check failed for canister 'user_profile'.
+You are making a BREAKING change. Other canisters or frontend clients relying on your canister may stop working.
+
+Method debug_force_sync is only in the expected type
+Do you want to proceed? yes/No
+Terminated
+Creating identities...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
+Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
+Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+Creating canisters...
+Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
+content_governance canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
+ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
+internet_identity canister created with canister id: uzt4z-lp777-77774-qaabq-cai
+learning_engine canister created with canister id: umunu-kh777-77774-qaaca-cai
+operational_governance canister created with canister id: ulvla-h7777-77774-qaacq-cai
+staking_hub canister created with canister id: ucwa4-rx777-77774-qaada-cai
+user_profile canister created with canister id: ufxgi-4p777-77774-qaadq-cai
+Ledger: u6s2n-gx777-77774-qaaba-cai
+Staking Hub: ucwa4-rx777-77774-qaada-cai
+Internet Identity: uzt4z-lp777-77774-qaabq-cai
+Deploying Internet Identity...
+Deploying: internet_identity
+All canisters have already been created.
+Building canister 'internet_identity'.
+Installed code for canister internet_identity, with canister ID uzt4z-lp777-77774-qaabq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Ledger...
+Deploying: ghc_ledger
+All canisters have already been created.
+Building canister 'ghc_ledger'.
+Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Staking Hub...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+warning: unused import: `Subaccount`
+  --> src/staking_hub/src/lib.rs:10:50
+   |
+10 | ...account::{Account, Subaccount};
+   |                       ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserState` is never constructed
+  --> src/staking_hub/src/lib.rs:22:8
+   |
+22 | struct UserState {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `staking_hub` (lib) generated 2 warnings (run `cargo fix --lib -p staking_hub` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3.29s
+Installed code for canister staking_hub, with canister ID ucwa4-rx777-77774-qaada-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Operational Governance...
+Deploying: operational_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'operational_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p operational_governance --locked
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> src/operational_governance/src/lib.rs:31:17
+   |
+31 |     fn to_bytes(&self) -> Cow<[u8]> {
+   |                 ^^^^^     ^^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+31 |     fn to_bytes(&self) -> Cow<'_, [u8]> {
+   |                               +++
+
+warning: `operational_governance` (lib) generated 1 warning (run `cargo fix --lib -p operational_governance` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 2.95s
+Installed code for canister operational_governance, with canister ID ulvla-h7777-77774-qaacq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Content Governance...
+Deploying: content_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'content_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p content_governance --locked
+    Finished `release` profile [optimized] target(s) in 2.30s
+Installed code for canister content_governance, with canister ID uxrrr-q7777-77774-qaaaq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Learning Engine...
+Deploying: learning_engine
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'learning_engine'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
+    Finished `release` profile [optimized] target(s) in 2.70s
+Installed code for canister learning_engine, with canister ID umunu-kh777-77774-qaaca-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying User Profile...
+Deploying: user_profile
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'user_profile'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
+    Finished `release` profile [optimized] target(s) in 2.68s
+Installed code for canister user_profile, with canister ID ufxgi-4p777-77774-qaadq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deployment Complete!
+Creating identities...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
+Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
+Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+Creating canisters...
+content_governance canister was already created and has canister id: uxrrr-q7777-77774-qaaaq-cai
+ghc_ledger canister was already created and has canister id: u6s2n-gx777-77774-qaaba-cai
+internet_identity canister was already created and has canister id: uzt4z-lp777-77774-qaabq-cai
+learning_engine canister was already created and has canister id: umunu-kh777-77774-qaaca-cai
+operational_governance canister was already created and has canister id: ulvla-h7777-77774-qaacq-cai
+staking_hub canister was already created and has canister id: ucwa4-rx777-77774-qaada-cai
+user_profile canister was already created and has canister id: ufxgi-4p777-77774-qaadq-cai
+Ledger: u6s2n-gx777-77774-qaaba-cai
+Staking Hub: ucwa4-rx777-77774-qaada-cai
+Internet Identity: uzt4z-lp777-77774-qaabq-cai
+Deploying Internet Identity...
+Deploying: internet_identity
+All canisters have already been created.
+Building canister 'internet_identity'.
+Module hash 18bd7e5f51aab7c4048aaa9fce25fe12565930173a055db6c5106bc83bf7a880 is already installed.
+Upgraded code for canister internet_identity, with canister ID uzt4z-lp777-77774-qaabq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Ledger...
+Deploying: ghc_ledger
+All canisters have already been created.
+Building canister 'ghc_ledger'.
+Module hash 9ab4baff988fb961d5fc216a887514d55f98bc959b5931325a63087ee882d66f is already installed.
+Upgraded code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Staking Hub...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+warning: unused import: `Subaccount`
+  --> src/staking_hub/src/lib.rs:10:50
+   |
+10 | ...account::{Account, Subaccount};
+   |                       ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserState` is never constructed
+  --> src/staking_hub/src/lib.rs:22:8
+   |
+22 | struct UserState {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `staking_hub` (lib) generated 2 warnings (run `cargo fix --lib -p staking_hub` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3.34s
+WARNING!
+Candid interface compatibility check failed for canister 'staking_hub'.
+You are making a BREAKING change. Other canisters or frontend clients relying on your canister may stop working.
+
+Method get_user_stats is only in the expected type
+Do you want to proceed? yes/No
+Terminated
+Creating identities...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
+Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
+Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+Creating canisters...
+Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
+content_governance canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
+ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
+internet_identity canister created with canister id: uzt4z-lp777-77774-qaabq-cai
+learning_engine canister created with canister id: umunu-kh777-77774-qaaca-cai
+operational_governance canister created with canister id: ulvla-h7777-77774-qaacq-cai
+staking_hub canister created with canister id: ucwa4-rx777-77774-qaada-cai
+user_profile canister created with canister id: ufxgi-4p777-77774-qaadq-cai
+Ledger: u6s2n-gx777-77774-qaaba-cai
+Staking Hub: ucwa4-rx777-77774-qaada-cai
+Internet Identity: uzt4z-lp777-77774-qaabq-cai
+Deploying Internet Identity...
+Deploying: internet_identity
+All canisters have already been created.
+Building canister 'internet_identity'.
+Installed code for canister internet_identity, with canister ID uzt4z-lp777-77774-qaabq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Ledger...
+Deploying: ghc_ledger
+All canisters have already been created.
+Building canister 'ghc_ledger'.
+Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Staking Hub...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+warning: unused import: `Subaccount`
+  --> src/staking_hub/src/lib.rs:10:50
+   |
+10 | ...account::{Account, Subaccount};
+   |                       ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserState` is never constructed
+  --> src/staking_hub/src/lib.rs:22:8
+   |
+22 | struct UserState {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `staking_hub` (lib) generated 2 warnings (run `cargo fix --lib -p staking_hub` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3.36s
+Installed code for canister staking_hub, with canister ID ucwa4-rx777-77774-qaada-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Operational Governance...
+Deploying: operational_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'operational_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p operational_governance --locked
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> src/operational_governance/src/lib.rs:31:17
+   |
+31 |     fn to_bytes(&self) -> Cow<[u8]> {
+   |                 ^^^^^     ^^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+31 |     fn to_bytes(&self) -> Cow<'_, [u8]> {
+   |                               +++
+
+warning: `operational_governance` (lib) generated 1 warning (run `cargo fix --lib -p operational_governance` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3.04s
+Installed code for canister operational_governance, with canister ID ulvla-h7777-77774-qaacq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Content Governance...
+Deploying: content_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'content_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p content_governance --locked
+    Finished `release` profile [optimized] target(s) in 2.33s
+Installed code for canister content_governance, with canister ID uxrrr-q7777-77774-qaaaq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Learning Engine...
+Deploying: learning_engine
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'learning_engine'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
+    Finished `release` profile [optimized] target(s) in 2.39s
+Installed code for canister learning_engine, with canister ID umunu-kh777-77774-qaaca-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying User Profile...
+Deploying: user_profile
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'user_profile'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
+    Finished `release` profile [optimized] target(s) in 2.40s
+Installed code for canister user_profile, with canister ID ufxgi-4p777-77774-qaadq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deployment Complete!
+Creating identities...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
+Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
+Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+Creating canisters...
+content_governance canister was already created and has canister id: uxrrr-q7777-77774-qaaaq-cai
+ghc_ledger canister was already created and has canister id: u6s2n-gx777-77774-qaaba-cai
+internet_identity canister was already created and has canister id: uzt4z-lp777-77774-qaabq-cai
+learning_engine canister was already created and has canister id: umunu-kh777-77774-qaaca-cai
+operational_governance canister was already created and has canister id: ulvla-h7777-77774-qaacq-cai
+staking_hub canister was already created and has canister id: ucwa4-rx777-77774-qaada-cai
+user_profile canister was already created and has canister id: ufxgi-4p777-77774-qaadq-cai
+Ledger: u6s2n-gx777-77774-qaaba-cai
+Staking Hub: ucwa4-rx777-77774-qaada-cai
+Internet Identity: uzt4z-lp777-77774-qaabq-cai
+Deploying Internet Identity...
+Deploying: internet_identity
+All canisters have already been created.
+Building canister 'internet_identity'.
+Module hash 18bd7e5f51aab7c4048aaa9fce25fe12565930173a055db6c5106bc83bf7a880 is already installed.
+Upgraded code for canister internet_identity, with canister ID uzt4z-lp777-77774-qaabq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Ledger...
+Deploying: ghc_ledger
+All canisters have already been created.
+Building canister 'ghc_ledger'.
+Module hash 9ab4baff988fb961d5fc216a887514d55f98bc959b5931325a63087ee882d66f is already installed.
+Upgraded code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Staking Hub...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+warning: unused import: `Subaccount`
+  --> src/staking_hub/src/lib.rs:10:50
+   |
+10 | ...account::{Account, Subaccount};
+   |                       ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserState` is never constructed
+  --> src/staking_hub/src/lib.rs:22:8
+   |
+22 | struct UserState {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `staking_hub` (lib) generated 2 warnings (run `cargo fix --lib -p staking_hub` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 2.91s
+Module hash 39bf09497843042a14c7ea236dd554b040d97abd68fd5c5849cea0db44e34d51 is already installed.
+Upgraded code for canister staking_hub, with canister ID ucwa4-rx777-77774-qaada-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Operational Governance...
+Deploying: operational_governance
+All canisters have already been created.
+[31mError: (B[mFailed while trying to deploy canisters.
+[33mCaused by: (B[mFailed to build all canisters.
+[33mCaused by: (B[mFailed while trying to build all canisters.
+[33mCaused by: (B[mFailed to download https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz to /mnt/c/LIB/CODE/gh-smartContracts/.dfx/local/canisters/internet_identity/download-internet_identity_dev.wasm.gz.
+[33mCaused by: (B[mfailed to write to /mnt/c/LIB/CODE/gh-smartContracts/.dfx/local/canisters/internet_identity/download-internet_identity_dev.wasm.gz
+[33mCaused by: (B[mInvalid argument (os error 22)
+Creating identities...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
+Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
+Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+Creating canisters...
+Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
+content_governance canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
+ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
+internet_identity canister created with canister id: uzt4z-lp777-77774-qaabq-cai
+learning_engine canister created with canister id: umunu-kh777-77774-qaaca-cai
+operational_governance canister created with canister id: ulvla-h7777-77774-qaacq-cai
+staking_hub canister created with canister id: ucwa4-rx777-77774-qaada-cai
+user_profile canister created with canister id: ufxgi-4p777-77774-qaadq-cai
+Ledger: u6s2n-gx777-77774-qaaba-cai
+Staking Hub: ucwa4-rx777-77774-qaada-cai
+Internet Identity: uzt4z-lp777-77774-qaabq-cai
+Deploying Internet Identity...
+Deploying: internet_identity
+All canisters have already been created.
+Building canister 'internet_identity'.
+Installed code for canister internet_identity, with canister ID uzt4z-lp777-77774-qaabq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Ledger...
+Deploying: ghc_ledger
+All canisters have already been created.
+Building canister 'ghc_ledger'.
+Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Staking Hub...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+warning: unused import: `Subaccount`
+  --> src/staking_hub/src/lib.rs:10:50
+   |
+10 | ...account::{Account, Subaccount};
+   |                       ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserState` is never constructed
+  --> src/staking_hub/src/lib.rs:22:8
+   |
+22 | struct UserState {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `staking_hub` (lib) generated 2 warnings (run `cargo fix --lib -p staking_hub` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 2.89s
+Installed code for canister staking_hub, with canister ID ucwa4-rx777-77774-qaada-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Operational Governance...
+Deploying: operational_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'operational_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p operational_governance --locked
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> src/operational_governance/src/lib.rs:31:17
+   |
+31 |     fn to_bytes(&self) -> Cow<[u8]> {
+   |                 ^^^^^     ^^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+31 |     fn to_bytes(&self) -> Cow<'_, [u8]> {
+   |                               +++
+
+warning: `operational_governance` (lib) generated 1 warning (run `cargo fix --lib -p operational_governance` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 2.77s
+Installed code for canister operational_governance, with canister ID ulvla-h7777-77774-qaacq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Content Governance...
+Deploying: content_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'content_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p content_governance --locked
+    Finished `release` profile [optimized] target(s) in 2.33s
+Installed code for canister content_governance, with canister ID uxrrr-q7777-77774-qaaaq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Learning Engine...
+Deploying: learning_engine
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'learning_engine'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
+    Finished `release` profile [optimized] target(s) in 2.58s
+Installed code for canister learning_engine, with canister ID umunu-kh777-77774-qaaca-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying User Profile...
+Deploying: user_profile
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'user_profile'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
+   Compiling user_profile v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/user_profile)
+    Finished `release` profile [optimized] target(s) in 8.07s
+Installed code for canister user_profile, with canister ID ufxgi-4p777-77774-qaadq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deployment Complete!
+Creating identities...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
+Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
+Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+Creating canisters...
+content_governance canister was already created and has canister id: uxrrr-q7777-77774-qaaaq-cai
+ghc_ledger canister was already created and has canister id: u6s2n-gx777-77774-qaaba-cai
+internet_identity canister was already created and has canister id: uzt4z-lp777-77774-qaabq-cai
+learning_engine canister was already created and has canister id: umunu-kh777-77774-qaaca-cai
+operational_governance canister was already created and has canister id: ulvla-h7777-77774-qaacq-cai
+staking_hub canister was already created and has canister id: ucwa4-rx777-77774-qaada-cai
+user_profile canister was already created and has canister id: ufxgi-4p777-77774-qaadq-cai
+Ledger: u6s2n-gx777-77774-qaaba-cai
+Staking Hub: ucwa4-rx777-77774-qaada-cai
+Internet Identity: uzt4z-lp777-77774-qaabq-cai
+Deploying Internet Identity...
+Deploying: internet_identity
+All canisters have already been created.
+Building canister 'internet_identity'.
+Module hash 18bd7e5f51aab7c4048aaa9fce25fe12565930173a055db6c5106bc83bf7a880 is already installed.
+Upgraded code for canister internet_identity, with canister ID uzt4z-lp777-77774-qaabq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Ledger...
+Deploying: ghc_ledger
+All canisters have already been created.
+Building canister 'ghc_ledger'.
+Module hash 9ab4baff988fb961d5fc216a887514d55f98bc959b5931325a63087ee882d66f is already installed.
+Upgraded code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Staking Hub...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+warning: unused import: `Subaccount`
+  --> src/staking_hub/src/lib.rs:10:50
+   |
+10 | ...account::{Account, Subaccount};
+   |                       ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserState` is never constructed
+  --> src/staking_hub/src/lib.rs:22:8
+   |
+22 | struct UserState {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `staking_hub` (lib) generated 2 warnings (run `cargo fix --lib -p staking_hub` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 2.95s
+Module hash 39bf09497843042a14c7ea236dd554b040d97abd68fd5c5849cea0db44e34d51 is already installed.
+Upgraded code for canister staking_hub, with canister ID ucwa4-rx777-77774-qaada-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Operational Governance...
+Deploying: operational_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'operational_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p operational_governance --locked
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> src/operational_governance/src/lib.rs:31:17
+   |
+31 |     fn to_bytes(&self) -> Cow<[u8]> {
+   |                 ^^^^^     ^^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+31 |     fn to_bytes(&self) -> Cow<'_, [u8]> {
+   |                               +++
+
+warning: `operational_governance` (lib) generated 1 warning (run `cargo fix --lib -p operational_governance` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3.30s
+Module hash 2c6c7795f942aeaa7ee9b13a0f49fc621e276bdd4c687cf06929c33db132d864 is already installed.
+Upgraded code for canister operational_governance, with canister ID ulvla-h7777-77774-qaacq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Content Governance...
+Deploying: content_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'content_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p content_governance --locked
+    Finished `release` profile [optimized] target(s) in 2.68s
+Module hash edf49906ead2f7915d949abc71a2440ebf7cbd2f4a501107732903c06cfb1d74 is already installed.
+Upgraded code for canister content_governance, with canister ID uxrrr-q7777-77774-qaaaq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Learning Engine...
+Deploying: learning_engine
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'learning_engine'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
+    Finished `release` profile [optimized] target(s) in 2.66s
+Module hash 2a00baf99fb2be3019621ff293af18d33c65358d67038ae437004a24fafc2102 is already installed.
+Upgraded code for canister learning_engine, with canister ID umunu-kh777-77774-qaaca-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying User Profile...
+Deploying: user_profile
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'user_profile'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
+    Finished `release` profile [optimized] target(s) in 2.76s
+Upgraded code for canister user_profile, with canister ID ufxgi-4p777-77774-qaadq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deployment Complete!
+Creating identities...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
+Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
+Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
+Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+Creating canisters...
+Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
+content_governance canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
+ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
+internet_identity canister created with canister id: uzt4z-lp777-77774-qaabq-cai
+learning_engine canister created with canister id: umunu-kh777-77774-qaaca-cai
+operational_governance canister created with canister id: ulvla-h7777-77774-qaacq-cai
+staking_hub canister created with canister id: ucwa4-rx777-77774-qaada-cai
+user_profile canister created with canister id: ufxgi-4p777-77774-qaadq-cai
+Ledger: u6s2n-gx777-77774-qaaba-cai
+Staking Hub: ucwa4-rx777-77774-qaada-cai
+Internet Identity: uzt4z-lp777-77774-qaabq-cai
+Deploying Internet Identity...
+Deploying: internet_identity
+All canisters have already been created.
+Building canister 'internet_identity'.
+Installed code for canister internet_identity, with canister ID uzt4z-lp777-77774-qaabq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Ledger...
+Deploying: ghc_ledger
+All canisters have already been created.
+Building canister 'ghc_ledger'.
+Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Staking Hub...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+warning: unused import: `Subaccount`
+  --> src/staking_hub/src/lib.rs:10:50
+   |
+10 | ...account::{Account, Subaccount};
+   |                       ^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `UserState` is never constructed
+  --> src/staking_hub/src/lib.rs:22:8
+   |
+22 | struct UserState {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `staking_hub` (lib) generated 2 warnings (run `cargo fix --lib -p staking_hub` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3.14s
+Installed code for canister staking_hub, with canister ID ucwa4-rx777-77774-qaada-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Operational Governance...
+Deploying: operational_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'operational_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p operational_governance --locked
+warning: hiding a lifetime that's elided elsewhere is confusing
+  --> src/operational_governance/src/lib.rs:31:17
+   |
+31 |     fn to_bytes(&self) -> Cow<[u8]> {
+   |                 ^^^^^     ^^^^^^^^^ the same lifetime is hidden here
+   |                 |
+   |                 the lifetime is elided here
+   |
+   = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+   = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+   |
+31 |     fn to_bytes(&self) -> Cow<'_, [u8]> {
+   |                               +++
+
+warning: `operational_governance` (lib) generated 1 warning (run `cargo fix --lib -p operational_governance` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3.62s
+Installed code for canister operational_governance, with canister ID ulvla-h7777-77774-qaacq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Content Governance...
+Deploying: content_governance
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'content_governance'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p content_governance --locked
+    Finished `release` profile [optimized] target(s) in 2.63s
+Installed code for canister content_governance, with canister ID uxrrr-q7777-77774-qaaaq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying Learning Engine...
+Deploying: learning_engine
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'learning_engine'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
+    Finished `release` profile [optimized] target(s) in 3.01s
+Installed code for canister learning_engine, with canister ID umunu-kh777-77774-qaaca-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deploying User Profile...
+Deploying: user_profile
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'user_profile'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
+    Finished `release` profile [optimized] target(s) in 2.89s
+Installed code for canister user_profile, with canister ID ufxgi-4p777-77774-qaadq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    content_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=u6s2n-gx777-77774-qaaba-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=uzt4z-lp777-77774-qaabq-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=umunu-kh777-77774-qaaca-cai
+    operational_governance: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ulvla-h7777-77774-qaacq-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
+Deployment Complete!

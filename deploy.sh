@@ -116,4 +116,8 @@ dfx deploy content_governance
 echo "Deploying Learning Engine..."
 dfx deploy learning_engine --argument "(record { staking_hub_id = principal \"$STAKING_HUB_ID\" })"
 
+# Deploy User Profile
+echo "Deploying User Profile..."
+dfx deploy user_profile --argument "(record { staking_hub_id = principal \"$STAKING_HUB_ID\"; learning_content_id = principal \"$LEARNING_ID\" })"
+
 echo "Deployment Complete!"

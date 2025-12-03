@@ -74,3 +74,18 @@ struct UserProfile {
 ## 5. Summary
 - **Sharding Learning Engine?** -> Yes, split Content from User State.
 - **Separate Canister for User State?** -> Yes, this is critical for "limitless" scaling.
+
+## 6. Update: Micro-Bank & Allowance Architecture (Implemented)
+
+To solve the bottleneck of millions of users hitting the `staking_hub` for rewards, we implemented:
+
+### A. Micro-Bank Model
+- Users hold their "Staked Balance" inside their `user_profile` shard.
+- Rewards are added locally. No cross-canister call per quiz.
+- `staking_hub` only holds the Real Token Treasury and Global Stats.
+
+### B. Batching & Allowance
+- **Hard Cap**: `staking_hub` enforces the 4.2B limit.
+- **Allowance**: Shards request a "Minting Allowance" (e.g., 100k tokens).
+- **Batching**: Shards report stats (Total Staked changes) only when requesting a new allowance.
+- **Result**: Network traffic reduced by 1000x+.

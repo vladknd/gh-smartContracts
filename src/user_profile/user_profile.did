@@ -1,0 +1,29 @@
+type UserProfile = record {
+    email : text;
+    name : text;
+    education : text;
+    gender : text;
+    staked_balance : nat64;
+    last_reward_index : nat;
+};
+
+type UserDailyStats = record {
+    day_index : nat64;
+    quizzes_taken : nat8;
+    tokens_earned : nat64;
+};
+
+type InitArgs = record {
+    staking_hub_id : principal;
+    learning_content_id : principal;
+};
+
+service : (InitArgs) -> {
+    update_profile : (UserProfile) -> ();
+    get_profile : (principal) -> (opt UserProfile) query;
+    submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
+    get_user_daily_status : (principal) -> (UserDailyStats) query;
+    is_quiz_completed : (principal, text) -> (bool) query;
+    unstake : (nat64) -> (variant { Ok : nat64; Err : text });
+    debug_force_sync : () -> (variant { Ok : null; Err : text });
+}
