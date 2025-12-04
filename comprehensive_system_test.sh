@@ -92,7 +92,16 @@ else
 fi
 
 # 4. User Engagement (Quiz & Rewards)
-log_step "User Engagement: Submit Quiz"
+log_step "User Engagement: Register & Submit Quiz"
+
+# Register User
+OUT_REG=$(dfx canister call user_profile register_user '(record { email = "test@example.com"; name = "Test User"; education = "PhD"; gender = "Non-binary" })' 2>&1)
+if [[ "$OUT_REG" == *"Ok"* ]]; then
+    log_result "PASS" "User registered successfully."
+else
+    log_result "FAIL" "User registration failed. Output: $OUT_REG"
+fi
+
 # Submit correct answer (index 0)
 OUT=$(dfx canister call user_profile submit_quiz '("unit_test_1", vec { 0 })' 2>&1)
 
@@ -174,6 +183,41 @@ if [[ "$STATS" == *"interest_pool = 0"* ]]; then
     log_result "PASS" "Interest Pool reset to 0."
 else
     log_result "FAIL" "Interest Pool not reset. Stats: $STATS"
+fi
+
+# 11. Verification: Manual Claim
+log_step "Verification: Manual Claim Rewards"
+
+# Force sync to get the new Global Index from Hub to Shard
+dfx canister call user_profile debug_force_sync >/dev/null
+
+# Check Profile for Unclaimed Interest
+PROFILE=$(dfx canister call user_profile get_profile "(principal \"$IDENTITY\")")
+
+# We expect unclaimed_interest > 0
+# 50_000_000 staked. Pool was 5_000_000.
+# Interest = 5_000_000 (10% yield).
+if [[ "$PROFILE" == *"unclaimed_interest = 5_000_000"* ]]; then
+    log_result "PASS" "Unclaimed Interest updated correctly (5 Token)."
+else
+    log_result "FAIL" "Unclaimed Interest incorrect. Output: $PROFILE"
+fi
+
+# Claim Rewards
+OUT=$(dfx canister call user_profile claim_rewards 2>&1)
+if [[ "$OUT" == *"Ok = 5_000_000"* ]]; then
+    log_result "PASS" "Rewards claimed successfully."
+else
+    log_result "FAIL" "Claim failed. Output: $OUT"
+fi
+
+# Verify Balance Increased
+PROFILE=$(dfx canister call user_profile get_profile "(principal \"$IDENTITY\")")
+# 50M (Staked) + 5M (Claimed) = 55M
+if [[ "$PROFILE" == *"staked_balance = 55_000_000"* ]]; then
+    log_result "PASS" "Staked Balance updated after claim (55 Token)."
+else
+    log_result "FAIL" "Balance incorrect after claim. Output: $PROFILE"
 fi
 
 echo -e "\n-----------------------------------" >> $REPORT_FILE

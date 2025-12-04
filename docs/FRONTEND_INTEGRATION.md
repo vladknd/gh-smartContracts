@@ -48,19 +48,32 @@ npm install @dfinity/agent @dfinity/candid @dfinity/principal @dfinity/auth-clie
     *   **Type**: Update
     *   **Description**: Submits answers for a specific quiz unit.
     *   **Returns**: `Ok(reward_amount)` (e.g., 100_000_000 for 1 GHC), or `Err(message)`.
-    *   **Usage**: Call when user clicks "Submit" on a quiz.
+    *   **Returns**: `Ok(reward_amount)` (e.g., 100_000_000 for 1 GHC), or `Err(message)`.
+    *   **Usage**: Call when user clicks "Submit" on a quiz. **Requires Registration.**
 
 2.  **`unstake(amount: nat64) -> Result<nat64, text>`**
     *   **Type**: Update
     *   **Description**: Unstakes a specific amount from the user's local balance. **Applies a 10% penalty.**
     *   **Returns**: `Ok(amount_received)` (90% of requested) or `Err(message)`.
-    *   **Usage**: Call when user wants to withdraw funds to their main wallet.
+    *   **Returns**: `Ok(amount_received)` (90% of requested) or `Err(message)`.
+    *   **Usage**: Call when user wants to withdraw funds to their main wallet. **Requires Registration.**
 
 3.  **`get_profile(user: principal) -> opt UserProfile`**
     *   **Type**: Query
     *   **Description**: Returns the user's profile and **Staked Balance**.
     *   **Returns**: `record { email; name; staked_balance; ... }`.
-    *   **Usage**: Display "Staked Balance" from this record.
+    *   **Returns**: `record { email; name; staked_balance; ... }`.
+    *   **Usage**: Check if user exists (returns `null` if not registered). Display "Staked Balance".
+
+5.  **`register_user(profile: UserProfileUpdate) -> Result<null, text>`**
+    *   **Type**: Update
+    *   **Description**: Registers a new user. Fails if user already exists. Initial balance is 0.
+    *   **Input**: `record { email; name; education; gender }`.
+
+6.  **`update_profile(profile: UserProfileUpdate) -> Result<null, text>`**
+    *   **Type**: Update
+    *   **Description**: Updates personal info for an existing user. Fails if user not registered. **Does not affect balance.**
+    *   **Input**: `record { email; name; education; gender }`.
 
 4.  **`get_user_daily_status(user: principal) -> UserDailyStats`**
     *   **Type**: Query
@@ -77,6 +90,12 @@ npm install @dfinity/agent @dfinity/candid @dfinity/principal @dfinity/auth-clie
     *   **Type**: Update
     *   **Description**: **DEV ONLY**. Forces the shard to sync pending stats with the Staking Hub immediately.
     *   **Usage**: Call this after `submit_quiz` if you need to verify Global Stats updates immediately during testing.
+    
+7.  **`get_user_transactions(user: principal) -> vec TransactionRecord`**
+    *   **Type**: Query
+    *   **Description**: Returns a history of internal game transactions (Quiz Rewards, Unstaking).
+    *   **Returns**: `vec { record { timestamp; tx_type; amount } }`.
+    *   **Usage**: Display "Game History" (e.g., "Earned 10 GHC", "Unstaked 5 GHC").
 
 ---
 
@@ -93,17 +112,33 @@ npm install @dfinity/agent @dfinity/candid @dfinity/principal @dfinity/auth-clie
 
 ---
 
-### C. Staking Hub (`staking_hub`)
+### 3. Staking & Interest (Manual Claim)
+The system uses a "Manual Claim" model for interest. Users must explicitly claim their rewards.
 
-**Purpose**: Central Treasury and Global Stats.
+**A. Displaying Balances**
+Call `get_profile(user_principal)` to get:
+- `staked_balance`: The principal amount (Tokens earned/staked).
+- `unclaimed_interest`: The pending rewards waiting to be claimed.
 
-**Note on Eventual Consistency**: Global stats (`total_staked`, `total_mined`) are updated in **batches** by the User Profile shards. You may not see immediate changes after a single quiz submission. This is by design for scalability.
+**B. Claiming Rewards**
+To move `unclaimed_interest` to `staked_balance`:
+```javascript
+await user_profile.claim_rewards();
+```
 
-#### Methods
+**C. Unstaking**
+Users can only unstake from their `staked_balance`.
+```javascript
+await user_profile.unstake(amount_e8s);
+```
 
-1.  **`get_global_stats() -> GlobalStats`**
-    *   **Type**: Query
-    *   **Description**: Returns total staked amount, total mined, and interest pool.
+### 4. Global Stats (Optional)
+To show global platform stats:
+```javascript
+const stats = await staking_hub.get_global_stats();
+console.log("Total Staked:", stats.total_staked);
+console.log("Interest Pool:", stats.interest_pool);
+```
     *   **Usage**: Display "Total Value Locked" or "Global Stats".
 
 ---
@@ -122,6 +157,20 @@ npm install @dfinity/agent @dfinity/candid @dfinity/principal @dfinity/auth-clie
 2.  **`icrc1_transfer(args: TransferArg) -> Result<nat64, TransferError>`**
     *   **Type**: Update
     *   **Description**: Transfers tokens to another user.
+
+---
+
+### E. Transaction History (Important)
+
+1.  **Internal Game History (Minting/Unstaking)**
+    *   Use `user_profile.get_user_transactions(user)` to get the history of rewards earned and tokens unstaked.
+    *   This data is stored directly in the `user_profile` canister.
+
+2.  **Ledger History (Sending/Receiving)**
+    *   The standard `icrc1_ledger` does not support querying transaction history by user directly.
+    *   To display "Sending/Receiving" history, you must use an **ICRC-1 Indexer**.
+    *   **Recommendation**: For local development, you can deploy the `ic-icrc1-index` canister. For mainnet, use the official indexers or third-party services.
+    *   **Frontend**: Use `@dfinity/ledger-icrc` to query the Index canister.
 
 ---
 
@@ -149,7 +198,20 @@ await authClient.login({
       canisterId: "ufxgi-4p777-77774-qaadq-cai",
     });
 
-    // 3. Submit Quiz
+    // 3. Check Registration & Register if needed
+    const profile = await userActor.get_profile(identity.getPrincipal());
+    
+    if (profile.length === 0) { // Option type returns [] or [value]
+        console.log("User not registered. Registering...");
+        await userActor.register_user({
+            email: "user@example.com",
+            name: "New User",
+            education: "Bachelor",
+            gender: "Other"
+        });
+    }
+
+    // 4. Submit Quiz
     submitQuiz(userActor);
   },
 });

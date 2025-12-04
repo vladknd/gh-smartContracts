@@ -8,6 +8,8 @@ use ic_stable_structures::storable::Bound;
 use std::cell::RefCell;
 use std::borrow::Cow;
 use candid::{Encode, Decode};
+use ic_cdk_timers::set_timer_interval;
+use std::time::Duration;
 
 type Memory = VirtualMemory<DefaultMemoryImpl>;
 
@@ -25,7 +27,66 @@ struct UserProfile {
     gender: String,
     // Economy State
     staked_balance: u64,
+    unclaimed_interest: u64, // New field for manual claim
     last_reward_index: u128,
+    transaction_count: u64,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct UserProfileUpdate {
+    email: String,
+    name: String,
+    education: String,
+    gender: String,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+enum TransactionType {
+    QuizReward,
+    Unstake,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct TransactionRecord {
+    timestamp: u64,
+    tx_type: TransactionType,
+    amount: u64,
+}
+
+impl Storable for TransactionRecord {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: 100,
+        is_fixed_size: false,
+    };
+}
+
+#[derive(CandidType, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct TransactionKey {
+    user: Principal,
+    index: u64,
+}
+
+impl Storable for TransactionKey {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: 100,
+        is_fixed_size: false,
+    };
 }
 
 impl Storable for UserProfile {
@@ -138,6 +199,19 @@ thread_local! {
             PendingStats { staked_delta: 0, unstaked_delta: 0 }
         ).unwrap()
     );
+
+    static USER_TRANSACTIONS: RefCell<StableBTreeMap<TransactionKey, TransactionRecord, Memory>> = RefCell::new(
+        StableBTreeMap::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(7)))
+        )
+    );
+
+    static GLOBAL_REWARD_INDEX: RefCell<StableCell<u128, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(8))),
+            0
+        ).unwrap()
+    );
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
@@ -156,7 +230,7 @@ impl Storable for PendingStats {
     }
 
     const BOUND: Bound = Bound::Bounded {
-        max_size: 50,
+        max_size: 100,
         is_fixed_size: false,
     };
 }
@@ -165,6 +239,23 @@ impl Storable for PendingStats {
 fn init(args: InitArgs) {
     STAKING_HUB_ID.with(|id| id.borrow_mut().set(args.staking_hub_id).expect("Failed to set Staking Hub ID"));
     LEARNING_CONTENT_ID.with(|id| id.borrow_mut().set(args.learning_content_id).expect("Failed to set Learning Content ID"));
+
+    // Start Sync Timer (Every 5 minutes)
+    set_timer_interval(Duration::from_secs(300), || {
+        ic_cdk::spawn(async {
+            let _ = sync_with_hub_internal().await;
+        });
+    });
+}
+
+#[ic_cdk::post_upgrade]
+fn post_upgrade() {
+    // Restart Sync Timer (Every 5 minutes)
+    set_timer_interval(Duration::from_secs(300), || {
+        ic_cdk::spawn(async {
+            let _ = sync_with_hub_internal().await;
+        });
+    });
 }
 
 fn get_current_day() -> u64 {
@@ -172,60 +263,171 @@ fn get_current_day() -> u64 {
 }
 
 #[update]
-fn update_profile(profile: UserProfile) {
+fn register_user(args: UserProfileUpdate) -> Result<(), String> {
     let user = ic_cdk::caller();
-    USER_PROFILES.with(|p| p.borrow_mut().insert(user, profile));
+    
+    if USER_PROFILES.with(|p| p.borrow().contains_key(&user)) {
+        return Err("User already registered".to_string());
+    }
+
+    let new_profile = UserProfile {
+        email: args.email,
+        name: args.name,
+        education: args.education,
+        gender: args.gender,
+        staked_balance: 0,
+        unclaimed_interest: 0,
+        last_reward_index: 0,
+        transaction_count: 0,
+    };
+
+    USER_PROFILES.with(|p| p.borrow_mut().insert(user, new_profile));
+    Ok(())
+}
+
+#[update]
+fn update_profile(args: UserProfileUpdate) -> Result<(), String> {
+    let user = ic_cdk::caller();
+    
+    USER_PROFILES.with(|p| {
+        let mut map = p.borrow_mut();
+        if let Some(mut profile) = map.get(&user) {
+            profile.email = args.email;
+            profile.name = args.name;
+            profile.education = args.education;
+            profile.gender = args.gender;
+            map.insert(user, profile);
+            Ok(())
+        } else {
+            Err("User not registered".to_string())
+        }
+    })
 }
 
 #[query]
 fn get_profile(user: Principal) -> Option<UserProfile> {
-    USER_PROFILES.with(|p| p.borrow().get(&user))
+    USER_PROFILES.with(|p| {
+        if let Some(profile) = p.borrow().get(&user) {
+            // Calculate pending interest for display
+            let global_index = GLOBAL_REWARD_INDEX.with(|i| *i.borrow().get());
+            let mut display_profile = profile.clone();
+            
+            if global_index > profile.last_reward_index {
+                let index_diff = global_index - profile.last_reward_index;
+                let interest = (profile.staked_balance as u128 * index_diff) / 1_000_000_000_000_000_000;
+                display_profile.unclaimed_interest += interest as u64;
+            }
+            Some(display_profile)
+        } else {
+            None
+        }
+    })
+}
+
+// Helper to compound interest for a user (Updates Unclaimed Interest)
+fn compound_interest(user: Principal) {
+    let global_index = GLOBAL_REWARD_INDEX.with(|i| *i.borrow().get());
+    
+    USER_PROFILES.with(|p| {
+        let mut map = p.borrow_mut();
+        if let Some(mut profile) = map.get(&user) {
+            if global_index > profile.last_reward_index {
+                let index_diff = global_index - profile.last_reward_index;
+                let interest = (profile.staked_balance as u128 * index_diff) / 1_000_000_000_000_000_000;
+                
+                if interest > 0 {
+                    profile.unclaimed_interest += interest as u64;
+                }
+                profile.last_reward_index = global_index;
+                map.insert(user, profile);
+            } else if profile.last_reward_index == 0 {
+                // Initialize index for new users/first time
+                profile.last_reward_index = global_index;
+                map.insert(user, profile);
+            }
+        }
+    });
 }
 
 // Helper to sync with hub (Request Allowance + Report Stats)
 async fn sync_with_hub_internal() -> Result<(), String> {
     let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
     
+    // 1. Optimistic Reset (Atomic Read-and-Clear)
     let (staked_delta, unstaked_delta) = PENDING_STATS.with(|s| {
-        let stats = s.borrow().get().clone();
-        (stats.staked_delta, stats.unstaked_delta)
+        let mut cell = s.borrow_mut();
+        let mut stats = cell.get().clone();
+        
+        let s_delta = stats.staked_delta;
+        let u_delta = stats.unstaked_delta;
+        
+        // Reset to 0 (we are taking these values to report)
+        stats.staked_delta = 0;
+        stats.unstaked_delta = 0;
+        
+        cell.set(stats).expect("Failed to update pending stats");
+        
+        (s_delta, u_delta)
     });
 
     // Request enough for next 1000 quizzes (1000 * 1 Token)
     let requested_allowance: u64 = 1000 * 100_000_000;
 
-    let result: Result<(Result<u64, String>,), _> = ic_cdk::call(
+    let result: Result<(Result<(u64, u128), String>,), _> = ic_cdk::call(
         staking_hub_id,
         "sync_shard",
         (staked_delta, unstaked_delta, requested_allowance)
     ).await;
 
     match result {
-        Ok((Ok(granted),)) => {
-            // Update Allowance
+        Ok((Ok((granted, global_index)),)) => {
+            // Success! Just update allowance.
             MINTING_ALLOWANCE.with(|a| {
                 let current = *a.borrow().get();
                 a.borrow_mut().set(current + granted).expect("Failed to update allowance");
             });
 
-            // Reset Pending Stats
+            // Update Global Index
+            GLOBAL_REWARD_INDEX.with(|i| {
+                i.borrow_mut().set(global_index).expect("Failed to update global index");
+            });
+
+            Ok(())
+        },
+        Ok((Err(msg),)) => {
+            // Hub Logic Error: Rollback Stats
             PENDING_STATS.with(|s| {
                 let mut cell = s.borrow_mut();
                 let mut stats = cell.get().clone();
-                stats.staked_delta -= staked_delta;
-                stats.unstaked_delta -= unstaked_delta;
-                cell.set(stats).expect("Failed to update pending stats");
+                stats.staked_delta += staked_delta;
+                stats.unstaked_delta += unstaked_delta;
+                cell.set(stats).expect("Failed to rollback pending stats");
             });
-            Ok(())
+            Err(format!("Hub Rejected Sync: {}", msg))
         },
-        Ok((Err(msg),)) => Err(format!("Hub Rejected Sync: {}", msg)),
-        Err((code, msg)) => Err(format!("Hub Call Failed: {:?} {}", code, msg))
+        Err((code, msg)) => {
+            // Network/System Error: Rollback Stats
+            PENDING_STATS.with(|s| {
+                let mut cell = s.borrow_mut();
+                let mut stats = cell.get().clone();
+                stats.staked_delta += staked_delta;
+                stats.unstaked_delta += unstaked_delta;
+                cell.set(stats).expect("Failed to rollback pending stats");
+            });
+            Err(format!("Hub Call Failed: {:?} {}", code, msg))
+        }
     }
 }
 
 #[update]
 async fn submit_quiz(unit_id: String, answers: Vec<u8>) -> Result<u64, String> {
     let user = ic_cdk::caller();
+    
+    // 0. Check Registration
+    if !USER_PROFILES.with(|p| p.borrow().contains_key(&user)) {
+        return Err("User not registered".to_string());
+    }
+
     let key = UserQuizKey { user, unit_id: unit_id.clone() };
     
     // 1. Check Daily Limit
@@ -289,19 +491,34 @@ async fn submit_quiz(unit_id: String, answers: Vec<u8>) -> Result<u64, String> {
     USER_DAILY_STATS.with(|s| s.borrow_mut().insert(user, daily_stats));
 
     // Update User Profile Balance
+    compound_interest(user); // Apply interest first!
+    
     USER_PROFILES.with(|p| {
         let mut map = p.borrow_mut();
-        let mut profile = map.get(&user).unwrap_or(UserProfile {
-            email: "".to_string(),
-            name: "".to_string(),
-            education: "".to_string(),
-            gender: "".to_string(),
-            staked_balance: 0,
-            last_reward_index: 0,
-        });
-        
-        profile.staked_balance += reward_amount;
-        map.insert(user, profile);
+        // We expect the user to exist because we checked at the start (or should have)
+        // But wait, we didn't check at the start of submit_quiz yet.
+        // Let's rely on the check we are about to add at the top of submit_quiz.
+        if let Some(mut profile) = map.get(&user) {
+            profile.staked_balance += reward_amount;
+            
+            // Log Transaction
+            let tx_index = profile.transaction_count;
+            profile.transaction_count += 1;
+            
+            let tx_record = TransactionRecord {
+                timestamp: ic_cdk::api::time(),
+                tx_type: TransactionType::QuizReward,
+                amount: reward_amount,
+            };
+            
+            USER_TRANSACTIONS.with(|t| t.borrow_mut().insert(TransactionKey { user, index: tx_index }, tx_record));
+            
+            map.insert(user, profile);
+        } else {
+            // This should be unreachable if we enforce registration at the start
+            // But for safety/logic consistency:
+            ic_cdk::trap("User not registered (state inconsistency)");
+        }
     });
 
     // Deduct Allowance
@@ -354,15 +571,11 @@ fn is_quiz_completed(user: Principal, unit_id: String) -> bool {
 async fn unstake(amount: u64) -> Result<u64, String> {
     let user = ic_cdk::caller();
     
-    // 1. Check Balance
-    let mut profile = USER_PROFILES.with(|p| p.borrow().get(&user).unwrap_or(UserProfile {
-        email: "".to_string(),
-        name: "".to_string(),
-        education: "".to_string(),
-        gender: "".to_string(),
-        staked_balance: 0,
-        last_reward_index: 0,
-    }));
+    // 1. Check Balance and Registration
+    // Apply Interest First!
+    compound_interest(user);
+    
+    let mut profile = USER_PROFILES.with(|p| p.borrow().get(&user).ok_or("User not registered".to_string()))?;
 
     if profile.staked_balance < amount {
         return Err(format!("Insufficient balance. Available: {}", profile.staked_balance));
@@ -370,6 +583,19 @@ async fn unstake(amount: u64) -> Result<u64, String> {
 
     // 2. Update Local State (Optimistic Update)
     profile.staked_balance -= amount;
+    
+    // Log Transaction (Optimistic)
+    let tx_index = profile.transaction_count;
+    profile.transaction_count += 1;
+    
+    let tx_record = TransactionRecord {
+        timestamp: ic_cdk::api::time(),
+        tx_type: TransactionType::Unstake,
+        amount: amount,
+    };
+    
+    USER_TRANSACTIONS.with(|t| t.borrow_mut().insert(TransactionKey { user, index: tx_index }, tx_record));
+    
     USER_PROFILES.with(|p| p.borrow_mut().insert(user, profile.clone()));
 
     // 3. Update Pending Stats (Reduce Total Staked)
@@ -393,6 +619,9 @@ async fn unstake(amount: u64) -> Result<u64, String> {
         Ok((Err(msg),)) => {
             // Rollback Local State
             profile.staked_balance += amount;
+            profile.transaction_count -= 1; // Revert count
+            USER_TRANSACTIONS.with(|t| t.borrow_mut().remove(&TransactionKey { user, index: tx_index }));
+            
             USER_PROFILES.with(|p| p.borrow_mut().insert(user, profile));
             
             PENDING_STATS.with(|s| {
@@ -406,6 +635,9 @@ async fn unstake(amount: u64) -> Result<u64, String> {
         Err((code, msg)) => {
             // Rollback Local State
             profile.staked_balance += amount;
+            profile.transaction_count -= 1; // Revert count
+            USER_TRANSACTIONS.with(|t| t.borrow_mut().remove(&TransactionKey { user, index: tx_index }));
+            
             USER_PROFILES.with(|p| p.borrow_mut().insert(user, profile));
             
             PENDING_STATS.with(|s| {
@@ -419,9 +651,68 @@ async fn unstake(amount: u64) -> Result<u64, String> {
     }
 }
 
+#[query]
+fn get_user_transactions(user: Principal) -> Vec<TransactionRecord> {
+    let count = USER_PROFILES.with(|p| {
+        p.borrow().get(&user).map(|profile| profile.transaction_count).unwrap_or(0)
+    });
+    
+    let mut transactions = Vec::new();
+    USER_TRANSACTIONS.with(|t| {
+        let t = t.borrow();
+        for i in 0..count {
+            if let Some(record) = t.get(&TransactionKey { user, index: i }) {
+                transactions.push(record);
+            }
+        }
+    });
+    
+    transactions
+}
+
 #[update]
 async fn debug_force_sync() -> Result<(), String> {
     sync_with_hub_internal().await
+}
+
+#[update]
+fn claim_rewards() -> Result<u64, String> {
+    let user = ic_cdk::caller();
+    
+    // 1. Calculate latest interest
+    compound_interest(user);
+    
+    // 2. Move Unclaimed -> Staked
+    USER_PROFILES.with(|p| {
+        let mut map = p.borrow_mut();
+        if let Some(mut profile) = map.get(&user) {
+            let amount = profile.unclaimed_interest;
+            
+            if amount == 0 {
+                return Err("No rewards to claim".to_string());
+            }
+            
+            profile.staked_balance += amount;
+            profile.unclaimed_interest = 0;
+            
+            // Log Transaction
+            let tx_index = profile.transaction_count;
+            profile.transaction_count += 1;
+            
+            let tx_record = TransactionRecord {
+                timestamp: ic_cdk::api::time(),
+                tx_type: TransactionType::QuizReward, // Using QuizReward as placeholder for now
+                amount: amount,
+            };
+            
+            USER_TRANSACTIONS.with(|t| t.borrow_mut().insert(TransactionKey { user, index: tx_index }, tx_record));
+            
+            map.insert(user, profile);
+            Ok(amount)
+        } else {
+            Err("User not registered".to_string())
+        }
+    })
 }
 
 ic_cdk::export_candid!();

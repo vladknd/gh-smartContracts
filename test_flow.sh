@@ -24,10 +24,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# 1. Mining
-echo -e "\n[Step 1] Submitting Quiz (Mining)..."
-# Quiz ID 1, Answer "A" (Correct)
-RESULT=$(dfx canister call learning_engine submit_quiz '(1, vec {"A"})')
+# 1. Register & Mining
+echo -e "\n[Step 1] Registering & Submitting Quiz..."
+
+# Register first
+dfx canister call user_profile register_user '(record { email = "test@example.com"; name = "Test User"; education = "PhD"; gender = "Non-binary" })'
+
+# Quiz ID "unit_1", Answer [0] (Correct) - Calling user_profile, not learning_engine
+RESULT=$(dfx canister call user_profile submit_quiz '("unit_1", vec {0})')
 echo "Result: $RESULT"
 if [[ $RESULT == *"Ok"* ]]; then
     echo "✅ Quiz submitted successfully"

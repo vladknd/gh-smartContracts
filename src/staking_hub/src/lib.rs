@@ -141,7 +141,7 @@ fn remove_allowed_minter(principal: Principal) {
 
 // Replaces report_stats: Handles both stats reporting and allowance requests
 #[update]
-fn sync_shard(staked_delta: i64, unstaked_delta: u64, requested_allowance: u64) -> Result<u64, String> {
+fn sync_shard(staked_delta: i64, unstaked_delta: u64, requested_allowance: u64) -> Result<(u64, u128), String> {
     let caller = ic_cdk::caller();
     
     // Check if caller is an allowed minter (shard)
@@ -182,8 +182,10 @@ fn sync_shard(staked_delta: i64, unstaked_delta: u64, requested_allowance: u64) 
             0
         };
         
+        let current_index = stats.cumulative_reward_index;
+        
         cell.set(stats).expect("Failed to update global stats");
-        Ok(granted_allowance)
+        Ok((granted_allowance, current_index))
     })
 }
 
@@ -233,17 +235,6 @@ async fn process_unstake(user: Principal, amount: u64) -> Result<u64, String> {
     GLOBAL_STATS.with(|s| {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
-        // Note: Total Staked reduction is handled via report_stats or here?
-        // Let's say Shard reduces local balance, then calls this.
-        // But wait, Shard doesn't know about penalty.
-        // Better: Shard reduces User Balance by `amount`.
-        // Shard calls `report_stats(-amount)`.
-        // Shard calls `process_unstake(user, amount)`.
-        // Here we just handle the Transfer and Penalty Pool.
-        // We do NOT touch total_staked here if report_stats handles it.
-        // BUT, to be atomic, maybe we should do it here.
-        // Let's assume Shard handles the "Staked Balance" accounting.
-        // We just handle the "Real Token" accounting.
         
         stats.interest_pool += penalty; // Add penalty to pool
         stats.total_unstaked += amount;
