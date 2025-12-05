@@ -120,4 +120,9 @@ dfx deploy learning_engine --argument "(record { staking_hub_id = principal \"$S
 echo "Deploying User Profile..."
 dfx deploy user_profile --argument "(record { staking_hub_id = principal \"$STAKING_HUB_ID\"; learning_content_id = principal \"$LEARNING_ID\" })"
 
+# Register User Profile as Allowed Minter (Shard) in Staking Hub
+echo "Registering User Profile as Allowed Minter..."
+USER_PROFILE_ID=$(dfx canister id user_profile)
+dfx canister call staking_hub add_allowed_minter "(principal \"$USER_PROFILE_ID\")"
+
 echo "Deployment Complete!"

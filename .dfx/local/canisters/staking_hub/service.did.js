@@ -3,9 +3,10 @@ export const idlFactory = ({ IDL }) => {
   const GlobalStats = IDL.Record({
     'cumulative_reward_index' : IDL.Nat,
     'total_staked' : IDL.Nat64,
+    'total_allocated' : IDL.Nat64,
     'total_unstaked' : IDL.Nat64,
-    'total_mined' : IDL.Nat64,
     'interest_pool' : IDL.Nat64,
+    'total_rewards_distributed' : IDL.Nat64,
   });
   return IDL.Service({
     'add_allowed_minter' : IDL.Func([IDL.Principal], [], []),
@@ -22,8 +23,13 @@ export const idlFactory = ({ IDL }) => {
       ),
     'remove_allowed_minter' : IDL.Func([IDL.Principal], [], []),
     'sync_shard' : IDL.Func(
-        [IDL.Int64, IDL.Nat64, IDL.Nat64],
-        [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
+        [IDL.Int64, IDL.Nat64, IDL.Nat64, IDL.Nat64],
+        [
+          IDL.Variant({
+            'Ok' : IDL.Tuple(IDL.Nat64, IDL.Nat),
+            'Err' : IDL.Text,
+          }),
+        ],
         [],
       ),
   });

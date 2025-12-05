@@ -5,9 +5,10 @@ import type { IDL } from '@dfinity/candid';
 export interface GlobalStats {
   'cumulative_reward_index' : bigint,
   'total_staked' : bigint,
+  'total_allocated' : bigint,
   'total_unstaked' : bigint,
-  'total_mined' : bigint,
   'interest_pool' : bigint,
+  'total_rewards_distributed' : bigint,
 }
 export interface InitArgs { 'ledger_id' : Principal }
 export interface _SERVICE {
@@ -25,8 +26,8 @@ export interface _SERVICE {
   >,
   'remove_allowed_minter' : ActorMethod<[Principal], undefined>,
   'sync_shard' : ActorMethod<
-    [bigint, bigint, bigint],
-    { 'Ok' : bigint } |
+    [bigint, bigint, bigint, bigint],
+    { 'Ok' : [bigint, bigint] } |
       { 'Err' : string }
   >,
 }

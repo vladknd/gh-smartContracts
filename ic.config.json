@@ -1,0 +1,14 @@
+{
+    "network": "local",
+    "host": "http://localhost:4943",
+    "canisters": {
+        "icrc1_index": "vpyes-67777-77774-qaaeq-cai",
+        "user_profile": "ufxgi-4p777-77774-qaadq-cai",
+        "learning_engine": "umunu-kh777-77774-qaaca-cai",
+        "staking_hub": "ucwa4-rx777-77774-qaada-cai",
+        "operational_governance": "ulvla-h7777-77774-qaacq-cai",
+        "ghc_ledger": "u6s2n-gx777-77774-qaaba-cai",
+        "content_governance": "uxrrr-q7777-77774-qaaaq-cai",
+        "internet_identity": "uzt4z-lp777-77774-qaabq-cai"
+    }
+}

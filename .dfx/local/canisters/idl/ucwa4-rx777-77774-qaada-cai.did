@@ -7,13 +7,14 @@ type GlobalStats = record {
     interest_pool : nat64;
     cumulative_reward_index : nat;
     total_unstaked : nat64;
-    total_mined : nat64;
+    total_allocated : nat64;
+    total_rewards_distributed : nat64;
 };
 
 service : (InitArgs) -> {
     "add_allowed_minter": (principal) -> ();
     "remove_allowed_minter": (principal) -> ();
-    "sync_shard": (int64, nat64, nat64) -> (variant { Ok: nat64; Err: text });
+    "sync_shard": (int64, nat64, nat64, nat64) -> (variant { Ok: record { nat64; nat }; Err: text });
     "distribute_interest": () -> (variant { Ok: text; Err: text });
     "process_unstake": (principal, nat64) -> (variant { Ok: nat64; Err: text });
     "get_global_stats": () -> (GlobalStats) query;
