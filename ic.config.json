@@ -1,0 +1,26 @@
+{
+    "network": "local",
+    "host": "http://localhost:4943",
+    "canisters": {
+        "icrc1_index": "uzt4z-lp777-77774-qaabq-cai",
+        "user_profile": "vizcg-th777-77774-qaaea-cai",
+        "learning_engine": "ulvla-h7777-77774-qaacq-cai",
+        "staking_hub": "ufxgi-4p777-77774-qaadq-cai",
+        "operational_governance": "ucwa4-rx777-77774-qaada-cai",
+        "ghc_ledger": "u6s2n-gx777-77774-qaaba-cai",
+        "content_governance": "uxrrr-q7777-77774-qaaaq-cai",
+        "internet_identity": "umunu-kh777-77774-qaaca-cai"
+    },
+    "founders": [
+        {
+            "name": "founder1",
+            "principal": "xkmru-yvuvq-25zzi-33wfc-pjkuz-6htqw-ohrpy-jslep-qy4np-g3sge-fqe",
+            "allocation": "300000000"
+        },
+        {
+            "name": "founder2",
+            "principal": "36im7-65lrs-q4ytk-loc7u-54v4m-mw4nh-avau3-ypw7n-odcsa-3atmp-sae",
+            "allocation": "200000000"
+        }
+    ]
+}

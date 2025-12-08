@@ -1,20 +1,24 @@
 type InitArgs = record {
     ledger_id : principal;
+    staking_hub_id : principal;
 };
 
-type GlobalStats = record {
-    total_staked : nat64;
-    interest_pool : nat64;
-    cumulative_reward_index : nat;
-    total_unstaked : nat64;
-    total_mined : nat64;
+type Proposal = record {
+    id : nat64;
+    proposer : principal;
+    recipient : principal;
+    amount : nat64;
+    description : text;
+    votes_yes : nat64;
+    votes_no : nat64;
+    executed : bool;
+    created_at : nat64;
 };
 
 service : (InitArgs) -> {
-    "add_allowed_minter": (principal) -> ();
-    "remove_allowed_minter": (principal) -> ();
-    "sync_shard": (int64, nat64, nat64) -> (variant { Ok: nat64; Err: text });
-    "distribute_interest": () -> (variant { Ok: text; Err: text });
-    "process_unstake": (principal, nat64) -> (variant { Ok: nat64; Err: text });
-    "get_global_stats": () -> (GlobalStats) query;
+    "create_proposal": (principal, nat64, text) -> (variant { Ok: nat64; Err: text });
+    "vote": (nat64, bool) -> (variant { Ok: null; Err: text });
+    "execute_proposal": (nat64) -> (variant { Ok: null; Err: text });
+    "get_proposal": (nat64) -> (opt Proposal) query;
+    "get_total_spent": () -> (nat64) query;
 }

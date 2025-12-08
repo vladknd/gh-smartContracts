@@ -94,7 +94,12 @@ INIT_ARGS="(variant { Init = record {
      };
  }})"
 
+
 dfx deploy ghc_ledger --argument "$INIT_ARGS"
+
+# Deploy ICRC-1 Indexer
+echo "Deploying ICRC-1 Indexer..."
+dfx deploy icrc1_index_canister --argument "(opt variant { Init = record { ledger_id = principal \"$LEDGER_ID\" } })"
 
 # Deploy Staking Hub
 echo "Deploying Staking Hub..."
@@ -119,5 +124,10 @@ dfx deploy learning_engine --argument "(record { staking_hub_id = principal \"$S
 # Deploy User Profile
 echo "Deploying User Profile..."
 dfx deploy user_profile --argument "(record { staking_hub_id = principal \"$STAKING_HUB_ID\"; learning_content_id = principal \"$LEARNING_ID\" })"
+
+# Register User Profile as Allowed Minter (Shard) in Staking Hub
+echo "Registering User Profile as Allowed Minter..."
+USER_PROFILE_ID=$(dfx canister id user_profile)
+dfx canister call staking_hub add_allowed_minter "(principal \"$USER_PROFILE_ID\")"
 
 echo "Deployment Complete!"

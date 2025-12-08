@@ -1,6 +1,6 @@
 {
   "__Candid_UI": {
-    "local": "vizcg-th777-77774-qaaea-cai"
+    "local": "vpyes-67777-77774-qaaeq-cai"
   },
   "content_governance": {
     "local": "uxrrr-q7777-77774-qaaaq-cai"
@@ -8,19 +8,22 @@
   "ghc_ledger": {
     "local": "u6s2n-gx777-77774-qaaba-cai"
   },
-  "internet_identity": {
+  "icrc1_index_canister": {
     "local": "uzt4z-lp777-77774-qaabq-cai"
   },
-  "learning_engine": {
+  "internet_identity": {
     "local": "umunu-kh777-77774-qaaca-cai"
   },
-  "operational_governance": {
+  "learning_engine": {
     "local": "ulvla-h7777-77774-qaacq-cai"
   },
-  "staking_hub": {
+  "operational_governance": {
     "local": "ucwa4-rx777-77774-qaada-cai"
   },
-  "user_profile": {
+  "staking_hub": {
     "local": "ufxgi-4p777-77774-qaadq-cai"
+  },
+  "user_profile": {
+    "local": "vizcg-th777-77774-qaaea-cai"
   }
 }

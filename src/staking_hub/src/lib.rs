@@ -40,12 +40,32 @@ impl Storable for UserState {
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
+struct GlobalStatsV2 {
+    total_staked: u64,
+    interest_pool: u64,
+    cumulative_reward_index: u128,
+    total_unstaked: u64,
+    total_mined: u64,
+    total_rewards_distributed: u64,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct GlobalStatsV1_5 {
+    total_staked: u64,
+    interest_pool: u64,
+    cumulative_reward_index: u128,
+    total_unstaked: u64,
+    total_mined: u64,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
 struct GlobalStats {
     total_staked: u64,
     interest_pool: u64,
     cumulative_reward_index: u128, // Scaled by 1e18
     total_unstaked: u64,
-    total_mined: u64, // Tracked against MAX_SUPPLY
+    total_allocated: u64, // Renamed from total_mined: Tracked against MAX_SUPPLY
+    total_rewards_distributed: u64, // Actual rewards given to users
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
@@ -65,6 +85,30 @@ impl Storable for GlobalStats {
         if let Ok(stats) = Decode!(bytes.as_ref(), Self) {
             return stats;
         }
+
+        // Try decoding as V2 (migration)
+        if let Ok(v2) = Decode!(bytes.as_ref(), GlobalStatsV2) {
+            return Self {
+                total_staked: v2.total_staked,
+                interest_pool: v2.interest_pool,
+                cumulative_reward_index: v2.cumulative_reward_index,
+                total_unstaked: v2.total_unstaked,
+                total_allocated: v2.total_mined, // Map mined -> allocated
+                total_rewards_distributed: v2.total_rewards_distributed,
+            };
+        }
+
+        // Try decoding as V1.5 (migration)
+        if let Ok(v1_5) = Decode!(bytes.as_ref(), GlobalStatsV1_5) {
+            return Self {
+                total_staked: v1_5.total_staked,
+                interest_pool: v1_5.interest_pool,
+                cumulative_reward_index: v1_5.cumulative_reward_index,
+                total_unstaked: v1_5.total_unstaked,
+                total_allocated: v1_5.total_mined,
+                total_rewards_distributed: 0,
+            };
+        }
         
         // Try decoding as V1 (migration)
         if let Ok(v1) = Decode!(bytes.as_ref(), GlobalStatsV1) {
@@ -73,7 +117,8 @@ impl Storable for GlobalStats {
                 interest_pool: v1.interest_pool,
                 cumulative_reward_index: v1.cumulative_reward_index,
                 total_unstaked: 0, // Initialize new field
-                total_mined: 0, // Initialize new field
+                total_allocated: 0, // Initialize new field
+                total_rewards_distributed: 0, // Initialize new field
             };
         }
 
@@ -106,7 +151,8 @@ thread_local! {
                 interest_pool: 0,
                 cumulative_reward_index: 0,
                 total_unstaked: 0,
-                total_mined: 0,
+                total_allocated: 0,
+                total_rewards_distributed: 0,
             }
         ).unwrap()
     );
@@ -141,7 +187,7 @@ fn remove_allowed_minter(principal: Principal) {
 
 // Replaces report_stats: Handles both stats reporting and allowance requests
 #[update]
-fn sync_shard(staked_delta: i64, unstaked_delta: u64, requested_allowance: u64) -> Result<(u64, u128), String> {
+fn sync_shard(staked_delta: i64, unstaked_delta: u64, distributed_delta: u64, requested_allowance: u64) -> Result<(u64, u128), String> {
     let caller = ic_cdk::caller();
     
     // Check if caller is an allowed minter (shard)
@@ -166,17 +212,18 @@ fn sync_shard(staked_delta: i64, unstaked_delta: u64, requested_allowance: u64) 
             }
         }
         stats.total_unstaked += unstaked_delta;
+        stats.total_rewards_distributed += distributed_delta;
 
         // 2. Handle Allowance Request (Hard Cap Check)
         let granted_allowance = if requested_allowance > 0 {
-            let remaining = MAX_SUPPLY.saturating_sub(stats.total_mined);
+            let remaining = MAX_SUPPLY.saturating_sub(stats.total_allocated);
             let to_grant = if remaining >= requested_allowance {
                 requested_allowance
             } else {
                 remaining // Give whatever is left
             };
             
-            stats.total_mined += to_grant;
+            stats.total_allocated += to_grant;
             to_grant
         } else {
             0
@@ -237,7 +284,7 @@ async fn process_unstake(user: Principal, amount: u64) -> Result<u64, String> {
         let mut stats = cell.get().clone();
         
         stats.interest_pool += penalty; // Add penalty to pool
-        stats.total_unstaked += amount;
+        stats.total_unstaked += return_amount;
         cell.set(stats).expect("Failed to update global stats");
     });
 
@@ -274,7 +321,7 @@ async fn process_unstake(user: Principal, amount: u64) -> Result<u64, String> {
                 let mut cell = s.borrow_mut();
                 let mut stats = cell.get().clone();
                 stats.interest_pool -= penalty;
-                stats.total_unstaked -= amount;
+                stats.total_unstaked -= return_amount;
                 cell.set(stats).expect("Failed to rollback global stats");
             });
             Err(format!("Ledger transfer failed: {:?}", e))

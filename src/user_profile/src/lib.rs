@@ -217,7 +217,7 @@ thread_local! {
     static PENDING_STATS: RefCell<StableCell<PendingStats, Memory>> = RefCell::new(
         StableCell::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(6))),
-            PendingStats { staked_delta: 0, unstaked_delta: 0 }
+            PendingStats { staked_delta: 0, unstaked_delta: 0, rewards_delta: 0 }
         ).unwrap()
     );
 
@@ -235,13 +235,51 @@ thread_local! {
     );
 }
 
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct PendingStatsV1 {
+    staked_delta: i64,
+    unstaked_delta: u64,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct PendingStats {
+    staked_delta: i64,
+    unstaked_delta: u64,
+    rewards_delta: u64, // New field
+}
+
+impl Storable for PendingStats {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        if let Ok(stats) = Decode!(bytes.as_ref(), Self) {
+            return stats;
+        }
+        if let Ok(v1) = Decode!(bytes.as_ref(), PendingStatsV1) {
+            return Self {
+                staked_delta: v1.staked_delta,
+                unstaked_delta: v1.unstaked_delta,
+                rewards_delta: 0,
+            };
+        }
+        panic!("Failed to decode PendingStats");
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: 100,
+        is_fixed_size: false,
+    };
+}
+
 #[init]
 fn init(args: InitArgs) {
     STAKING_HUB_ID.with(|id| id.borrow_mut().set(args.staking_hub_id).expect("Failed to set Staking Hub ID"));
     LEARNING_CONTENT_ID.with(|id| id.borrow_mut().set(args.learning_content_id).expect("Failed to set Learning Content ID"));
 
-    // Start Sync Timer (Every 5 minutes)
-    set_timer_interval(Duration::from_secs(300), || {
+    // Start Sync Timer (Every 5 seconds for testing)
+    set_timer_interval(Duration::from_secs(5), || {
         ic_cdk::spawn(async {
             let _ = sync_with_hub_internal().await;
         });
@@ -250,8 +288,8 @@ fn init(args: InitArgs) {
 
 #[ic_cdk::post_upgrade]
 fn post_upgrade() {
-    // Restart Sync Timer (Every 5 minutes)
-    set_timer_interval(Duration::from_secs(300), || {
+    // Restart Sync Timer (Every 5 seconds for testing)
+    set_timer_interval(Duration::from_secs(5), || {
         ic_cdk::spawn(async {
             let _ = sync_with_hub_internal().await;
         });
@@ -354,29 +392,39 @@ async fn sync_with_hub_internal() -> Result<(), String> {
     let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
     
     // 1. Optimistic Reset (Atomic Read-and-Clear)
-    let (staked_delta, unstaked_delta) = PENDING_STATS.with(|s| {
+    let (staked_delta, unstaked_delta, rewards_delta) = PENDING_STATS.with(|s| {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
         
         let s_delta = stats.staked_delta;
         let u_delta = stats.unstaked_delta;
+        let r_delta = stats.rewards_delta;
         
         // Reset to 0 (we are taking these values to report)
         stats.staked_delta = 0;
         stats.unstaked_delta = 0;
+        stats.rewards_delta = 0;
         
         cell.set(stats).expect("Failed to update pending stats");
         
-        (s_delta, u_delta)
+        (s_delta, u_delta, r_delta)
     });
 
-    // Request enough for next 1000 quizzes (1000 * 1 Token)
-    let requested_allowance: u64 = 1000 * 100_000_000;
+    // Smart Allowance Request
+    let current_allowance = MINTING_ALLOWANCE.with(|a| *a.borrow().get());
+    let low_threshold = 500 * 100_000_000; // 500 Tokens
+    let refill_amount = 1000 * 100_000_000; // 1000 Tokens
+
+    let requested_allowance: u64 = if current_allowance < low_threshold {
+        refill_amount
+    } else {
+        0
+    };
 
     let result: Result<(Result<(u64, u128), String>,), _> = ic_cdk::call(
         staking_hub_id,
         "sync_shard",
-        (staked_delta, unstaked_delta, requested_allowance)
+        (staked_delta, unstaked_delta, rewards_delta, requested_allowance)
     ).await;
 
     match result {
@@ -401,6 +449,7 @@ async fn sync_with_hub_internal() -> Result<(), String> {
                 let mut stats = cell.get().clone();
                 stats.staked_delta += staked_delta;
                 stats.unstaked_delta += unstaked_delta;
+                stats.rewards_delta += rewards_delta;
                 cell.set(stats).expect("Failed to rollback pending stats");
             });
             Err(format!("Hub Rejected Sync: {}", msg))
@@ -412,6 +461,7 @@ async fn sync_with_hub_internal() -> Result<(), String> {
                 let mut stats = cell.get().clone();
                 stats.staked_delta += staked_delta;
                 stats.unstaked_delta += unstaked_delta;
+                stats.rewards_delta += rewards_delta;
                 cell.set(stats).expect("Failed to rollback pending stats");
             });
             Err(format!("Hub Call Failed: {:?} {}", code, msg))
@@ -532,6 +582,7 @@ async fn submit_quiz(unit_id: String, answers: Vec<u8>) -> Result<u64, String> {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
         stats.staked_delta += reward_amount as i64;
+        stats.rewards_delta += reward_amount;
         cell.set(stats).expect("Failed to update pending stats");
     });
 
