@@ -32,6 +32,21 @@ struct UserProfile {
     transaction_count: u64,
 }
 
+impl Storable for UserProfile {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: 500, // Reasonable limit for profile data
+        is_fixed_size: false,
+    };
+}
+
 #[derive(CandidType, Deserialize, Clone, Debug)]
 struct UserProfileUpdate {
     email: String,
@@ -89,21 +104,6 @@ impl Storable for TransactionKey {
     };
 }
 
-impl Storable for UserProfile {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Bounded {
-        max_size: 500, // Reasonable limit for profile data
-        is_fixed_size: false,
-    };
-}
-
 #[derive(CandidType, Deserialize, Clone, Debug)]
 struct UserDailyStats {
     day_index: u64,
@@ -133,6 +133,27 @@ struct UserQuizKey {
 }
 
 impl Storable for UserQuizKey {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: 100,
+        is_fixed_size: false,
+    };
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct PendingStats {
+    staked_delta: i64,
+    unstaked_delta: u64,
+}
+
+impl Storable for PendingStats {
     fn to_bytes(&self) -> Cow<'_, [u8]> {
         Cow::Owned(Encode!(self).unwrap())
     }
@@ -212,27 +233,6 @@ thread_local! {
             0
         ).unwrap()
     );
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug)]
-struct PendingStats {
-    staked_delta: i64,
-    unstaked_delta: u64,
-}
-
-impl Storable for PendingStats {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-
-    const BOUND: Bound = Bound::Bounded {
-        max_size: 100,
-        is_fixed_size: false,
-    };
 }
 
 #[init]

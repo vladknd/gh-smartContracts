@@ -3,166 +3,168 @@
 A comprehensive Internet Computer Protocol (ICP) project for the GreenHero Coin educational platform. This project implements a "Pre-Mint & Allocate" tokenomics model where users earn GHC tokens by completing educational activities.
 
 ## 🏗️ Architecture
-
-This project consists of 5 core smart contracts (canisters):
-
-### Core Financial & Governance Canisters
-
-- **ghc_ledger** - ICRC-1 compliant token ledger recording all balances and transfers.
-- **staking_hub** - Central custodian holding the "Mined Utility Partition" (4.1B tokens), managing user subaccounts, and handling staking/mining logic.
-- **operational_governance** - Manages the Treasury (3.6B tokens) and handles spending proposals.
-- **content_governance** - Manages educational content proposals (whitelisting books/NFTs).
-
-### Educational Canisters
-
-- **learning_engine** - Manages quizzes, user progress, and verifies learning activities to trigger rewards.
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- [dfx](https://internetcomputer.org/docs/current/developer-docs/setup/install) (Internet Computer SDK)
-- [Rust](https://www.rust-lang.org/tools/install)
-- [Node.js](https://nodejs.org/) (optional, for frontend integration)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd gh-smartContracts
-
-# Install dfx if not already installed
-sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
-```
-
-### Deploy Locally
-
-```bash
-# Start local replica and deploy all canisters
-./deploy.sh
-```
-
-## 📚 Documentation
-
-- [Architecture & Design](ARCHITECTURE.md) - Detailed system architecture and tokenomics
-- [Deployment Guide](DEPLOYMENT.md) - Instructions for deployment
-- [Verification Guide](VERIFICATION.md) - How to verify the system state
-- [Frontend Integration](FRONTEND_INTEGRATION.md) - Guide for connecting a frontend
-- [Quick Reference](QUICK_REF.md) - Handy command reference
-
-## 🛠️ Management & Verification
-
-### Run Comprehensive Tests
-
-The project includes a comprehensive test script that verifies the entire flow, including deployment, initialization, and interaction between canisters.
-
-```bash
-./comprehensive_test.sh
-```
-
-### Test Specific Flows
-
-```bash
-# Test the quiz and reward flow
-./test_quiz_flow.sh
-
-# Test general system flow
-./test_flow.sh
-```
-
-### Load Initial Data
-
-```bash
-# Load learning materials into the Learning Engine
-./load_data.sh
-```
-
-## 📦 Project Structure
-
-```
-gh-smartContracts/
-├── src/
-│   ├── ghc_ledger/             # ICRC-1 Token Ledger
-│   ├── staking_hub/            # Staking & Mining Hub
-│   ├── operational_governance/ # Treasury & Ops Governance
-│   ├── content_governance/     # Content Governance
-│   └── learning_engine/        # Learning & Quiz Engine
-├── deploy.sh                   # Main deployment script
-├── comprehensive_test.sh       # Full system verification
-├── test_quiz_flow.sh           # Quiz flow tests
-├── load_data.sh                # Data loading script
-├── dfx.json                    # DFX configuration
-├── Cargo.toml                  # Rust workspace config
-├── ARCHITECTURE.md             # Architecture documentation
-└── README.md                   # This file
-```
-
-## 🔗 Canister Dependencies
-
-```
-+-------------------------------------------------------+       +-------------------------------------------------------+
-|                operational_governance                 |       |                  content_governance                   |
-|           (Controls Treasury: 3.6B GHC)               |       |              (Manages Content Updates)                |
-|                                                       |       |                                                       |
-|  [STORES]                                             |       |  [STORES]                                             |
-|   - Proposals (ID, Amount, Votes)                     |       |   - Book Count                                        |
-|   - Total Spent Counter                               |       |   - (Future) Content Proposals                        |
-|                                                       |       |                                                       |
-|  [READS]                                              |       |  [READS]                                              |
-|   - get_proposal(id)                                  |       |   - get_book_count()                                  |
-|   - get_total_spent()                                 |       |                                                       |
-+--------------------------+----------------------------+       +---------------------------+---------------------------+
-                           |                                                                |
-                           | (queries voting power)                                         | (queries voting power)
-                           v                                                                v
-            +---------------------------------------------------------------------------------------------+
-            |                                         staking_hub                                         |
-            |                                 (Holds 4.1B Utility Tokens)                                 |
-            |                                                                                             |
-            |  [STORES]                                                                                   |
-            |   - User Virtual Balances (Staked + Pending Rewards)                                        |
-            |   - Global Stats (Total Staked, Interest Pool, Total Unstaked)                              |
-            |                                                                                             |
-            |  [READS]                                                                                    |
-            |   - get_user_stats(user) -> (Balance, Pending)                                              |
-            |   - get_global_stats() -> (Staked, Pool, Unstaked)                                          |
-            |   - get_voting_power(user)                                                                  |
-            +-------------+---------------------------------------------------------------+---------------+
-                          |                                                               ^
-                          | (unstakes / transfers real tokens)                            | (stakes rewards / mints virtual tokens)
-                          v                                                               |
-+-------------------------------------------------------+       +-------------------------+-----------------------------+
-|                      ghc_ledger                       |       |                      learning_engine                  |
-|               (ICRC-1 Token Standard)                 |       |                 (User Education Platform)             |
-|                                                       |       |                                                       |
-|  [STORES]                                             |       |  [STORES]                                             |
-|   - Real Token Balances (Founders, Treasury, Hub)     |       |   - Learning Units (Content, Quizzes)                 |
-|   - Transaction History                               |       |   - User Progress (Completed Quizzes)                 |
-|                                                       |       |   - Daily Stats (Attempts, Earned)                    |
-|                                                       |       |                                                       |
-|  [READS]                                              |       |  [READS]                                              |
-|   - icrc1_balance_of(account)                         |       |   - get_learning_unit(id)                             |
-|   - icrc1_total_supply()                              |       |   - get_user_daily_status(user)                       |
-+-------------------------------------------------------+       +-------------------------------------------------------+
-```
-
-### 🔄 Interaction Details
-
-**1. Mining Flow ("Virtual Staking")**
-The interaction between `learning_engine` and `staking_hub` is designed for maximum efficiency and user experience:
-1.  **Verify**: User submits quiz answers to `learning_engine`.
-    *   **Passing Threshold**: Must answer at least **60%** correctly (e.g., 3/5).
-    *   **Daily Limit**: Users can take up to **5 quizzes per day**.
-2.  **Auto-Stake**: If correct, `learning_engine` calls `staking_hub.stake_rewards(user, amount)`.
-3.  **Instant Utility**: The user's "Virtual Balance" in the Staking Hub is immediately updated. This balance **counts as Voting Power** instantly.
-4.  **No Gas Fees**: There is no interaction with the `ghc_ledger` at this stage. The tokens remain in the Staking Hub's main account on the Ledger, but are logically attributed to the user internally.
-
-**2. Interest Payouts (Monthly Dividends)**
-The system incentivizes long-term holding through a "Lazy Distribution" model:
-*   **Collection**: When a user unstakes, a **10% penalty** is deducted and added to a `Pending Interest Pool`.
-*   **Distribution Rounds**: Periodically (e.g., monthly), an admin triggers a distribution. This moves the accumulated penalties into a `Cumulative Reward Index`.
-*   **Lazy Payout**: Users do not see their balance change instantly. Instead, the next time they interact (mine, vote, or unstake), their balance is automatically updated based on the `Reward Index` growth since their last interaction. This allows O(1) scalability for millions of users.
+ 
+ This project consists of 6 core smart contracts (canisters):
+ 
+ ### Core Financial & Governance Canisters
+ 
+ - **ghc_ledger** - ICRC-1 compliant token ledger recording all balances and transfers.
+ - **staking_hub** - Central Bank holding the "Mined Utility Partition" (4.1B tokens), managing Global Stats, and handling real settlement.
+ - **operational_governance** - Manages the Treasury (3.6B tokens) and handles spending proposals.
+ - **content_governance** - Manages educational content proposals (whitelisting books/NFTs).
+ 
+ ### User & Educational Canisters
+ 
+ - **user_profile** (Sharded) - The main entry point. Manages user state, "Micro-Bank" balances, and minting logic.
+ - **learning_engine** - Stateless content provider. Stores quizzes and verifies answers.
+ 
+ ## 🚀 Quick Start
+ 
+ ### Prerequisites
+ 
+ - [dfx](https://internetcomputer.org/docs/current/developer-docs/setup/install) (Internet Computer SDK)
+ - [Rust](https://www.rust-lang.org/tools/install)
+ - [Node.js](https://nodejs.org/) (optional, for frontend integration)
+ 
+ ### Installation
+ 
+ ```bash
+ # Clone the repository
+ git clone <your-repo-url>
+ cd gh-smartContracts
+ 
+ # Install dfx if not already installed
+ sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+ ```
+ 
+ ### Deploy Locally
+ 
+ ```bash
+ # Start local replica and deploy all canisters
+ ./deploy.sh
+ ```
+ 
+ ## 📚 Documentation
+ 
+ - [Architecture & Design](ARCHITECTURE.md) - Detailed system architecture and tokenomics
+ - [Deployment Guide](DEPLOYMENT.md) - Instructions for deployment
+ - [Verification Guide](VERIFICATION.md) - How to verify the system state
+ - [Frontend Integration](FRONTEND_INTEGRATION.md) - Guide for connecting a frontend
+ - [Quick Reference](QUICK_REF.md) - Handy command reference
+ 
+ ## 🛠️ Management & Verification
+ 
+ ### Run Comprehensive Tests
+ 
+ The project includes a comprehensive test script that verifies the entire flow, including deployment, initialization, and interaction between canisters.
+ 
+ ```bash
+ ./comprehensive_test.sh
+ ```
+ 
+ ### Test Specific Flows
+ 
+ ```bash
+ # Test the quiz and reward flow
+ ./test_quiz_flow.sh
+ 
+ # Test general system flow
+ ./test_flow.sh
+ ```
+ 
+ ### Load Initial Data
+ 
+ ```bash
+ # Load learning materials into the Learning Engine
+ ./load_data.sh
+ ```
+ 
+ ## 📦 Project Structure
+ 
+ ```
+ gh-smartContracts/
+ ├── src/
+ │   ├── ghc_ledger/             # ICRC-1 Token Ledger
+ │   ├── staking_hub/            # Staking & Mining Hub
+ │   ├── operational_governance/ # Treasury & Ops Governance
+ │   ├── content_governance/     # Content Governance
+ │   ├── learning_engine/        # Learning Content Provider
+ │   └── user_profile/           # User State & Micro-Bank
+ ├── deploy.sh                   # Main deployment script
+ ├── comprehensive_test.sh       # Full system verification
+ ├── test_quiz_flow.sh           # Quiz flow tests
+ ├── load_data.sh                # Data loading script
+ ├── dfx.json                    # DFX configuration
+ ├── Cargo.toml                  # Rust workspace config
+ ├── ARCHITECTURE.md             # Architecture documentation
+ └── README.md                   # This file
+ ```
+ 
+ ## 🔗 Canister Dependencies
+ 
+ ```
+ +-------------------------------------------------------+       +-------------------------------------------------------+
+ |                operational_governance                 |       |                  content_governance                   |
+ |           (Controls Treasury: 3.6B GHC)               |       |              (Manages Content Updates)                |
+ +--------------------------+----------------------------+       +---------------------------+---------------------------+
+                            |                                                                |
+                            | (queries voting power)                                         | (queries voting power)
+                            v                                                                v
+             +---------------------------------------------------------------------------------------------+
+             |                                         staking_hub                                         |
+             |                                 (Central Bank & Global Stats)                               |
+             |                                                                                             |
+             |  [STORES]                                                                                   |
+             |   - Global Stats (Total Staked, Interest Pool, Index)                                       |
+             |   - Minting Allowances                                                                      |
+             |                                                                                             |
+             |  [READS]                                                                                    |
+             |   - get_global_stats()                                                                      |
+             +-------------+---------------------------------------------------------------+---------------+
+                           |                                                               ^
+                           | (transfers real tokens on unstake)                            | (reports stats / requests allowance)
+                           v                                                               |
+ +-------------------------------------------------------+       +-------------------------+-----------------------------+
+ |                      ghc_ledger                       |       |                      user_profile                     |
+ |               (ICRC-1 Token Standard)                 |       |                 (User State & Micro-Bank)             |
+ |                                                       |       |                                                       |
+ |  [STORES]                                             |       |  [STORES]                                             |
+ |   - Real Token Balances                               |       |   - User Profile & Progress                           |
+ |                                                       |       |   - Staked Balance (Virtual)                          |
+ |                                                       |       |   - Unclaimed Interest                                |
+ |                                                       |       |                                                       |
+ |  [READS]                                              |       |  [READS]                                              |
+ |   - icrc1_balance_of(account)                         |       |   - get_profile(user)                                 |
+ +-------------------------------------------------------+       +-------------------------+-----------------------------+
+                                                                                           |
+                                                                                           | (verifies answers)
+                                                                                           v
+                                                                 +-------------------------+-----------------------------+
+                                                                 |                     learning_engine                   |
+                                                                 |               (Stateless Content Provider)            |
+                                                                 |                                                       |
+                                                                 |  [STORES]                                             |
+                                                                 |   - Learning Units (Content, Quizzes)                 |
+                                                                 |                                                       |
+                                                                 |  [READS]                                              |
+                                                                 |   - verify_quiz(answers)                              |
+                                                                 +-------------------------------------------------------+
+ ```
+ 
+ ### 🔄 Interaction Details
+ 
+ **1. Mining Flow ("Virtual Staking")**
+ The interaction between `user_profile` and `learning_engine` is designed for maximum efficiency:
+ 1.  **Submit**: User submits quiz answers to their `user_profile` shard.
+ 2.  **Verify**: `user_profile` calls `learning_engine.verify_quiz(answers)`.
+ 3.  **Local Mint**: If correct, `user_profile` updates the user's local balance immediately.
+ 4.  **Batch Sync**: Periodically, the shard reports stats to `staking_hub` and requests a new "Minting Allowance".
+ 
+ **2. Interest Payouts (Lazy Distribution)**
+ The system incentivizes long-term holding through a "Lazy Distribution" model:
+ *   **Collection**: When a user unstakes, a **10% penalty** is deducted and added to a `Pending Interest Pool` in the Hub.
+ *   **Distribution**: Periodically, the Hub updates the `Global Reward Index`.
+ *   **Lazy Payout**: When a user interacts with their profile, the shard calculates pending interest based on the Index growth and adds it to their `unclaimed_interest`.
 
 ## 🧪 Testing
 
@@ -182,25 +184,22 @@ Use the provided shell scripts to run integration tests against a local replica:
 ```
 
 ### Manual Verification
-
-You can interact with the canisters using `dfx`:
-
-```bash
-# Check Staking Hub status
-dfx canister call staking_hub get_stats
-
-# Check Ledger Balance
-dfx canister call ghc_ledger icrc1_balance_of "(record { owner = principal \"...\" })"
-
-# Check Learning Engine Stats
-dfx canister call learning_engine get_stats
-```
-
-## 🔐 Security
-
-- **Stable Structures**: Uses `ic-stable-structures` for scalable and safe memory management.
-- **Governance Control**: Treasury and Content decisions are managed via governance canisters.
-- **Access Control**: Critical functions in `staking_hub` are restricted to specific caller canisters (e.g., `learning_engine`).
+ 
+ You can interact with the canisters using `dfx`:
+ 
+ ```bash
+ # Check Staking Hub status
+ dfx canister call staking_hub get_global_stats
+ 
+ # Check Ledger Balance
+ dfx canister call ghc_ledger icrc1_balance_of "(record { owner = principal \"...\" })"
+ ```
+ 
+ ## 🔐 Security
+ 
+ - **Stable Structures**: Uses `ic-stable-structures` for scalable and safe memory management.
+ - **Governance Control**: Treasury and Content decisions are managed via governance canisters.
+ - **Access Control**: Critical functions in `staking_hub` are restricted to specific caller canisters (e.g., `user_profile` shards).
 
 ## 🤝 Contributing
 

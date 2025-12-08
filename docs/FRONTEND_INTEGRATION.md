@@ -48,13 +48,11 @@ npm install @dfinity/agent @dfinity/candid @dfinity/principal @dfinity/auth-clie
     *   **Type**: Update
     *   **Description**: Submits answers for a specific quiz unit.
     *   **Returns**: `Ok(reward_amount)` (e.g., 100_000_000 for 1 GHC), or `Err(message)`.
-    *   **Returns**: `Ok(reward_amount)` (e.g., 100_000_000 for 1 GHC), or `Err(message)`.
     *   **Usage**: Call when user clicks "Submit" on a quiz. **Requires Registration.**
 
 2.  **`unstake(amount: nat64) -> Result<nat64, text>`**
     *   **Type**: Update
     *   **Description**: Unstakes a specific amount from the user's local balance. **Applies a 10% penalty.**
-    *   **Returns**: `Ok(amount_received)` (90% of requested) or `Err(message)`.
     *   **Returns**: `Ok(amount_received)` (90% of requested) or `Err(message)`.
     *   **Usage**: Call when user wants to withdraw funds to their main wallet. **Requires Registration.**
 
@@ -62,36 +60,35 @@ npm install @dfinity/agent @dfinity/candid @dfinity/principal @dfinity/auth-clie
     *   **Type**: Query
     *   **Description**: Returns the user's profile and **Staked Balance**.
     *   **Returns**: `record { email; name; staked_balance; ... }`.
-    *   **Returns**: `record { email; name; staked_balance; ... }`.
     *   **Usage**: Check if user exists (returns `null` if not registered). Display "Staked Balance".
 
-5.  **`register_user(profile: UserProfileUpdate) -> Result<null, text>`**
+4.  **`register_user(profile: UserProfileUpdate) -> Result<null, text>`**
     *   **Type**: Update
     *   **Description**: Registers a new user. Fails if user already exists. Initial balance is 0.
     *   **Input**: `record { email; name; education; gender }`.
 
-6.  **`update_profile(profile: UserProfileUpdate) -> Result<null, text>`**
+5.  **`update_profile(profile: UserProfileUpdate) -> Result<null, text>`**
     *   **Type**: Update
     *   **Description**: Updates personal info for an existing user. Fails if user not registered. **Does not affect balance.**
     *   **Input**: `record { email; name; education; gender }`.
 
-4.  **`get_user_daily_status(user: principal) -> UserDailyStats`**
+6.  **`get_user_daily_status(user: principal) -> UserDailyStats`**
     *   **Type**: Query
     *   **Description**: Returns the user's daily progress.
     *   **Returns**: `record { quizzes_taken; tokens_earned; ... }`.
     *   **Usage**: Display "Quizzes Today: X/5".
 
-5.  **`is_quiz_completed(user: principal, unit_id: text) -> bool`**
+7.  **`is_quiz_completed(user: principal, unit_id: text) -> bool`**
     *   **Type**: Query
     *   **Description**: Checks if a user has already completed a quiz.
     *   **Usage**: Disable "Submit" button if true.
 
-6.  **`debug_force_sync() -> Result<null, text>`**
+8.  **`debug_force_sync() -> Result<null, text>`**
     *   **Type**: Update
     *   **Description**: **DEV ONLY**. Forces the shard to sync pending stats with the Staking Hub immediately.
     *   **Usage**: Call this after `submit_quiz` if you need to verify Global Stats updates immediately during testing.
     
-7.  **`get_user_transactions(user: principal) -> vec TransactionRecord`**
+9.  **`get_user_transactions(user: principal) -> vec TransactionRecord`**
     *   **Type**: Query
     *   **Description**: Returns a history of internal game transactions (Quiz Rewards, Unstaking).
     *   **Returns**: `vec { record { timestamp; tx_type; amount } }`.

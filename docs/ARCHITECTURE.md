@@ -15,73 +15,69 @@ The GreenHero Coin (GHC) dapp is a blockchain-based educational platform built o
 
 ## System Components
 
-### 1. GHC Ledger (ICRC-1)
-- **Standard**: ICRC-1.
-- **Function**: Records all token balances and transfers.
-- **Configuration**:
-    -   Transfer Fee: 0.0001 GHC.
-    -   Archive Canister: Enabled.
-
-### 2. Staking & Mining Hub
-- **Role**: Central custodian and logic engine.
+### 1. User Profile (Sharded)
+- **Role**: The User's Personal Record & Micro-Bank.
 - **Responsibilities**:
-    -   Holds the 4.1B Utility tokens.
-    -   Manages **Virtual User Balances** (Internal Ledger).
-    -   Tracks "Virtual Utility Coin" (VUC) for founders.
-    -   Handles "Auto-Stake" (Mining) and "Unstake" operations.
-    -   Manages **Interest Pool** and **Lazy Distribution**.
-- **Data Structures (Stable Memory)**:
-    -   `user_state`: Map<Principal, UserState { balance, last_reward_index }>
-    -   `global_stats`: { total_staked, interest_pool, cumulative_reward_index }
+    -   **Primary Entry Point** for all user interactions.
+    -   Stores User Profile (Email, Name, etc.) and Quiz Progress.
+    -   **Micro-Bank**: Manages the user's "Staked Balance" and "Unclaimed Interest" locally.
+    -   **Minting**: Requests "Minting Allowance" from Staking Hub to mint tokens locally (batching).
+-   **Scaling**: Designed for horizontal scaling (sharding) to handle millions of users.
 
-### 3. Operational Governance
+### 2. Learning Engine
+- **Role**: Stateless Content Provider.
+- **Responsibilities**:
+    -   Stores Learning Units, Quizzes, and Correct Answers.
+    -   **Verify Quiz**: Provides a pure query method `verify_quiz(answers)` used by User Profile shards.
+    -   Does **NOT** store user data or progress.
+
+### 3. Staking & Mining Hub
+- **Role**: Central Bank & Global Stats.
+- **Responsibilities**:
+    -   Holds the 4.1B Utility tokens (Real Treasury).
+    -   **Global Stats**: Tracks `total_staked`, `interest_pool`, `cumulative_reward_index`.
+    -   **Allowance Manager**: Grants minting allowances to User Profile shards.
+    -   **Settlement**: Handles real ledger transfers during unstaking.
+    -   **Interest Distribution**: Calculates global reward index updates.
+
+### 4. Operational Governance
 - **Role**: Manages the Treasury (3.6B GHC).
 - **Responsibilities**:
     -   Proposals for spending.
-    -   Voting power calculation (queries Staking Hub).
+    -   Voting power calculation.
     -   Enforces 16M GHC/month spending limit.
 
-### 4. Content Governance
+### 5. Content Governance
 - **Role**: Manages educational content.
 - **Responsibilities**:
     -   Proposals to whitelist books/NFTs.
-    -   Voting power calculation (queries Staking Hub).
 
-### 5. Learning Engine
-- **Role**: Manages quizzes and user progress.
-- **Responsibilities**:
-    -   Verifies quiz answers (Passing Threshold: 60%).
-    -   Enforces Daily Limits (Max 5 quizzes/day).
-    -   Tracks user progress and triggers rewards.
-- **Architecture**: Scalable "Bucket" system.
-    -   **Master Router**: Directs users to specific buckets.
-    -   **Buckets**: Store quiz history for ~10k users each.
+### 6. GHC Ledger (ICRC-1)
+- **Standard**: ICRC-1.
+- **Function**: Records all token balances and transfers.
 
 ## Key Workflows
 
 ### Mining (Virtual Staking)
-1.  **Quiz**: User completes quiz in `Learning Engine`.
-2.  **Verify**: Engine verifies answers.
-3.  **Auto-Stake**: Engine calls `staking_hub.stake_rewards(user, amount)`.
-4.  **Update**: Hub updates user's virtual balance and applies any pending interest.
+1.  **Submit**: User submits quiz answers to their `User Profile` shard.
+2.  **Verify**: `User Profile` calls `learning_engine.verify_quiz(answers)`.
+3.  **Reward**: If passed, `User Profile` mints tokens locally (updates `staked_balance`).
+4.  **Sync**: `User Profile` periodically reports stats to `Staking Hub` and requests more minting allowance.
 
-### Governance Voting
-- **Voting Power**:
-    -   **Founders**: Proportional to `Hub_Main_Balance` (VUC).
-    -   **Community**: Proportional to `Hub_User_Virtual_Balance`.
--   **Process**: Governance canister queries `Staking Hub` for voting power.
+### Unstaking
+1.  **Request**: User calls `unstake(amount)` on `User Profile`.
+2.  **Update**: `User Profile` reduces local `staked_balance`.
+3.  **Process**: `User Profile` calls `staking_hub.process_unstake(user, amount)`.
+4.  **Transfer**: `Staking Hub` sends real tokens (minus 10% penalty) from its Ledger account to the user's wallet.
+5.  **Penalty**: The 10% penalty is added to the Global Interest Pool.
 
-### Unstaking & Interest
-1.  **Request**: User requests to unstake $X$ GHC.
-2.  **Penalty**: 10% deducted and added to `Interest Pool`.
-3.  **Transfer**:
-    -   90% -> User's Liquid Wallet (Market Partition) via Ledger Transfer.
-    -   10% -> Remains in Hub (Interest Pool).
-4.  **Distribution**: Periodically, `Interest Pool` is moved to `Global Reward Index`.
-5.  **Payout**: Users automatically claim their share of the index growth upon their next interaction.
+### Interest Distribution (Lazy)
+1.  **Global**: `Staking Hub` updates `Global Reward Index` based on Interest Pool size.
+2.  **Local**: When a user interacts with `User Profile`, it checks the Global Index.
+3.  **Compound**: `User Profile` calculates pending interest (`Balance * IndexDiff`) and adds it to `unclaimed_interest`.
 
 ## Technology Stack
 -   **Blockchain**: Internet Computer (ICP).
 -   **Language**: Rust.
--   **Standards**: ICRC-1 (Token), ICRC-7 (NFTs - potentially for books).
+-   **Standards**: ICRC-1 (Token).
 -   **Storage**: `ic-stable-structures` for scalable stable memory.

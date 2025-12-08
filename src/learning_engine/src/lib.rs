@@ -1,13 +1,13 @@
+use std::cell::RefCell;
+use std::borrow::Cow;
 use ic_cdk::init;
 use ic_cdk::query;
 use ic_cdk::update;
 use candid::{CandidType, Deserialize, Principal};
+use candid::{Encode, Decode};
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
 use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, StableCell, Storable};
 use ic_stable_structures::storable::Bound;
-use std::cell::RefCell;
-use std::borrow::Cow;
-use candid::{Encode, Decode};
 
 type Memory = VirtualMemory<DefaultMemoryImpl>;
 
@@ -69,6 +69,14 @@ struct PublicLearningUnit {
 struct PublicQuizQuestion {
     question: String,
     options: Vec<String>,
+}
+
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct LearningUnitMetadata {
+    unit_id: String,
+    unit_title: String,
+    chapter_id: String,
+    chapter_title: String,
 }
 
 thread_local! {
@@ -158,14 +166,6 @@ fn verify_quiz(unit_id: String, answers: Vec<u8>) -> (bool, u64, u64) {
             (false, 0, 0) // Unit not found
         }
     })
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug)]
-struct LearningUnitMetadata {
-    unit_id: String,
-    unit_title: String,
-    chapter_id: String,
-    chapter_title: String,
 }
 
 #[query]

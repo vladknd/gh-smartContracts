@@ -3,6 +3,11 @@
 ## 1. Overview
 The system uses a **Global Reward Index** model to distribute yield (from penalties) to stakers efficiently. This allows for scalable interest distribution without iterating through millions of user accounts.
 
+**Key Architecture Change (Micro-Bank):**
+- **User Balances** are stored in **Sharded User Profile Canisters**.
+- **Global Stats** (Total Staked, Interest Pool) are stored in the **Staking Hub**.
+- **Synchronization**: Shards lazily sync with the Hub to update the Global Index.
+
 ## 2. The Global Index Model
 - **Concept**: The `GlobalIndex` represents the cumulative earnings per staked token since the beginning of time.
 - **Source of Funds**: The Interest Pool is funded **ONLY** by exit penalties (10% of unstaked amount).
@@ -13,7 +18,7 @@ The system uses a **Global Reward Index** model to distribute yield (from penalt
 
 ## 3. User Mechanics (Manual Claim)
 
-### A. Data Structure
+### A. Data Structure (Stored in `user_profile` Canister)
 Each user profile tracks:
 - `staked_balance`: The principal amount (Tokens earned from quizzes).
 - `unclaimed_interest`: The pending rewards waiting to be claimed.
