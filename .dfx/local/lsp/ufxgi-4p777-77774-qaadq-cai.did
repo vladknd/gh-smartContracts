@@ -1,0 +1,19 @@
+type GlobalStats = record {
+  cumulative_reward_index : nat;
+  total_staked : nat64;
+  total_allocated : nat64;
+  total_unstaked : nat64;
+  interest_pool : nat64;
+  total_rewards_distributed : nat64;
+};
+type InitArgs = record { ledger_id : principal };
+service : {
+  add_allowed_minter : (principal) -> ();
+  distribute_interest : () -> (variant { Ok : text; Err : text });
+  get_global_stats : () -> (GlobalStats) query;
+  process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
+  remove_allowed_minter : (principal) -> ();
+  sync_shard : (int64, nat64, nat64, nat64) -> (
+      variant { Ok : record { nat64; nat }; Err : text },
+    );
+}

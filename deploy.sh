@@ -94,7 +94,12 @@ INIT_ARGS="(variant { Init = record {
      };
  }})"
 
+
 dfx deploy ghc_ledger --argument "$INIT_ARGS"
+
+# Deploy ICRC-1 Indexer
+echo "Deploying ICRC-1 Indexer..."
+dfx deploy icrc1_index_canister --argument "(opt variant { Init = record { ledger_id = principal \"$LEDGER_ID\" } })"
 
 # Deploy Staking Hub
 echo "Deploying Staking Hub..."

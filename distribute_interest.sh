@@ -11,7 +11,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Get staking_hub canister ID
-STAKING_HUB=$(jq -r '.canisters.staking_hub.local' ic.config.json)
+STAKING_HUB=$(jq -r '.canisters.staking_hub' ic.config.json)
 
 if [ -z "$STAKING_HUB" ] || [ "$STAKING_HUB" = "null" ]; then
     echo "❌ Error: Could not find staking_hub canister ID in ic.config.json"
