@@ -89,3 +89,93 @@ To solve the bottleneck of millions of users hitting the `staking_hub` for rewar
 - **Allowance**: Shards request a "Minting Allowance" (e.g., 100k tokens).
 - **Batching**: Shards report stats (Total Staked changes) only when requesting a new allowance.
 - **Result**: Network traffic reduced by 1000x+.
+
+## 7. Update: Autonomous Hub - Fully Decentralized (Implemented)
+
+### Previous Issue
+The factory pattern with an admin was still centralized - the admin could add malicious shards or disable legitimate ones.
+
+### Solution: Admin-Less Auto-Scaling Hub
+The `staking_hub` is now **fully autonomous** with no admin functions:
+
+### A. WASM Embedded at Init (Immutable)
+```rust
+#[init]
+fn init(args: InitArgs) {
+    // Store user_profile WASM - CANNOT BE CHANGED AFTER INIT
+    EMBEDDED_WASM.with(|w| w.borrow_mut().set(args.user_profile_wasm));
+    
+    // Configuration also immutable
+    LEDGER_ID.with(|id| id.borrow_mut().set(args.ledger_id));
+    LEARNING_CONTENT_ID.with(|id| id.borrow_mut().set(args.learning_content_id));
+}
+```
+
+### B. Auto-Scaling
+- Timer checks capacity every 60 seconds
+- Anyone can call `ensure_capacity()` to trigger shard creation
+- New shards are created from the embedded WASM only
+- No admin approval needed - it's automatic!
+
+```
+Shard Creation Flow:
+                                    
+  ensure_capacity() ──► Check if shards near capacity
+         │
+         ▼
+  All shards >= 90K users? ──Yes──► Create new shard
+         │                              │
+         │ No                           ▼
+         │                    Use embedded WASM
+         ▼                              │
+  No action needed                      ▼
+                            Register automatically
+```
+
+### C. Removed Admin Functions
+The following functions **NO LONGER EXIST**:
+- ~~`set_admin()`~~
+- ~~`add_allowed_minter()`~~
+- ~~`remove_allowed_minter()`~~
+- ~~`disable_shard()`~~
+- ~~`enable_shard()`~~
+- ~~`set_wasm_hash()`~~
+- ~~`set_learning_content_id()`~~
+
+### D. Security Model
+```
+┌─────────────────────────────────────────────────────────┐
+│              TRUSTLESS SECURITY MODEL                   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ✓ Only hub can create shards (from embedded WASM)     │
+│  ✓ Only hub-created shards can sync/mint               │
+│  ✓ WASM verified at deploy time, never changes         │
+│  ✓ No admin keys to steal or compromise                │
+│  ✓ Code is law - fully trustless                       │
+│                                                         │
+│  Attack Prevention:                                     │
+│  • Rogue Admin: NO ADMIN EXISTS                        │
+│  • Malicious Shard: Can't register, hub creates all    │
+│  • Token Drain: Only registered shards can mint        │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### E. Constants
+```rust
+const SHARD_SOFT_LIMIT: u64 = 90_000;  // Create new shard proactively
+const SHARD_HARD_LIMIT: u64 = 100_000; // Shard marked as Full
+const AUTO_SCALE_INTERVAL: Duration = 60 seconds;
+```
+
+### F. Testing
+Run `scripts/test_autonomous_hub.sh` to verify the decentralized architecture.
+
+### G. Future: SNS Governance
+For upgrades and emergency controls, integrate with an SNS DAO:
+- Upgrades via proposal voting
+- Emergency shard disable via quorum vote
+- Fully decentralized governance
+
+

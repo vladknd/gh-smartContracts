@@ -6,14 +6,32 @@ type GlobalStats = record {
   interest_pool : nat64;
   total_rewards_distributed : nat64;
 };
-type InitArgs = record { ledger_id : principal };
+type InitArgs = record {
+  learning_content_id : principal;
+  ledger_id : principal;
+  user_profile_wasm : blob;
+};
+type ShardInfo = record {
+  user_count : nat64;
+  status : ShardStatus;
+  canister_id : principal;
+  created_at : nat64;
+};
+type ShardStatus = variant { Full; Active };
 service : (InitArgs) -> {
-  add_allowed_minter : (principal) -> ();
   distribute_interest : () -> (variant { Ok : text; Err : text });
+  ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
+  get_active_shards : () -> (vec ShardInfo) query;
+  get_config : () -> (principal, principal, bool) query;
   get_global_stats : () -> (GlobalStats) query;
+  get_limits : () -> (nat64, nat64) query;
+  get_shard_count : () -> (nat64) query;
+  get_shard_for_new_user : () -> (opt principal) query;
+  get_shards : () -> (vec ShardInfo) query;
+  is_registered_shard : (principal) -> (bool) query;
   process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
-  remove_allowed_minter : (principal) -> ();
   sync_shard : (int64, nat64, nat64, nat64) -> (
       variant { Ok : record { nat64; nat }; Err : text },
     );
+  update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
 }

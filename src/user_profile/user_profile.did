@@ -6,6 +6,7 @@ type UserProfile = record {
     staked_balance : nat64;
     unclaimed_interest : nat64;
     last_reward_index : nat;
+    transaction_count : nat64;
 };
 
 type UserDailyStats = record {
@@ -38,14 +39,28 @@ type TransactionRecord = record {
 };
 
 service : (InitArgs) -> {
+    // User Registration & Profile
     register_user : (UserProfileUpdate) -> (variant { Ok : null; Err : text });
     update_profile : (UserProfileUpdate) -> (variant { Ok : null; Err : text });
     get_profile : (principal) -> (opt UserProfile) query;
+    
+    // Quiz & Learning
     submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
-    get_user_daily_status : (principal) -> (UserDailyStats) query;
     is_quiz_completed : (principal, text) -> (bool) query;
+    
+    // Daily Stats
+    get_user_daily_status : (principal) -> (UserDailyStats) query;
+    
+    // Economy Functions
     unstake : (nat64) -> (variant { Ok : nat64; Err : text });
-    get_user_transactions : (principal) -> (vec TransactionRecord) query;
-    debug_force_sync : () -> (variant { Ok : null; Err : text });
     claim_rewards : () -> (variant { Ok : nat64; Err : text });
+    
+    // Transaction History
+    get_user_transactions : (principal) -> (vec TransactionRecord) query;
+    
+    // Shard Metrics
+    get_user_count : () -> (nat64) query;
+    
+    // Debug
+    debug_force_sync : () -> (variant { Ok : null; Err : text });
 }

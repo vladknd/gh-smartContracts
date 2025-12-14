@@ -50,8 +50,8 @@ The GHC system uses a **Global Reward Index Model** to distribute yield (from pe
                 ▼
    ╔═════════════════════════════════════╗
    ║  GlobalIndex += Pool / TotalStaked  ║
-   ║  (Example: 10 / 100 = 0.1)         ║
-   ║  InterestPool = 0                  ║
+   ║  (Example: 10 / 100 = 0.1)          ║
+   ║  InterestPool = 0                   ║
    ╚════════════╤════════════════════════╝
                 │
                 │ Syncs every 5 seconds

@@ -1,5 +1,7 @@
 type InitArgs = record {
     ledger_id : principal;
+    learning_content_id : principal;
+    user_profile_wasm : vec nat8;
 };
 
 type GlobalStats = record {
@@ -11,11 +13,37 @@ type GlobalStats = record {
     total_rewards_distributed : nat64;
 };
 
+type ShardStatus = variant {
+    Active;
+    Full;
+};
+
+type ShardInfo = record {
+    canister_id : principal;
+    created_at : nat64;
+    user_count : nat64;
+    status : ShardStatus;
+};
+
 service : (InitArgs) -> {
-    "add_allowed_minter": (principal) -> ();
-    "remove_allowed_minter": (principal) -> ();
+    // Auto-Scaling (anyone can call - safe because only uses embedded WASM)
+    "ensure_capacity": () -> (variant { Ok: opt principal; Err: text });
+    
+    // Shard Discovery Queries
+    "get_shards": () -> (vec ShardInfo) query;
+    "get_active_shards": () -> (vec ShardInfo) query;
+    "get_shard_for_new_user": () -> (opt principal) query;
+    "is_registered_shard": (principal) -> (bool) query;
+    "get_shard_count": () -> (nat64) query;
+    
+    // Shard Operations (Called ONLY by registered shards)
+    "update_shard_user_count": (nat64) -> (variant { Ok: null; Err: text });
     "sync_shard": (int64, nat64, nat64, nat64) -> (variant { Ok: record { nat64; nat }; Err: text });
     "distribute_interest": () -> (variant { Ok: text; Err: text });
     "process_unstake": (principal, nat64) -> (variant { Ok: nat64; Err: text });
+    
+    // Query Functions
     "get_global_stats": () -> (GlobalStats) query;
+    "get_config": () -> (principal, principal, bool) query;
+    "get_limits": () -> (nat64, nat64) query;
 }

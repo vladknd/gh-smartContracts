@@ -735,6 +735,7 @@ dependencies = [
  "icrc-ledger-types",
  "num-traits",
  "serde",
+ "sha2",
 ]
 
 [[package]]

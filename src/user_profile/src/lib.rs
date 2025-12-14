@@ -147,10 +147,18 @@ impl Storable for UserQuizKey {
     };
 }
 
+// V1 for migration
+#[derive(CandidType, Deserialize, Clone, Debug)]
+struct PendingStatsV1 {
+    staked_delta: i64,
+    unstaked_delta: u64,
+}
+
 #[derive(CandidType, Deserialize, Clone, Debug)]
 struct PendingStats {
     staked_delta: i64,
     unstaked_delta: u64,
+    rewards_delta: u64, // New field
 }
 
 impl Storable for PendingStats {
@@ -159,7 +167,17 @@ impl Storable for PendingStats {
     }
 
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
+        if let Ok(stats) = Decode!(bytes.as_ref(), Self) {
+            return stats;
+        }
+        if let Ok(v1) = Decode!(bytes.as_ref(), PendingStatsV1) {
+            return Self {
+                staked_delta: v1.staked_delta,
+                unstaked_delta: v1.unstaked_delta,
+                rewards_delta: 0,
+            };
+        }
+        panic!("Failed to decode PendingStats");
     }
 
     const BOUND: Bound = Bound::Bounded {
@@ -233,44 +251,6 @@ thread_local! {
             0
         ).unwrap()
     );
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug)]
-struct PendingStatsV1 {
-    staked_delta: i64,
-    unstaked_delta: u64,
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug)]
-struct PendingStats {
-    staked_delta: i64,
-    unstaked_delta: u64,
-    rewards_delta: u64, // New field
-}
-
-impl Storable for PendingStats {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        if let Ok(stats) = Decode!(bytes.as_ref(), Self) {
-            return stats;
-        }
-        if let Ok(v1) = Decode!(bytes.as_ref(), PendingStatsV1) {
-            return Self {
-                staked_delta: v1.staked_delta,
-                unstaked_delta: v1.unstaked_delta,
-                rewards_delta: 0,
-            };
-        }
-        panic!("Failed to decode PendingStats");
-    }
-
-    const BOUND: Bound = Bound::Bounded {
-        max_size: 100,
-        is_fixed_size: false,
-    };
 }
 
 #[init]
@@ -439,6 +419,14 @@ async fn sync_with_hub_internal() -> Result<(), String> {
             GLOBAL_REWARD_INDEX.with(|i| {
                 i.borrow_mut().set(global_index).expect("Failed to update global index");
             });
+
+            // Report user count to hub for load balancing
+            let user_count = USER_PROFILES.with(|p| p.borrow().len());
+            let _ : Result<(Result<(), String>,), _> = ic_cdk::call(
+                staking_hub_id,
+                "update_shard_user_count",
+                (user_count,)
+            ).await;
 
             Ok(())
         },
@@ -766,4 +754,11 @@ fn claim_rewards() -> Result<u64, String> {
     })
 }
 
+/// Get total number of registered users in this shard
+#[query]
+fn get_user_count() -> u64 {
+    USER_PROFILES.with(|p| p.borrow().len())
+}
+
 ic_cdk::export_candid!();
+
