@@ -104,29 +104,76 @@ Weighted Average Storage:
 DIFFERENCE: 2,700x more storage required for per-batch
 ```
 
-### 3.2 Instruction Limits Per Call
+### 3.2 Instruction Limits and Cycle Costs
 
 ```text
 +=======================================================================+
-|                    INSTRUCTION LIMITS                                  |
+|                    INSTRUCTIONS = COST + LATENCY                       |
 +=======================================================================+
 
-ICP Limit: ~2 billion instructions per update call
+On ICP, every instruction costs CYCLES (ICP's "gas"):
 
-Unstake operation with per-batch:
-- Must iterate through all deposits to calculate total penalty
-- Must decide which deposits to remove (FIFO/LIFO/etc.)
-- Must update remaining deposits
+   **Cycle to USD Conversion:**
+   USD Cost = (Total Cycles / 1,000,000,000,000) * XDR_to_USD_Rate
+   *(Note: 1 Trillion Cycles = 1 XDR; 1 XDR is approximately $1.30 USD)*
 
-For a power user with 5,000+ deposits (10+ years):
-- Each deposit: ~1,000 instructions for penalty calc
-- Total: 5,000,000 instructions just for iteration
-- Add serialization/deserialization overhead
+1. CYCLE COSTS (Direct Financial Impact)
+   - ~0.4 cycles per instruction
+   - 1 trillion cycles ≈ ~$1.30 (varies with price)
+   
+   Per-Batch (5,000 deposits × 1,000 instructions):
+     = 5,000,000 instructions × 0.4 cycles = 2,000,000 cycles per unstake
 
-RISK: Heavy users could hit instruction limits on unstake
+   Weighted Average (~100 instructions):
+     = 100 instructions × 0.4 cycles = 40 cycles per unstake
+   
+   COST DIFFERENCE: 50,000x more expensive per operation!
+
+   USD COST COMPARISON (using 1 Trillion cycles = $1.30 USD):
+   ┌─────────────────────┬────────────────────┬──────────────────────┐
+   │                     │ Per-Batch Approach │ Weighted Avg Approach│
+   │                     │ (track deposits)   │ (2 fields only)      │
+   ├─────────────────────┼────────────────────┼──────────────────────┤
+   │ Cycles per unstake  │ 2,000,000          │ 40                   │
+   │ USD per unstake     │ $0.0000026         │ $0.000000052         │
+   │ Cost for 1M unstakes│ $2.60              │ $0.000052            │
+   │ Cost for 10M users  │ $26.00             │ $0.00052             │
+   └─────────────────────┴────────────────────┴──────────────────────┘
+   
+   WHAT THIS COST MEANS:
+   - If 10M users each unstake once, the canister burns $26 in cycles
+     (vs $0.0005 with weighted average)
+   
+   At scale, the Per-Batch Approach costs ~50,000x more in cycles!
+
+2. LATENCY (User Experience Impact)
+   - ICP processes ~1 billion instructions per second
+   - 5,000,000 instructions = ~5ms execution time
+   - But with serialization overhead, easily 50-100ms
+   
+   Users with many deposits experience SLOW unstaking.
+   Users with weighted average get INSTANT response.
+
+3. THROUGHPUT (System-Wide Impact)
+   - Canister processes one update call at a time (single-threaded)
+   - A 100ms operation BLOCKS the canister for 100ms
+   - Other users must wait in queue
+   
+   Heavy users slow down the ENTIRE system, not just themselves.
+
+4. HARD LIMIT RISK
+   ICP Limit: ~2 billion instructions per update call
+
+   For a power user with 5,000+ deposits (10+ years):
+   - Each deposit: ~1,000 instructions for penalty calc
+   - Total: 5,000,000 instructions just for iteration
+   - Add serialization/deserialization: could approach limit
+   
+   RISK: Extreme users could have UNPROCESSABLE unstake requests!
 
 Weighted Average:
 - Fixed ~100 instructions regardless of staking history
+- Constant cost, constant latency, no limit risk
 ```
 
 ### 3.3 Upgrade Performance
