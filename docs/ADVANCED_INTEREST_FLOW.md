@@ -64,14 +64,15 @@ Before diving into the mechanics, here are the critical terms used throughout th
 
 ### 2.1 Staking Age
 
-**Definition:** The amount of time (in days) that has passed since a user began staking.
+**Definition:** The amount of time (in days) that has passed since a user beginning of staking process.
 
 **Formula:**
 ```text
 Staking_Age = Current_Time - Staking_Time
 ```
-
-**Purpose:** Determines which tier a user belongs to.
+### 2.2 Staking_Time:
+**Definition:** The virtual (averaged) timestamp representing the beggining of staking process of user's tokens. This value is adjusted when new tokens are added.
+**Purpose:** Determines the start of staking period for Staking Age calculation.
 
 **Example:**
 - User started staking on January 1, 2025
@@ -79,9 +80,13 @@ Staking_Age = Current_Time - Staking_Time
 - Staking Age = 104 days
 - User qualifies for **Gold Tier** (90-365 days)
 
+**Formula:**
+```text
+staking_time = Current_Time - Weighted_Avg_Age
+```
 ---
 
-### 2.2 Weighted Average Age
+### 2.3 Weighted Average Age
 
 **Definition:** A single number representing the "effective maturity" of a user's entire token balance, accounting for tokens deposited at different times.
 
@@ -93,13 +98,6 @@ Staking_Age = Current_Time - Staking_Time
 Weighted_Avg_Age = --------------------------------------------------
                               staked_balance + New_Tokens
 ```
-
-
-
-
-Since new tokens always have Age = 0:
-
-User mines 5 coins (New_Tokens), before he had 
 ```text
                     (staked_balance * Staking_Age)
 Weighted_Avg_Age = --------------------------
@@ -130,7 +128,6 @@ staking_time = Current_Time - Weighted_Avg_Age
 | Weighted_Avg_Age    | Runtime calculation        | Used to update staking_time               |
 | Current_Time        | System clock (ic_cdk::time)| Always "now"                              |
 +=====================+============================+===========================================+
-```
 
 **Example: Growing from Zero (Step-by-Step Daily Deposits)**
 ```text
@@ -147,14 +144,25 @@ EVENT: User earns 5 GHC from their first quiz
 CALCULATION:
   This is the FIRST deposit, so:
   - No weighted average needed
-  - staking_time is set to NOW (Day 1)
+  - staking_time is set to NOW (Day 1) which is the as first deposit staking time 
 
 AFTER UPDATE (written to user_profile canister):
   ┌─────────────────────────────────────────┐
   │ staked_balance     = 5 GHC              │ ← STORED
   │ staking_time       = Day 1              │ ← STORED
   └─────────────────────────────────────────┘
+```
+TIMELINE:
+Day 1     (+5GHC)         
+           │                        
+           ▼                       
+           Day(1)      
+─────────────────────────────────────────────────────────────────────▶
+           ^
+           |
+       staking_time
 
+```
 +=======================================================================+
 |                 DAY 2: SECOND DEPOSIT                                 |
 +=======================================================================+
@@ -198,6 +206,19 @@ AFTER UPDATE (written to user_profile canister):
   │ staking_time       = Day 1.5            │ ← STORED (drifted +0.5)
   └─────────────────────────────────────────┘
 
+```
+TIMELINE: 
+        (+5GHC)                   (+5GHC)               
+           │                         │                   
+           ▼                         ▼                   
+         Day(1)     Day(1.5)       Day(2)          
+─────────────────────────────────────────────────────────────────────▶
+                       ^
+                       |
+                   staking_time
+```
+
+
 +=======================================================================+
 |                 DAY 3: THIRD DEPOSIT                                  |
 +=======================================================================+
@@ -230,6 +251,17 @@ AFTER UPDATE (written to user_profile canister):
   │ staked_balance     = 15 GHC             │ ← STORED
   │ staking_time       = Day 2              │ ← STORED (drifted +0.5)
   └─────────────────────────────────────────┘
+```
+TIMELINE: 
+        (+5GHC)                   (+5GHC)               (+5GHC)
+           │                         │                    │
+           ▼                         ▼                    ▼
+         Day(1)                    Day(2)               Day(3)
+─────────────────────────────────────────────────────────────────────▶
+                                     ^
+                                     |
+                                 staking_time
+```
 
 +=======================================================================+
 |                 DAY 10: PATTERN CONTINUES                             |
@@ -263,10 +295,102 @@ STEP 5: Convert to Timestamp
 AFTER UPDATE (written to user_profile canister):
   ┌─────────────────────────────────────────┐
   │ staked_balance     = 50 GHC             │ ← STORED
-  │ staking_time = Day 5.95           │ ← STORED (drifted +0.45)
+  │ staking_time       = Day 5.95           │ ← STORED (drifted +0.45)
   └─────────────────────────────────────────┘
+  
+```
+TIMELINE: 
+        (+5GHC)                                         (+5GHC)
+           │                         ...                   │
+           ▼                                               ▼
+         Day(1)             Day(5.95)                    Day(10)
+─────────────────────────────────────────────────────────────────────▶
+                               ^
+                               |
+                           staking_time
+```
 
 +=======================================================================+
+|                 DAY 10: USER DECIDES TO UNSTAKE                       |
++=======================================================================+
+
+Now imagine the user decides to unstake some or all of their tokens.
+
+CURRENT STATE (from user_profile canister):
+  staked_balance     = 50 GHC
+  staking_time       = Day 5.95
+  Current_Time       = Day 10
+
+PENALTY TIERS (for reference):
+┌─────────────────────┬────────────────┐
+│ Staking Duration    │ Penalty Rate   │
+├─────────────────────┼────────────────┤
+│ 0 - 30 days         │ 15%            │
+│ 30 - 90 days        │ 10%            │
+│ 90 - 365 days       │ 5%             │
+│ 365+ days           │ 2%             │
+└─────────────────────┴────────────────┘
+
+─────────────────────────────────────────────────────────────────────────
+SCENARIO A: PARTIAL UNSTAKE (User unstakes 20 GHC, keeps 30 GHC)
+─────────────────────────────────────────────────────────────────────────
+
+STEP 1: Calculate Staking_Age
+  Staking_Age = Current_Time - staking_time
+              = Day 10 - Day 5.95
+              = 4.05 days
+
+STEP 2: Determine Penalty Bracket
+  4.05 days falls in "0-30 days" bracket → 15% penalty
+
+STEP 3: Calculate Penalty
+  Unstake_Amount = 20 GHC
+  Penalty = 20 × 15% = 3 GHC
+  User_Receives = 20 - 3 = 17 GHC
+  Interest_Pool_Receives = 3 GHC
+
+STEP 4: Update State
+  ┌─────────────────────────────────────────┐
+  │ staked_balance     = 30 GHC             │ ← REDUCED by 20
+  │ staking_time       = Day 5.95           │ ← UNCHANGED!
+  └─────────────────────────────────────────┘
+
+NOTE: staking_time stays the same! The remaining 30 GHC keeps its age.
+      If user deposits more later, weighted average will be applied.
+
+─────────────────────────────────────────────────────────────────────────
+SCENARIO B: FULL UNSTAKE (User unstakes all 50 GHC)
+─────────────────────────────────────────────────────────────────────────
+
+STEP 1: Calculate Staking_Age
+  Staking_Age = Day 10 - Day 5.95 = 4.05 days
+
+STEP 2: Determine Penalty Bracket
+  4.05 days falls in "0-30 days" bracket → 15% penalty
+
+STEP 3: Calculate Penalty
+  Unstake_Amount = 50 GHC
+  Penalty = 50 × 15% = 7.5 GHC
+  User_Receives = 50 - 7.5 = 42.5 GHC
+  Interest_Pool_Receives = 7.5 GHC
+
+STEP 4: Update State (full reset)
+  ┌─────────────────────────────────────────┐
+  │ staked_balance     = 0                  │ ← RESET to 0
+  │ staking_time       = 0                  │ ← RESET to 0
+  └─────────────────────────────────────────┘
+
+NOTE: Full unstake = clean slate. Next deposit will be treated as
+      the user's first deposit again (no history carried over).
+
+
+WHY staking_time UNCHANGED ON PARTIAL UNSTAKE?
+  - Unstaking doesn't add new tokens (no dilution)
+  - Remaining tokens earned their age fairly
+  - If we reset staking_time, we'd punish users for partial withdrawals
+  - The math is simpler and fairer
+
+
 |                 DAY 100: LONG-TERM VIEW                               |
 +=======================================================================+
 
@@ -298,7 +422,7 @@ STEP 5: Convert to Timestamp
 AFTER UPDATE (written to user_profile canister):
   ┌─────────────────────────────────────────┐
   │ staked_balance     = 500 GHC            │ ← STORED
-  │ staking_time = Day 50.75          │ ← STORED (drifted +0.50)
+  │ staking_time = Day 50.75          `     │ ← STORED (drifted +0.50)
   └─────────────────────────────────────────┘
 
 +=======================================================================+
@@ -308,7 +432,6 @@ AFTER UPDATE (written to user_profile canister):
 Even after 100 days of continuous daily deposits:
 - The effective staking age is ~49.25 days (almost exactly half!)
 - Each new deposit only reduces the age by ~0.5 days
-- The user's tier: SILVER (30-90 days) ← Not Bronze!
 
 This shows why the weighted average age is important:
 Without it, adding ANY new tokens would either:
@@ -384,25 +507,9 @@ COMPUTATION REQUIRED (on every interest calculation):
 
 ADDITIONAL COMPLEXITY:
 ┌──────────────────────────────────────────────────────────────────────┐
-│  1. TIER TRANSITIONS PER BATCH                                       │
-│     Each deposit ages independently. On Day 100:                     │
-│     - Deposit from Day 1 is 99 days old (GOLD tier)                 │
-│     - Deposit from Day 70 is 30 days old (SILVER tier)              │
-│     - Deposit from Day 100 is 0 days old (BRONZE tier)              │
-│                                                                      │
-│     You'd need to track SEPARATE tier indexes for EACH deposit,     │
-│     and update them whenever a deposit crosses a tier boundary.      │
-│                                                                      │
-│  2. INTER-CANISTER CALL EXPLOSION                                    │
-│     Each deposit may need its own sync with staking_hub to:         │
-│     - Register in the correct tier's total_staked                   │
-│     - Track its own reward index snapshot                           │
-│                                                                      │
-│     365 deposits = 365 potential sync operations per year!          │
-│                                                                      │
-│  3. UNSTAKING NIGHTMARE                                              │
+│     UNSTAKING NIGHTMARE                                              │
 │     When user unstakes, which deposits do you remove first?         │
-│     FIFO? LIFO? Oldest (highest tier) first? Newest first?          │
+│     FIFO? LIFO? Oldest first? Newest first?          │
 │     Each choice has different economic implications.                 │
 └──────────────────────────────────────────────────────────────────────┘
 
@@ -412,7 +519,6 @@ COMPARISON SUMMARY:
 ├────────────────────┼──────────────────────┼──────────────────────────┤
 │ Storage per user   │ O(1) - 16 bytes      │ O(n) - 16 bytes × days   │
 │ Interest calc time │ O(1) - constant      │ O(n) - linear in deposits│
-│ Tier tracking      │ 1 tier per user      │ n tiers (1 per deposit)  │
 │ Sync operations    │ 1 per deposit event  │ n per interest calc      │
 │ Code complexity    │ Simple               │ Very complex             │
 │ Unstaking logic    │ Single deduction     │ Multi-record management  │
