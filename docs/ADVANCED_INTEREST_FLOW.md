@@ -70,6 +70,8 @@ Before diving into the mechanics, here are the critical terms used throughout th
 ```text
 Staking_Age = Current_Time - Staking_Time
 ```
+
+
 ### 2.2 Staking_Time:
 **Definition:** The virtual (averaged) timestamp representing the beggining of staking process of user's tokens. This value is adjusted when new tokens are added.
 **Purpose:** Determines the start of staking period for Staking Age calculation.
@@ -81,12 +83,29 @@ Staking_Age = Current_Time - Staking_Time
 - User qualifies for **Gold Tier** (90-365 days)
 
 **Formula:**
-```text
+```
 staking_time = Current_Time - Weighted_Avg_Age
 ```
----
 
-### 2.3 Weighted Average Age
+
+### 2.3 Coin-Days
+
+**Definition:** A unit measuring the "investment weight" of tokens over time.
+
+**Formula:**
+```
+Coin_Days = Number_of_Tokens * Days_Held
+```
+
+**Example:**
+- 100 tokens held for 10 days = 1,000 Coin-Days
+- 10 tokens held for 100 days = 1,000 Coin-Days
+- Both have equal "investment weight" to the system
+
+**Purpose:** Used as the numerator when calculating Weighted Average Age.
+
+
+### 2.4 Weighted Average Age
 
 **Definition:** A single number representing the "effective maturity" of a user's entire token balance, accounting for tokens deposited at different times.
 
@@ -535,26 +554,6 @@ The weighted average approach trades a small amount of precision
 This is why virtually all staking systems use a weighted average or
 similar aggregation technique rather than tracking individual deposits.
 ```
-
----
-
-### 2.3 Coin-Days
-
-**Definition:** A unit measuring the "investment weight" of tokens over time.
-
-**Formula:**
-```text
-Coin_Days = Number_of_Tokens * Days_Held
-```
-
-**Example:**
-- 100 tokens held for 10 days = 1,000 Coin-Days
-- 10 tokens held for 100 days = 1,000 Coin-Days
-- Both have equal "investment weight" to the system
-
-**Purpose:** Used as the numerator when calculating Weighted Average Age.
-
----
 
 ### 2.4 Tier
 

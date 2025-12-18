@@ -220,14 +220,6 @@ OPTIMAL STRATEGY:
 RESULT: Users systematically pay minimum penalties while
 maintaining effective liquidity. Defeats penalty mechanism.
 
-If system forces LIFO (newest first):
-- Users game by depositing large amounts right before unstaking
-- These new deposits "shield" old deposits
-
-If system forces FIFO (oldest first):
-- Users might prefer this anyway (lowest penalty)
-- Still gameable with timed deposits
-
 ANY deterministic order can be gamed once known.
 
 Weighted Average:
