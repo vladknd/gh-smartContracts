@@ -13,13 +13,18 @@ export const idlFactory = ({ IDL }) => {
   });
   const GlobalStats = IDL.Record({
     'cumulative_reward_index' : IDL.Nat,
+    'tier_reward_indexes' : IDL.Vec(IDL.Nat),
     'total_staked' : IDL.Nat64,
     'total_allocated' : IDL.Nat64,
+    'tier_staked' : IDL.Vec(IDL.Nat64),
     'total_unstaked' : IDL.Nat64,
     'interest_pool' : IDL.Nat64,
     'total_rewards_distributed' : IDL.Nat64,
   });
+  const TierDeltas = IDL.Vec(IDL.Int64);
+  const TierIndexes = IDL.Vec(IDL.Nat);
   return IDL.Service({
+    'add_allowed_minter' : IDL.Func([IDL.Principal], [], []),
     'distribute_interest' : IDL.Func(
         [],
         [IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text })],
@@ -52,10 +57,10 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'sync_shard' : IDL.Func(
-        [IDL.Int64, IDL.Nat64, IDL.Nat64, IDL.Nat64],
+        [TierDeltas, IDL.Nat64, IDL.Nat64, IDL.Nat64],
         [
           IDL.Variant({
-            'Ok' : IDL.Tuple(IDL.Nat64, IDL.Nat),
+            'Ok' : IDL.Tuple(IDL.Nat64, TierIndexes),
             'Err' : IDL.Text,
           }),
         ],

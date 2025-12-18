@@ -1,6 +1,8 @@
 # GHC Interest Flow & Distribution Mechanics
 
-> **Last Updated:** December 5, 2025
+> **Last Updated:** December 14, 2025
+
+> **Note:** For the new tier-based interest system that rewards long-term stakers, see [ADVANCED_INTEREST_FLOW.md](./ADVANCED_INTEREST_FLOW.md). This document describes the base mechanics.
 
 This document explains how interest is generated, distributed, and claimed in the GHC staking system.
 

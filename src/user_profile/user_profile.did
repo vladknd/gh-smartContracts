@@ -1,12 +1,27 @@
+// ============================================================================
+// User Profile Candid Interface
+// ============================================================================
+// This canister manages user profiles, quiz submissions, and staking state.
+// It operates as a "shard" that syncs with the central staking_hub.
+
+// User profile with tier tracking
 type UserProfile = record {
+    // Personal Information
     email : text;
     name : text;
     education : text;
     gender : text;
+    
+    // Economy State
     staked_balance : nat64;
     unclaimed_interest : nat64;
-    last_reward_index : nat;
+    last_reward_index : nat;  // Legacy field
     transaction_count : nat64;
+    
+    // Tier Tracking
+    current_tier : nat8;        // 0=Bronze, 1=Silver, 2=Gold, 3=Diamond
+    tier_start_index : nat;     // Reward index when entered current tier
+    initial_stake_time : nat64; // Timestamp of first stake (for tier calculation)
 };
 
 type UserDailyStats = record {
@@ -39,28 +54,42 @@ type TransactionRecord = record {
 };
 
 service : (InitArgs) -> {
+    // =========================================================================
     // User Registration & Profile
+    // =========================================================================
     register_user : (UserProfileUpdate) -> (variant { Ok : null; Err : text });
     update_profile : (UserProfileUpdate) -> (variant { Ok : null; Err : text });
     get_profile : (principal) -> (opt UserProfile) query;
     
+    // =========================================================================
     // Quiz & Learning
-    submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
+    // =========================================================================
+    submit_quiz : (text, vec nat8) -> (variant { Ok : nat64; Err : text });
     is_quiz_completed : (principal, text) -> (bool) query;
     
+    // =========================================================================
     // Daily Stats
+    // =========================================================================
     get_user_daily_status : (principal) -> (UserDailyStats) query;
     
+    // =========================================================================
     // Economy Functions
+    // =========================================================================
     unstake : (nat64) -> (variant { Ok : nat64; Err : text });
     claim_rewards : () -> (variant { Ok : nat64; Err : text });
     
+    // =========================================================================
     // Transaction History
+    // =========================================================================
     get_user_transactions : (principal) -> (vec TransactionRecord) query;
     
+    // =========================================================================
     // Shard Metrics
+    // =========================================================================
     get_user_count : () -> (nat64) query;
     
-    // Debug
+    // =========================================================================
+    // Debug / Testing
+    // =========================================================================
     debug_force_sync : () -> (variant { Ok : null; Err : text });
 }

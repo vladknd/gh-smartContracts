@@ -102,8 +102,9 @@ echo "Deploying ICRC-1 Indexer..."
 dfx deploy icrc1_index_canister --argument "(opt variant { Init = record { ledger_id = principal \"$LEDGER_ID\" } })"
 
 # Deploy Staking Hub
+# Note: user_profile_wasm is empty for now - we'll manually register shards
 echo "Deploying Staking Hub..."
-dfx deploy staking_hub --argument "(record { ledger_id = principal \"$LEDGER_ID\" })"
+dfx deploy staking_hub --argument "(record { ledger_id = principal \"$LEDGER_ID\"; learning_content_id = principal \"$LEARNING_ID\"; user_profile_wasm = vec {} })"
 
 # Deploy Operational Governance
 echo "Deploying Operational Governance..."

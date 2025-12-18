@@ -4,8 +4,10 @@ import type { IDL } from '@dfinity/candid';
 
 export interface GlobalStats {
   'cumulative_reward_index' : bigint,
+  'tier_reward_indexes' : Array<bigint>,
   'total_staked' : bigint,
   'total_allocated' : bigint,
+  'tier_staked' : BigUint64Array | bigint[],
   'total_unstaked' : bigint,
   'interest_pool' : bigint,
   'total_rewards_distributed' : bigint,
@@ -23,7 +25,10 @@ export interface ShardInfo {
 }
 export type ShardStatus = { 'Full' : null } |
   { 'Active' : null };
+export type TierDeltas = BigInt64Array | bigint[];
+export type TierIndexes = Array<bigint>;
 export interface _SERVICE {
+  'add_allowed_minter' : ActorMethod<[Principal], undefined>,
   'distribute_interest' : ActorMethod<
     [],
     { 'Ok' : string } |
@@ -48,8 +53,8 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'sync_shard' : ActorMethod<
-    [bigint, bigint, bigint, bigint],
-    { 'Ok' : [bigint, bigint] } |
+    [TierDeltas, bigint, bigint, bigint],
+    { 'Ok' : [bigint, TierIndexes] } |
       { 'Err' : string }
   >,
   'update_shard_user_count' : ActorMethod<

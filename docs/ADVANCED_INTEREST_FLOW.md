@@ -1,1271 +1,1380 @@
-# Advanced Interest Flow: Discrete Tier System
+# GHC Advanced Interest System: Complete Technical Guide
 
-> **Last Updated:** December 13, 2025  
-> **Status:** Proposed Enhancement  
-> **Depends On:** [INTEREST_FLOW.md](./INTEREST_FLOW.md)
-
-This document describes an advanced interest distribution mechanism that rewards long-term stakers with higher yields through a **Discrete Tier System**.
+> **Status:** Approved Architecture  
+> **Last Updated:** December 2025  
+> **Related:** [STAKING_MECHANICS.md](./STAKING_MECHANICS.md), [INTEREST_FLOW.md](./INTEREST_FLOW.md)
 
 ---
 
 ## Table of Contents
 
-1. [Executive Summary](#1-executive-summary)
-2. [Problem Statement](#2-problem-statement)
-3. [Solution: Discrete Tier System](#3-solution-discrete-tier-system)
-4. [How It Works](#4-how-it-works)
-5. [Architecture](#5-architecture)
-6. [Implementation Details](#6-implementation-details)
-7. [Why Separate Pools Per Tier?](#7-why-separate-pools-per-tier)
-8. [Comparison with Alternatives](#8-comparison-with-alternatives)
-9. [Migration Plan](#9-migration-plan)
-10. [Frontend Integration](#10-frontend-integration)
-11. [Security Analysis](#11-security-analysis)
+1. [System Overview](#1-system-overview)
+2. [Key Definitions](#2-key-definitions)
+3. [The Zero-Sum Economic Model](#3-the-zero-sum-economic-model)
+4. [Tier System Architecture](#4-tier-system-architecture)
+5. [Staking Age Calculation](#5-staking-age-calculation)
+6. [Weighted Average Age Formula](#6-weighted-average-age-formula)
+7. [Interest Distribution Mechanics](#7-interest-distribution-mechanics)
+8. [The Global Reward Index](#8-the-global-reward-index)
+9. [User Interest Calculation](#9-user-interest-calculation)
+10. [Complete Flow Diagrams](#10-complete-flow-diagrams)
+11. [Edge Cases and Examples](#11-edge-cases-and-examples)
+12. [Implementation Reference](#12-implementation-reference)
 
 ---
 
-## 1. Executive Summary
+## 1. System Overview
 
-The Discrete Tier System enhances our existing Global Reward Index model by introducing **time-based loyalty tiers**. Users who stake longer receive a higher share of the interest pool through a fair, scalable, and transparent mechanism.
+The GHC Interest System rewards users who stake their tokens longer. It operates on a **Zero-Sum, Non-Inflationary** model, meaning:
 
-### Key Features
+- **No new tokens are ever created** to pay interest
+- All interest comes from **penalties** collected when users unstake
+- Longer stakers earn more because they share a pool with fewer people
 
-| Feature | Description |
-|---------|-------------|
-| **4 Loyalty Tiers** | Bronze → Silver → Gold → Diamond |
-| **Time-Based Progression** | Tier determined by continuous staking duration |
-| **Fair Distribution** | Each tier has dedicated pool share, no token inflation |
-| **O(1) Scalability** | Only 4 tier totals to track globally |
-| **Automatic Upgrades** | Users progress through tiers automatically |
+```text
++=====================================================================+
+|                    HIGH-LEVEL SYSTEM OVERVIEW                        |
++=====================================================================+
 
-### Tier Configuration
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     LOYALTY TIER STRUCTURE                       │
-├──────────┬──────────────┬──────────────┬────────────────────────┤
-│   TIER   │   DURATION   │  POOL SHARE  │      DESCRIPTION       │
-├──────────┼──────────────┼──────────────┼────────────────────────┤
-│  Bronze  │   0-30 days  │     20%      │  New stakers           │
-│  Silver  │  30-90 days  │     25%      │  Committed stakers     │
-│  Gold    │ 90-365 days  │     30%      │  Loyal stakers         │
-│  Diamond │   365+ days  │     25%      │  Long-term holders     │
-└──────────┴──────────────┴──────────────┴────────────────────────┘
-```
-
----
-
-## 2. Problem Statement
-
-### Current System Limitation
-
-The existing Global Reward Index model distributes interest **proportionally to staked balance only**:
-
-```
-user_interest = staked_balance × index_increase
-```
-
-**Everyone with the same balance receives the same interest, regardless of loyalty.**
-
-### The Challenge
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     CURRENT DISTRIBUTION                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Alice (100 GHC, staking 7 days)    ────────▶  10 GHC interest │
-│                                                                  │
-│   Bob (100 GHC, staking 365 days)    ────────▶  10 GHC interest │
-│                                                                  │
-│          Same balance = Same reward (unfair to Bob!)             │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Why This Matters
-
-1. **No incentive to hold long-term** — Users can jump in/out for quick gains
-2. **Increased volatility** — No loyalty benefits encourage speculative behavior
-3. **Unfair to early supporters** — Those who took early risk aren't rewarded
-4. **Missed gamification** — Tier progression is a powerful engagement tool
-
----
-
-## 3. Solution: Discrete Tier System
-
-### Core Concept
-
-Instead of one shared pool, we partition the interest pool into **4 tier-specific pools**. Each tier has its own reward index that depends on:
-
-1. The tier's allocated share of the penalty pool
-2. The total tokens staked by users in that tier
-
-```
-                         PENALTY POOL
-                        (from unstaking)
-                              │
-                              │ 100 GHC
-                              │
-           ┌──────────────────┼──────────────────┐
-           │                  │                  │
-           ▼                  ▼                  ▼                  ▼
-    ┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐
-    │   BRONZE   │     │   SILVER   │     │    GOLD    │     │  DIAMOND   │
-    │   20 GHC   │     │   25 GHC   │     │   30 GHC   │     │   25 GHC   │
-    │  (20%)     │     │  (25%)     │     │  (30%)     │     │  (25%)     │
-    ├────────────┤     ├────────────┤     ├────────────┤     ├────────────┤
-    │ Staked:    │     │ Staked:    │     │ Staked:    │     │ Staked:    │
-    │ 500 GHC    │     │ 300 GHC    │     │ 150 GHC    │     │  50 GHC    │
-    ├────────────┤     ├────────────┤     ├────────────┤     ├────────────┤
-    │ Index +=   │     │ Index +=   │     │ Index +=   │     │ Index +=   │
-    │ 20/500     │     │ 25/300     │     │ 30/150     │     │ 25/50      │
-    │ = 0.04     │     │ = 0.083    │     │ = 0.20     │     │ = 0.50     │
-    ├────────────┤     ├────────────┤     ├────────────┤     ├────────────┤
-    │ Effective  │     │ Effective  │     │ Effective  │     │ Effective  │
-    │ Rate: 4%   │     │ Rate: 8.3% │     │ Rate: 20%  │     │ Rate: 50%  │
-    └────────────┘     └────────────┘     └────────────┘     └────────────┘
-```
-
-### Result: Loyalty Pays
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   TIER-BASED DISTRIBUTION                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Alice (100 GHC, Bronze, 7 days)     ──▶  4 GHC interest       │
-│                                                                  │
-│   Bob (100 GHC, Diamond, 365 days)    ──▶  50 GHC interest      │
-│                                                                  │
-│           Same balance, but Bob gets 12.5x more!                 │
-│               (Because fewer users share Diamond pool)           │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+    USER UNSTAKES                           STAKERS RECEIVE
+    (Pays Penalty)                          (Earn Interest)
+         |                                        ^
+         |                                        |
+         v                                        |
+    +----------+       +-----------+       +-------------+
+    | 10% Fee  | ----> | INTEREST  | ----> | DISTRIBUTED |
+    | Collected|       |   POOL    |       | TO 4 TIERS  |
+    +----------+       +-----------+       +-------------+
+                            |
+                            v
+              +---------------------------+
+              |  Split by Tier Weights:   |
+              |  Bronze: 20%              |
+              |  Silver: 25%              |
+              |  Gold:   30%              |
+              |  Diamond: 25%             |
+              +---------------------------+
 ```
 
 ---
 
-## 4. How It Works
+## 2. Key Definitions
 
-### User Lifecycle Flow
+Before diving into the mechanics, here are the critical terms used throughout this document:
 
-```
-                                 USER JOURNEY
-═══════════════════════════════════════════════════════════════════
+### 2.1 Staking Age
 
- Day 1         Day 30         Day 90         Day 365
-   │             │              │               │
-   ▼             ▼              ▼               ▼
-┌──────┐     ┌──────┐       ┌──────┐       ┌──────────┐
-│BRONZE│────▶│SILVER│──────▶│ GOLD │──────▶│ DIAMOND  │
-└──────┘     └──────┘       └──────┘       └──────────┘
-   │             │              │               │
-   │  Automatic  │   Automatic  │   Automatic   │
-   │  Promotion  │   Promotion  │   Promotion   │
-   │             │              │               │
-   ▼             ▼              ▼               ▼
- 20% of       25% of         30% of         25% of
- pool         pool           pool           pool
- shared       shared         shared         shared
- among        among          among          among
- Bronze       Silver         Gold           Diamond
- stakers      stakers        stakers        stakers
+**Definition:** The amount of time (in days) that has passed since a user began staking.
+
+**Formula:**
+```text
+Staking_Age = Current_Time - Staking_Time
 ```
 
-### Step-by-Step: Interest Distribution
+**Purpose:** Determines which tier a user belongs to.
 
-```
-═══════════════════════════════════════════════════════════════════
-                    DISTRIBUTION FLOW
-═══════════════════════════════════════════════════════════════════
+**Example:**
+- User started staking on January 1, 2025
+- Today is April 15, 2025
+- Staking Age = 104 days
+- User qualifies for **Gold Tier** (90-365 days)
 
-Step 1: PENALTY COLLECTION
-─────────────────────────────────────────────────────────────────
-        User unstakes 100 GHC
-              │
-              ▼
-        ┌─────────────────┐
-        │ 10% Penalty     │
-        │ = 10 GHC        │
-        │ → interest_pool │
-        └─────────────────┘
+---
 
+### 2.2 Weighted Average Age
 
-Step 2: ADMIN TRIGGERS DISTRIBUTION
-─────────────────────────────────────────────────────────────────
-        distribute_interest() called
-              │
-              ▼
-        ┌─────────────────────────────────────────────┐
-        │  interest_pool = 100 GHC                    │
-        │                                             │
-        │  For each tier:                             │
-        │    tier_share = pool × tier_weight          │
-        │    tier_index += tier_share / tier_staked   │
-        └─────────────────────────────────────────────┘
-              │
-              ├──────▶ Bronze Index += 20/500 = 0.04
-              ├──────▶ Silver Index += 25/300 = 0.083
-              ├──────▶ Gold Index += 30/150 = 0.20
-              └──────▶ Diamond Index += 25/50 = 0.50
+**Definition:** A single number representing the "effective maturity" of a user's entire token balance, accounting for tokens deposited at different times.
 
+**Why Needed:** Users earn tokens daily from quizzes. Each batch of tokens has a different "birthday." Instead of tracking thousands of individual deposits, we calculate one weighted average.
 
-Step 3: SHARD SYNC (Every 5 seconds)
-─────────────────────────────────────────────────────────────────
-        ┌─────────────┐         ┌─────────────┐
-        │   Shard 1   │◀───────▶│ STAKING_HUB │
-        └─────────────┘         └─────────────┘
-              │
-              ▼
-        Receives: [bronze_idx, silver_idx, gold_idx, diamond_idx]
-        Stores locally for user calculations
-
-
-Step 4: USER INTEREST CALCULATION (Lazy)
-─────────────────────────────────────────────────────────────────
-        User views profile / claims rewards
-              │
-              ▼
-        ┌─────────────────────────────────────────────┐
-        │  1. Check if tier upgrade needed            │
-        │  2. If upgrading:                           │
-        │     - Calculate pending in old tier         │
-        │     - Add to unclaimed_interest             │
-        │     - Move to new tier                      │
-        │  3. Calculate current tier interest:        │
-        │     index_diff = current_idx - start_idx    │
-        │     interest = balance × index_diff         │
-        └─────────────────────────────────────────────┘
-
-
-Step 5: USER CLAIMS REWARDS
-─────────────────────────────────────────────────────────────────
-        claim_rewards() called
-              │
-              ▼
-        unclaimed_interest ──▶ staked_balance
-        unclaimed_interest = 0
+**Formula:**
+```text
+                    (staked_balance * Old_Age) + (New_Tokens * New_Age)
+Weighted_Avg_Age = --------------------------------------------------
+                              staked_balance + New_Tokens
 ```
 
-### Tier Upgrade Process
 
+
+
+Since new tokens always have Age = 0:
+
+User mines 5 coins (New_Tokens), before he had 
+```text
+                    (staked_balance * Staking_Age)
+Weighted_Avg_Age = --------------------------
+                    staked_balance + New_Tokens
+
+
+staking_time = Current_Time - Weighted_Avg_Age
 ```
-═══════════════════════════════════════════════════════════════════
-                    TIER UPGRADE FLOW
-═══════════════════════════════════════════════════════════════════
 
-User has been staking for 31 days (just passed Silver threshold)
+**How to Calculate Each Piece:**
 
-┌─────────────────────────────────────────────────────────────────┐
-│  BEFORE UPGRADE                                                  │
-│  ├─ current_tier: Bronze (0)                                    │
-│  ├─ staked_balance: 100 GHC                                     │
-│  ├─ tier_start_index: 0.50 (Bronze index when they joined)      │
-│  └─ Bronze current index: 0.90                                  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  UPGRADE DETECTION                                               │
-│  ├─ stake_duration = now - initial_stake_time = 31 days         │
-│  ├─ 31 days >= 30 days (Silver threshold)                       │
-│  └─ new_tier = Silver (1)                                       │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  CLAIM BRONZE INTEREST                                           │
-│  ├─ index_diff = 0.90 - 0.50 = 0.40                             │
-│  ├─ interest = 100 × 0.40 = 40 GHC                              │
-│  └─ unclaimed_interest += 40 GHC                                │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  MOVE TO SILVER                                                  │
-│  ├─ current_tier = Silver (1)                                   │
-│  ├─ tier_start_index = current Silver index (e.g., 1.20)        │
-│  └─ Queue tier delta for sync:                                  │
-│       Bronze: -100 GHC                                          │
-│       Silver: +100 GHC                                          │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  AFTER UPGRADE                                                   │
-│  ├─ current_tier: Silver (1)                                    │
-│  ├─ staked_balance: 100 GHC (unchanged)                         │
-│  ├─ tier_start_index: 1.20 (Silver index at upgrade time)       │
-│  └─ unclaimed_interest: 40 GHC (from Bronze period)             │
-└─────────────────────────────────────────────────────────────────┘
+| Component | What It Is | How to Get It |
+|-----------|------------|---------------|
+| `staking_time` | Timestamp representing a virtual(averagge) age of tokens | Read from user profile (recalculated after each deposit) |
+| `staked_balance` | Tokens already staked | Read from user profile |
+| `Staking_Age` | Duration (days) since staking began | Calculate: `Current_Time - staking_time` |
+| `New_Tokens` | Tokens being added now | The amount earned from quiz |
+| `New_Age` | Age of new tokens | Always 0 (brand new) |
+
+**Data Storage Reference:**
+```text
++=====================+============================+==========================================+
+|     DATA ITEM       |     WHERE STORED           |     NOTES                                 |
++=====================+============================+==========================================+
+| staking_time        | user_profile canister      | Recalculated and updated after deposit    |
+| staked_balance      | user_profile canister      | Updated after each deposit                |
+| Staking_Age         | Runtime calculation        | = Current_Time - staking_time             |
+| Weighted_Avg_Age    | Runtime calculation        | Used to update staking_time               |
+| Current_Time        | System clock (ic_cdk::time)| Always "now"                              |
++=====================+============================+===========================================+
+```
+
+**Example: Growing from Zero (Step-by-Step Daily Deposits)**
+```text
++=======================================================================+
+|                 DAY 1: USER'S FIRST DEPOSIT                           |
++=======================================================================+
+
+BEFORE (from user_profile canister):
+  staked_balance     = 0 GHC     (no prior balance)
+  staking_time       = 0         (never staked before)
+
+EVENT: User earns 5 GHC from their first quiz
+
+CALCULATION:
+  This is the FIRST deposit, so:
+  - No weighted average needed
+  - staking_time is set to NOW (Day 1)
+
+AFTER UPDATE (written to user_profile canister):
+  ┌─────────────────────────────────────────┐
+  │ staked_balance     = 5 GHC              │ ← STORED
+  │ staking_time       = Day 1              │ ← STORED
+  └─────────────────────────────────────────┘
+
++=======================================================================+
+|                 DAY 2: SECOND DEPOSIT                                 |
++=======================================================================+
+
+BEFORE (from user_profile canister):
+  staked_balance     = 5 GHC
+  staking_time       = Day 1
+
+EVENT: User earns 5 GHC from today's quiz
+  Current_Time       = Day 2
+  New_Tokens         = 5 GHC
+
+STEP 1: Calculate Staking_Age
+  Staking_Age = Current_Time - staking_time
+          = Day 2 - Day 1
+          = 1 day
+
+STEP 2: Calculate Coin-Days (numerator)
+  Coin_Days = staked_balance * Staking_Age
+            = 5 * 1
+            = 5 coin-days
+
+STEP 3: Calculate New Total Balance (denominator)
+  New_Balance = staked_balance + New_Tokens
+              = 5 + 5
+              = 10 GHC
+
+STEP 4: Calculate Weighted Average Age
+  Weighted_Avg_Age = Coin_Days / New_Balance
+                   = 5 / 10
+                   = 0.5 days
+
+STEP 5: Convert Age back to Timestamp
+  new_staking_time = Current_Time - Weighted_Avg_Age
+                         = Day 2 - 0.5
+                         = Day 1.5
+
+AFTER UPDATE (written to user_profile canister):
+  ┌─────────────────────────────────────────┐
+  │ staked_balance     = 10 GHC             │ ← STORED
+  │ staking_time       = Day 1.5            │ ← STORED (drifted +0.5)
+  └─────────────────────────────────────────┘
+
++=======================================================================+
+|                 DAY 3: THIRD DEPOSIT                                  |
++=======================================================================+
+
+BEFORE (from user_profile canister):
+  staked_balance     = 10 GHC
+  staking_time       = Day 1.5
+
+EVENT: User earns 5 GHC from today's quiz
+  Current_Time       = Day 3
+  New_Tokens         = 5 GHC
+
+STEP 1: Calculate Staking_Age
+  Staking_Age = Day 3 - Day 1.5 = 1.5 days
+
+STEP 2: Calculate Coin-Days
+  Coin_Days = 10 * 1.5 = 15 coin-days
+
+STEP 3: Calculate New Total Balance
+  New_Balance = 10 + 5 = 15 GHC
+
+STEP 4: Calculate Weighted Average Age
+  Weighted_Avg_Age = 15 / 15 = 1.0 day
+
+STEP 5: Convert to Timestamp
+  new_staking_time = Day 3 - 1.0 = Day 2
+
+AFTER UPDATE (written to user_profile canister):
+  ┌─────────────────────────────────────────┐
+  │ staked_balance     = 15 GHC             │ ← STORED
+  │ staking_time       = Day 2              │ ← STORED (drifted +0.5)
+  └─────────────────────────────────────────┘
+
++=======================================================================+
+|                 DAY 10: PATTERN CONTINUES                             |
++=======================================================================+
+
+Let's fast-forward to see the accumulated effect:
+
+BEFORE (from user_profile canister):
+  staked_balance     = 45 GHC    (9 days × 5 GHC)
+  staking_time = Day 5.5   (drifted from Day 1)
+
+EVENT: User earns 5 GHC from today's quiz
+  Current_Time = Day 10
+  New_Tokens   = 5 GHC
+
+STEP 1: Calculate Staking_Age
+  Staking_Age = Day 10 - Day 5.5 = 4.5 days
+
+STEP 2: Calculate Coin-Days
+  Coin_Days = 45 * 4.5 = 202.5 coin-days
+
+STEP 3: Calculate New Total Balance
+  New_Balance = 45 + 5 = 50 GHC
+
+STEP 4: Calculate Weighted Average Age
+  Weighted_Avg_Age = 202.5 / 50 = 4.05 days
+
+STEP 5: Convert to Timestamp
+  new_staking_time = Day 10 - 4.05 = Day 5.95
+
+AFTER UPDATE (written to user_profile canister):
+  ┌─────────────────────────────────────────┐
+  │ staked_balance     = 50 GHC             │ ← STORED
+  │ staking_time = Day 5.95           │ ← STORED (drifted +0.45)
+  └─────────────────────────────────────────┘
+
++=======================================================================+
+|                 DAY 100: LONG-TERM VIEW                               |
++=======================================================================+
+
+After 100 daily deposits of 5 GHC each:
+
+BEFORE (from user_profile canister):
+  staked_balance     = 495 GHC
+  staking_time = Day 50.25 (drifted from Day 1)
+
+EVENT: User earns 5 GHC from today's quiz
+  Current_Time = Day 100
+  New_Tokens   = 5 GHC
+
+STEP 1: Calculate Staking_Age
+  Staking_Age = Day 100 - Day 50.25 = 49.75 days
+
+STEP 2: Calculate Coin-Days
+  Coin_Days = 495 * 49.75 = 24,626.25 coin-days
+
+STEP 3: Calculate New Total Balance
+  New_Balance = 495 + 5 = 500 GHC
+
+STEP 4: Calculate Weighted Average Age
+  Weighted_Avg_Age = 24,626.25 / 500 = 49.25 days
+
+STEP 5: Convert to Timestamp
+  new_staking_time = Day 100 - 49.25 = Day 50.75
+
+AFTER UPDATE (written to user_profile canister):
+  ┌─────────────────────────────────────────┐
+  │ staked_balance     = 500 GHC            │ ← STORED
+  │ staking_time = Day 50.75          │ ← STORED (drifted +0.50)
+  └─────────────────────────────────────────┘
+
++=======================================================================+
+|                 OBSERVATION                                           |
++=======================================================================+
+
+Even after 100 days of continuous daily deposits:
+- The effective staking age is ~49.25 days (almost exactly half!)
+- Each new deposit only reduces the age by ~0.5 days
+- The user's tier: SILVER (30-90 days) ← Not Bronze!
+
+This shows why the weighted average age is important:
+Without it, adding ANY new tokens would either:
+- Reset age to 0 (unfair to loyal users)
+- Keep age unchanged (unfair to the system)
+
+The weighted average strikes a balance that rewards consistent participation.
+```
+
+**Why Not Track Each Batch Separately?**
+
+You might ask: *"Why not just record each deposit as a separate entry and calculate interest for each one individually?"*
+
+Here's why that approach is **not feasible**:
+
+```text
++=======================================================================+
+|         ALTERNATIVE APPROACH: PER-BATCH TRACKING (INFEASIBLE)         |
++=======================================================================+
+
+SCENARIO: User earns 5 GHC daily for 1 year
+
+STORAGE REQUIRED (in user_profile canister):
+┌──────────────────────────────────────────────────────────────────────┐
+│  Instead of 2 fields (staked_balance, staking_time), you need: │
+│                                                                      │
+│  deposits: Vec<Deposit> = [                                          │
+│    { amount: 5, timestamp: Day 1   },   ← Record #1                  │
+│    { amount: 5, timestamp: Day 2   },   ← Record #2                  │
+│    { amount: 5, timestamp: Day 3   },   ← Record #3                  │
+│    ...                                                               │
+│    { amount: 5, timestamp: Day 365 },   ← Record #365                │
+│  ]                                                                   │
+│                                                                      │
+│  STORAGE COST PER USER:                                              │
+│  - Weighted Average: ~16 bytes (1 u64 balance + 1 u64 timestamp)     │
+│  - Per-Batch:        ~5,840 bytes (365 × 16 bytes) for Year 1 ONLY   │
+│                                                                      │
+│  For 1 million users over 5 years:                                   │
+│  - Weighted Average: 16 MB total                                     │
+│  - Per-Batch:        29.2 GB total (1825 records × 16 bytes × 1M)    │
+└──────────────────────────────────────────────────────────────────────┘
+
+COMPUTATION REQUIRED (on every interest calculation):
+┌──────────────────────────────────────────────────────────────────────┐
+│  WEIGHTED AVERAGE APPROACH:                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │ fn calculate_interest(user):                                    │ │
+│  │   age = now - user.staking_time        // 1 subtraction  │ │
+│  │   tier = get_tier(age)                       // 1 lookup       │ │
+│  │   index_diff = global_index - user.last_index                  │ │
+│  │   interest = user.staked_balance * index_diff                  │ │
+│  │   return interest                                               │ │
+│  │                                                                 │ │
+│  │   TIME COMPLEXITY: O(1) - constant time                        │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  PER-BATCH APPROACH:                                                 │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │ fn calculate_interest(user):                                    │ │
+│  │   total_interest = 0                                            │ │
+│  │   for deposit in user.deposits:      // Loop 365+ times/year   │ │
+│  │     age = now - deposit.timestamp                               │ │
+│  │     tier = get_tier(age)             // Could be different!    │ │
+│  │     index = get_tier_index(tier)     // Fetch per deposit      │ │
+│  │     interest = deposit.amount * (index - deposit.last_index)   │ │
+│  │     total_interest += interest                                  │ │
+│  │   return total_interest                                         │ │
+│  │                                                                 │ │
+│  │   TIME COMPLEXITY: O(n) - grows with every deposit             │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+
+ADDITIONAL COMPLEXITY:
+┌──────────────────────────────────────────────────────────────────────┐
+│  1. TIER TRANSITIONS PER BATCH                                       │
+│     Each deposit ages independently. On Day 100:                     │
+│     - Deposit from Day 1 is 99 days old (GOLD tier)                 │
+│     - Deposit from Day 70 is 30 days old (SILVER tier)              │
+│     - Deposit from Day 100 is 0 days old (BRONZE tier)              │
+│                                                                      │
+│     You'd need to track SEPARATE tier indexes for EACH deposit,     │
+│     and update them whenever a deposit crosses a tier boundary.      │
+│                                                                      │
+│  2. INTER-CANISTER CALL EXPLOSION                                    │
+│     Each deposit may need its own sync with staking_hub to:         │
+│     - Register in the correct tier's total_staked                   │
+│     - Track its own reward index snapshot                           │
+│                                                                      │
+│     365 deposits = 365 potential sync operations per year!          │
+│                                                                      │
+│  3. UNSTAKING NIGHTMARE                                              │
+│     When user unstakes, which deposits do you remove first?         │
+│     FIFO? LIFO? Oldest (highest tier) first? Newest first?          │
+│     Each choice has different economic implications.                 │
+└──────────────────────────────────────────────────────────────────────┘
+
+COMPARISON SUMMARY:
+┌────────────────────┬──────────────────────┬──────────────────────────┐
+│ Metric             │ Weighted Average     │ Per-Batch Tracking       │
+├────────────────────┼──────────────────────┼──────────────────────────┤
+│ Storage per user   │ O(1) - 16 bytes      │ O(n) - 16 bytes × days   │
+│ Interest calc time │ O(1) - constant      │ O(n) - linear in deposits│
+│ Tier tracking      │ 1 tier per user      │ n tiers (1 per deposit)  │
+│ Sync operations    │ 1 per deposit event  │ n per interest calc      │
+│ Code complexity    │ Simple               │ Very complex             │
+│ Unstaking logic    │ Single deduction     │ Multi-record management  │
+└────────────────────┴──────────────────────┴──────────────────────────┘
+
+CONCLUSION:
+The weighted average approach trades a small amount of precision
+(~0.5 day drift per deposit) for massive gains in:
+- Storage efficiency (1800x less data)
+- Computational efficiency (O(1) vs O(n))
+- Code simplicity and maintainability
+- Predictable gas/cycle costs
+
+This is why virtually all staking systems use a weighted average or
+similar aggregation technique rather than tracking individual deposits.
 ```
 
 ---
 
-## 5. Architecture
+### 2.3 Coin-Days
 
-### Global State (staking_hub)
+**Definition:** A unit measuring the "investment weight" of tokens over time.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        STAKING HUB                               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   GlobalStats {                                                  │
-│       total_staked: u64,                                        │
-│       interest_pool: u64,                                       │
-│       total_unstaked: u64,                                      │
-│       total_allocated: u64,                                     │
-│       total_rewards_distributed: u64,                           │
-│                                                                  │
-│       // NEW: Per-tier tracking                                  │
-│       tier_staked: [u64; 4],           // [Bronze, Silver, ...]  │
-│       tier_reward_indexes: [u128; 4],  // Scaled by 1e18        │
-│   }                                                              │
-│                                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│   │ tier_staked │  │tier_indexes │  │interest_pool│             │
-│   ├─────────────┤  ├─────────────┤  ├─────────────┤             │
-│   │[0]: 500 GHC │  │[0]: 1.5e18  │  │   100 GHC   │             │
-│   │[1]: 300 GHC │  │[1]: 2.1e18  │  │             │             │
-│   │[2]: 150 GHC │  │[2]: 3.8e18  │  │ (pending    │             │
-│   │[3]:  50 GHC │  │[3]: 9.2e18  │  │  distribution)            │
-│   └─────────────┘  └─────────────┘  └─────────────┘             │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+**Formula:**
+```text
+Coin_Days = Number_of_Tokens * Days_Held
 ```
 
-### Per-User State (user_profile shard)
+**Example:**
+- 100 tokens held for 10 days = 1,000 Coin-Days
+- 10 tokens held for 100 days = 1,000 Coin-Days
+- Both have equal "investment weight" to the system
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      USER PROFILE SHARD                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   UserProfile {                                                  │
-│       // Existing fields                                         │
-│       staked_balance: u64,                                      │
-│       unclaimed_interest: u64,                                  │
-│       transaction_count: u64,                                   │
-│                                                                  │
-│       // NEW: Tier tracking                                      │
-│       current_tier: u8,          // 0=Bronze, 1=Silver, etc.    │
-│       tier_start_index: u128,    // Index when entered tier     │
-│       initial_stake_time: u64,   // First stake timestamp       │
-│       last_tier_check: u64,      // Last upgrade check          │
-│   }                                                              │
-│                                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Thread-Local Storage:                                          │
-│   ┌─────────────────────────────────────────────────────────┐   │
-│   │ TIER_REWARD_INDEXES: [u128; 4]                          │   │
-│   │   (synced from hub every 5 seconds)                     │   │
-│   ├─────────────────────────────────────────────────────────┤   │
-│   │ PENDING_TIER_DELTAS: [i64; 4]                           │   │
-│   │   (batched for sync: [+5, -3, +2, 0])                   │   │
-│   └─────────────────────────────────────────────────────────┘   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+**Purpose:** Used as the numerator when calculating Weighted Average Age.
 
-### Sync Protocol
+---
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        SYNC PROTOCOL                             │
-└─────────────────────────────────────────────────────────────────┘
+### 2.4 Tier
 
-     USER_PROFILE SHARD                         STAKING_HUB
-            │                                        │
-            │  sync_shard_v2(                        │
-            │    staked_delta: i64,                  │
-            │    unstaked_delta: u64,                │
-            │    tier_deltas: [i64; 4],  ◄─── NEW    │
-            │    requested_allowance: u64            │
-            │  )                                     │
-            │ ─────────────────────────────────────▶ │
-            │                                        │
-            │                                        │  Update:
-            │                                        │  - tier_staked[i] += delta[i]
-            │                                        │  - total_staked += sum(deltas)
-            │                                        │
-            │  Result<(                              │
-            │    granted_allowance: u64,             │
-            │    tier_indexes: [u128; 4]  ◄─── NEW   │
-            │  ), Error>                             │
-            │ ◀───────────────────────────────────── │
-            │                                        │
-            │  Store tier_indexes locally            │
-            │  for interest calculations             │
-            │                                        │
+**Definition:** One of four categories that users are sorted into based on their Staking Age.
+
+```text
++===========+================+==============+
+|   TIER    |  REQUIRED AGE  |  POOL SHARE  |
++===========+================+==============+
+|  Bronze   |   0 - 30 days  |     20%      |
++-----------+----------------+--------------+
+|  Silver   |  30 - 90 days  |     25%      |
++-----------+----------------+--------------+
+|  Gold     | 90 - 365 days  |     30%      |
++-----------+----------------+--------------+
+|  Diamond  |    365+ days   |     25%      |
++-----------+----------------+--------------+
 ```
 
 ---
 
-## 7. Why Separate Pools Per Tier?
+### 2.5 Pool Share (Tier Weight)
 
-### The Mathematical Problem
+**Definition:** The fixed percentage of the total Interest Pool allocated to a specific tier.
 
-With a **single global pool**, applying multipliers breaks the zero-sum property:
+**Important:** This is NOT the APY. This is the slice of the pie that goes to that tier's room. The actual APY depends on how many people are in that room.
 
-```
-═══════════════════════════════════════════════════════════════════
-              BROKEN: SINGLE POOL WITH MULTIPLIERS
-═══════════════════════════════════════════════════════════════════
+---
 
-Pool = 100 GHC
-Total Staked = 200 GHC
+### 2.6 Global Reward Index
 
-User A: 100 GHC × 1.0x multiplier = 100 effective
-User B: 100 GHC × 2.0x multiplier = 200 effective
+**Definition:** A cumulative counter that tracks "total earnings per token" for each tier since the system began.
 
-Naive calculation:
-  A's share = 100 × (100/200) × 1.0 = 50 GHC
-  B's share = 100 × (100/200) × 2.0 = 100 GHC
-                                      ─────────
-  Total distributed:                  150 GHC  ❌
-
-  WE DISTRIBUTED 50 GHC MORE THAN THE POOL!
+**Formula:**
+```text
+Index_Increase = Tier_Pool_Amount / Tier_Total_Staked
+New_Index = Old_Index + Index_Increase
 ```
 
-### The Solution: Isolated Tier Pools
+**Purpose:** Allows O(1) interest calculation for millions of users without iterating through each one.
 
+---
+
+### 2.7 Interest Pool
+
+**Definition:** The accumulated GHC tokens collected from unstaking penalties, waiting to be distributed.
+
+**Source:** 10% penalty applied when any user unstakes.
+
+---
+
+## 3. The Zero-Sum Economic Model
+
+### 3.1 Why Zero-Sum?
+
+The system is intentionally designed so that **total tokens never increase**. Every token paid as interest was first taken from someone else as a penalty.
+
+```text
++=======================================================================+
+|                         ZERO-SUM PRINCIPLE                             |
++=======================================================================+
+
+  BEFORE DISTRIBUTION:
+  +------------------+------------------+------------------+
+  |  User A (Staker) |  User B (Staker) |  Interest Pool   |
+  |    1,000 GHC     |    1,000 GHC     |     100 GHC      |
+  +------------------+------------------+------------------+
+  TOTAL IN SYSTEM: 2,100 GHC
+
+  AFTER DISTRIBUTION (50/50 split for simplicity):
+  +------------------+------------------+------------------+
+  |  User A (Staker) |  User B (Staker) |  Interest Pool   |
+  |    1,050 GHC     |    1,050 GHC     |       0 GHC      |
+  +------------------+------------------+------------------+
+  TOTAL IN SYSTEM: 2,100 GHC  <-- UNCHANGED!
+
+  The 100 GHC moved from the pool to the users.
+  No new tokens were created.
 ```
-═══════════════════════════════════════════════════════════════════
-              CORRECT: SEPARATE POOLS PER TIER
-═══════════════════════════════════════════════════════════════════
 
-Pool = 100 GHC
-├── Bronze Pool: 40 GHC (40%)
-└── Diamond Pool: 60 GHC (60%)
+### 3.2 The Source of Funds: Penalties
 
-Bronze Tier:
-  User A: 100 GHC staked
-  Other Bronze users: 300 GHC staked
-  Total Bronze: 400 GHC
+Every time a user unstakes, they pay a penalty:
+
+```text
+  User requests to unstake 1,000 GHC
+           |
+           v
+  +-------------------+
+  | Apply 10% Penalty |
+  +-------------------+
+           |
+           +---> 900 GHC returned to user's wallet
+           |
+           +---> 100 GHC sent to Interest Pool
+```
+
+### 3.3 Why This Matters
+
+- **Guaranteed Solvency:** The system can never "run out" of money to pay interest
+- **No Inflation:** Token supply stays constant, protecting value
+- **Fair Redistribution:** Those who leave early subsidize those who stay
+
+---
+
+## 4. Tier System Architecture
+
+### 4.1 The "Four Rooms" Concept
+
+Think of the system as a building with 4 separate rooms. Each room receives a fixed delivery of rewards, but the rewards are shared among everyone in that room.
+
+```text
++=======================================================================+
+|                    THE FOUR ROOMS (TIERS)                              |
++=======================================================================+
+
+                        INTEREST POOL: 1,000 GHC
+                               | 
+           +-------------------+-------------------+-------------------+
+           |                   |                   |                   |
+           v                   v                   v                   v
+    +-----------+       +-----------+       +-----------+       +-----------+
+    |  BRONZE   |       |  SILVER   |       |   GOLD    |       |  DIAMOND  |
+    |   ROOM    |       |   ROOM    |       |   ROOM    |       |   ROOM    |
+    +-----------+       +-----------+       +-----------+       +-----------+
+    |  Gets 20% |       |  Gets 25% |       |  Gets 30% |       |  Gets 25% |
+    |  200 GHC  |       |  250 GHC  |       |  300 GHC  |       |  250 GHC  |
+    +-----------+       +-----------+       +-----------+       +-----------+
+    | Population|       | Population|       | Population|       | Population|
+    | 10,000    |       |  5,000    |       |  2,000    |       |    500    |
+    | stakers   |       |  stakers  |       |  stakers  |       |  stakers  |
+    +-----------+       +-----------+       +-----------+       +-----------+
+    |Per Person:|       |Per Person:|       |Per Person:|       |Per Person:|
+    | 0.02 GHC  |       | 0.05 GHC  |       | 0.15 GHC  |       | 0.50 GHC  |
+    +-----------+       +-----------+       +-----------+       +-----------+
+         ^                                                            ^
+         |                                                            |
+         +-------- SAME POOL SHARE CAN MEAN VERY DIFFERENT YIELD -----+
+```
+
+
+
+### 4.3 The "Effective Multiplier" 
+
+The difference in yield between tiers is achieved through the**population scarcity of the tier**.
+
+```text
++=======================================================================+
+|                    EFFECTIVE MULTIPLIER EXAMPLE                        |
++=======================================================================+
+
+  ASSUMPTIONS:
+  - Total Interest Pool: 1,000 GHC
+  - Each tier receives its fixed share
+
+  BRONZE TIER:
+  - Pool Share: 200 GHC
+  - Total Staked in Tier: 100,000 GHC
+  - Yield per Token: 200 / 100,000 = 0.002 GHC (0.2%)
+
+  DIAMOND TIER:
+  - Pool Share: 250 GHC  
+  - Total Staked in Tier: 1,000 GHC (very few long-term holders)
+  - Yield per Token: 250 / 1,000 = 0.25 GHC (25%)
+
+  EFFECTIVE MULTIPLIER:
+  Diamond Yield / Bronze Yield = 0.25 / 0.002 = 125x
+
+  CONCLUSION:
+  Diamond users earn 125 TIMES more per token than Bronze users,
+  even though the pool allocation is similar (25% vs 20%).
+```
+
+---
+
+## 5. Staking Age Calculation
+
+### 5.1 The Simple Case (Single Deposit)
+
+If a user makes one deposit and never adds more, the age calculation is simple:
+
+```text
+  Staking_Age = Current_Time - Staking_Time
+
+  EXAMPLE:
+  - Staking_Time: Day 0 (January 1, 2025)
+  - Current_Time: Day 100 (April 11, 2025)
+  - Staking_Age: 100 days
+  - Tier: GOLD (90-365 days)
+```
+
+### 5.2 The Complex Case (Daily Earnings)
+
+Users earn ~5 GHC per day from quizzes. Each day's earnings have a different "birthday":
+
+```text
+  DAY 0:   Earn 5 GHC   (Age: 100 days by Day 100)
+  DAY 1:   Earn 5 GHC   (Age: 99 days by Day 100)
+  DAY 2:   Earn 5 GHC   (Age: 98 days by Day 100)
+  ...
+  DAY 99:  Earn 5 GHC   (Age: 1 day by Day 100)
+  DAY 100: Earn 5 GHC   (Age: 0 days)
+```
+
+**Problem:** Tracking 100 separate deposit records is not efficient.
+
+**Solution:** Use a single "Virtual Timestamp" that represents the weighted average.
+
+---
+
+## 6. Weighted Average Age Formula
+
+### 6.1 The Core Formula
+
+When a user deposits new tokens, we recalculate their "Virtual Start Date":
+
+```text
+FORMULA:
+
+                     (Current_Balance * Staking_Age)
+New_Average_Age  =  ----------------------------------
+                     (Current_Balance + Amount_Added)
+
+WHERE:
+- Current_Balance: Tokens already staked
+- Staking_Age: Days since staking_time (calculated as Now - Staking_Time)
+- Amount_Added: New tokens being deposited (always Age = 0)
+```
+
+### 6.2 Formula Breakdown (Each Piece Explained)
+
+```text
++=======================================================================+
+|                    FORMULA COMPONENT BREAKDOWN                         |
++=======================================================================+
+
+NUMERATOR: (Current_Balance * Staking_Age)
++-----------------------------------------------------------------------+
+| This calculates the total "Coin-Days" you have accumulated.           |
+|                                                                       |
+| Example:                                                              |
+| - You have 100 tokens                                                 |
+| - They are 50 days old                                                |
+| - Coin-Days = 100 * 50 = 5,000                                        |
+|                                                                       |
+| This number represents your "Investment Weight" or "Loyalty Score"    |
++-----------------------------------------------------------------------+
+
+DENOMINATOR: (Current_Balance + Amount_Added)
++-----------------------------------------------------------------------+
+| This is simply your NEW total balance after the deposit.              |
+|                                                                       |
+| Example:                                                              |
+| - Old balance: 100 tokens                                             |
+| - New deposit: 100 tokens                                             |
+| - New total: 200 tokens                                               |
++-----------------------------------------------------------------------+
+
+THE DIVISION:
++-----------------------------------------------------------------------+
+| We spread the existing Coin-Days across the new larger balance.       |
+|                                                                       |
+| Example:                                                              |
+| - Coin-Days: 5,000                                                    |
+| - New Balance: 200                                                    |
+| - New Average Age: 5,000 / 200 = 25 days                              |
+|                                                                       |
+| Your effective age DROPPED from 50 days to 25 days because you        |
+| added tokens that are 0 days old.                                     |
++-----------------------------------------------------------------------+
+```
+
+### 6.3 Visual Representation
+
+```text
++=======================================================================+
+|                    BEFORE DEPOSIT                                      |
++=======================================================================+
+     
+  TOKEN PILE:  [████████████████████] 100 Tokens
+  AGE:         50 Days Old
+  COIN-DAYS:   100 * 50 = 5,000
+  TIER:        SILVER (30-90 days)
+
++=======================================================================+
+|                    DEPOSIT 100 NEW TOKENS                              |
++=======================================================================+
+
+  OLD PILE:    [████████████████████] 100 Tokens @ 50 days = 5,000 coin-days
+  NEW PILE:    [████████████████████] 100 Tokens @  0 days =     0 coin-days
+               ─────────────────────────────────────────────────────────────
+  COMBINED:    [████████████████████████████████████████] 200 Tokens
+  TOTAL COIN-DAYS: 5,000 + 0 = 5,000
+
++=======================================================================+
+|                    AFTER CALCULATION                                   |
++=======================================================================+
+
+  NEW AVERAGE AGE:  5,000 / 200 = 25 days
   
-  A's share = 40 × (100/400) = 10 GHC ✓
+  TIER:        BRONZE (0-30 days)  <-- DROPPED FROM SILVER!
+```
 
-Diamond Tier:
-  User B: 100 GHC staked
-  Other Diamond users: 100 GHC staked
-  Total Diamond: 200 GHC
+### 6.4 Converting Age to Virtual Timestamp
+
+After calculating the new age, we store it as a timestamp:
+
+```text
+  New_Staking_Time = Current_Time - New_Average_Age
+
+  EXAMPLE:
+  - Current Day: Day 100
+  - New Average Age: 25 days
+  - New Virtual Start: Day 100 - 25 = Day 75
+
+  The system now thinks this user "started staking" on Day 75,
+  even though they actually started on Day 0.
+```
+
+---
+
+## 7. Interest Distribution Mechanics
+
+### 7.1 The Distribution Trigger
+
+An admin (or automated timer) calls `distribute_interest()` to process the accumulated penalty pool.
+
+```text
++=======================================================================+
+|                    DISTRIBUTION TRIGGER                                |
++=======================================================================+
+
+  BEFORE DISTRIBUTION:
+  +-------------------------------------------+
+  |  INTEREST POOL                            |
+  |  Accumulated from penalties: 10,000 GHC   |
+  +-------------------------------------------+
+
+  ADMIN CALLS:  distribute_interest()
+
+  AFTER DISTRIBUTION:
+  +-------------------------------------------+
+  |  INTEREST POOL                            |
+  |  Remaining: 0 GHC                         |
+  +-------------------------------------------+
   
-  B's share = 60 × (100/200) = 30 GHC ✓
-
-Total distributed: 10 + 30 + (other users) = 100 GHC ✓
-
-EXACTLY THE POOL AMOUNT — NO INFLATION!
+  WHERE DID THE 10,000 GHC GO? The balance of interest pool was reset to zero and indexes were updated allowing users to earn interest again based on updated indexes.
+  - Bronze Index increased
+  - Silver Index increased  
+  - Gold Index increased
+  - Diamond Index increased
 ```
 
-### Benefits of Separate Pools
+### 7.2 The Split Process
 
-| Benefit | Explanation |
-|---------|-------------|
-| **Zero-Sum Guarantee** | Total distributed = Total collected (always) |
-| **No Inflation** | No new tokens created, just redistribution |
-| **Transparent Rates** | Each tier's effective APY is calculable |
-| **Isolated Risk** | One tier's behavior doesn't affect other tiers |
-| **Simple Auditing** | Sum of tier distributions = pool amount |
+```text
++=======================================================================+
+|                    INTEREST POOL SPLITTING                             |
++=======================================================================+
+
+                        INTEREST POOL: 10,000 GHC
+                                  |
+                                  v
+              +-------------------------------------------+
+              |           APPLY TIER WEIGHTS              |
+              +-------------------------------------------+
+                                  |
+        +------------+------------+------------+------------+
+        |            |            |            |            |
+        v            v            v            v            v
+  +---------+  +---------+  +---------+  +---------+
+  | BRONZE  |  | SILVER  |  |  GOLD   |  | DIAMOND |
+  |  20%    |  |  25%    |  |  30%    |  |  25%    |
+  +---------+  +---------+  +---------+  +---------+
+  |2,000 GHC|  |2,500 GHC|  |3,000 GHC|  |2,500 GHC|
+  +---------+  +---------+  +---------+  +---------+
+```
+
+### 7.3 Index Update for Each Tier
+
+After splitting, each tier's Global Reward Index is updated:
+
+```text
++=======================================================================+
+|                    INDEX UPDATE CALCULATION                            |
++=======================================================================+
+
+FOR EACH TIER:
+
+  Index_Increase = Tier_Pool_Amount / Tier_Total_Staked
+
+EXAMPLE CALCULATIONS:
+
+  BRONZE TIER:
+  +----------------------------------+
+  | Pool Amount: 2,000 GHC           |
+  | Total Staked: 1,000,000 GHC      |
+  | Index Increase: 2,000/1,000,000  |
+  |               = 0.002            |
+  +----------------------------------+
+
+  SILVER TIER:
+  +----------------------------------+
+  | Pool Amount: 2,500 GHC           |
+  | Total Staked: 500,000 GHC        |
+  | Index Increase: 2,500/500,000    |
+  |               = 0.005            |
+  +----------------------------------+
+
+  GOLD TIER:
+  +----------------------------------+
+  | Pool Amount: 3,000 GHC           |
+  | Total Staked: 100,000 GHC        |
+  | Index Increase: 3,000/100,000    |
+  |               = 0.03             |
+  +----------------------------------+
+
+  DIAMOND TIER:
+  +----------------------------------+
+  | Pool Amount: 2,500 GHC           |
+  | Total Staked: 10,000 GHC         |
+  | Index Increase: 2,500/10,000     |
+  |               = 0.25             |
+  +----------------------------------+
+```
 
 ---
 
-## 8. Comparison with Alternatives
+## 8. The Global Reward Index
 
-### Alternative 1: Centralized Effective Staked
+### 8.1 What Is It?
 
-**Approach:** Track `total_effective_staked = Σ(balance × multiplier)` globally.
+The Global Reward Index is a **cumulative counter** that only ever increases. It represents the total earnings-per-token since the system began.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│              CENTRALIZED EFFECTIVE STAKED                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   index_increase = pool / total_effective_staked                 │
-│   user_interest = (balance × multiplier) × index_increase        │
-│                                                                  │
-│   Problem: Multipliers change continuously!                      │
-│                                                                  │
-│   Time ────────────────────────────────────────────▶            │
-│                                                                  │
-│   total_staked:           ━━━━━━━━━━━━━━━━━━━━━━                │
-│                           (stable between stakes)                │
-│                                                                  │
-│   total_effective:        ╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱                  │
-│                           (constantly increasing!)               │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```text
++=======================================================================+
+|                    INDEX OVER TIME                                     |
++=======================================================================+
+
+  TIME  -->  Distribution 1  -->  Distribution 2  -->  Distribution 3
+
+  BRONZE INDEX:
+  [0.000] -----> [0.002] ---------> [0.004] ---------> [0.007]
+                 +0.002              +0.002              +0.003
+
+  DIAMOND INDEX:
+  [0.000] -----> [0.250] ---------> [0.480] ---------> [0.750]
+                 +0.250              +0.230              +0.270
+
+  NOTE: Diamond index grows MUCH faster because fewer tokens share the pool.
 ```
 
-**Problems:**
+### 8.2 Why Use an Index Instead of Per-User Updates?
 
-| Issue | Severity | Description |
-|-------|----------|-------------|
-| **Sync Frequency** | 🔴 Critical | Need continuous sync as multipliers grow |
-| **State Drift** | 🔴 Critical | Global total becomes stale between syncs |
-| **Scalability** | 🔴 Critical | O(n) recalculation on every change |
-| **Complexity** | 🟠 High | Each shard must track effective totals |
-
-### Alternative 2: Epoch-Based Snapshots
-
-**Approach:** Freeze multipliers at epoch boundaries (e.g., weekly).
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   EPOCH-BASED SNAPSHOTS                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Week 1: Snapshot all user multipliers                          │
-│           │                                                      │
-│           ▼                                                      │
-│   ┌───────────────────┐                                         │
-│   │ Alice: 1.2x       │  Frozen for entire week                 │
-│   │ Bob:   1.8x       │                                         │
-│   │ Carol: 2.0x       │                                         │
-│   └───────────────────┘                                         │
-│           │                                                      │
-│           ▼  (distribute based on snapshots)                    │
-│                                                                  │
-│   Week 2: Re-snapshot with updated multipliers                   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+**Without Index (O(n) - Slow):**
+```text
+  For every distribution:
+    For every user (could be millions):
+      Calculate their share
+      Update their balance
+  
+  TIME COMPLEXITY: O(n) per distribution, n is the number of users
+  PROBLEM: Doesn't scale
 ```
 
-**Problems:**
-
-| Issue | Severity | Description |
-|-------|----------|-------------|
-| **Delayed Updates** | 🟠 Medium | Users wait until epoch for new multiplier |
-| **Gaming Risk** | 🟠 Medium | Users time stakes around snapshot dates |
-| **UX Confusion** | 🟡 Low | "Why hasn't my multiplier updated?" |
-
-### Alternative 3: Bonus Pool (Inflationary)
-
-**Approach:** Penalty pool distributed equally; extra bonus minted for loyalty.
-
+**With Index (O(1) - Fast):**
+```text
+  For every distribution:
+    Update 4 index numbers (one per tier)
+  
+  When user checks balance:
+    Calculate interest locally using index difference
+  
+  TIME COMPLEXITY: O(1) per distribution
+  ADVANTAGE: Scales to millions of users
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                   BONUS POOL (INFLATIONARY)                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Penalty Pool (100 GHC) ──▶ Distributed by balance (fair)      │
-│                                +                                 │
-│   Minted Bonus (50 GHC)  ──▶ Distributed by loyalty (extra)     │
-│                                                                  │
-│   Total: 150 GHC distributed, but 50 GHC is NEW supply          │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Problems:**
-
-| Issue | Severity | Description |
-|-------|----------|-------------|
-| **Inflation** | 🔴 Critical | Increases token supply, dilutes value |
-| **Treasury Drain** | 🔴 Critical | Bonus comes from somewhere |
-| **Economic Risk** | 🟠 High | Unpredictable long-term effects |
-
-### Why Discrete Tiers Win
-
-```
-═══════════════════════════════════════════════════════════════════
-                    COMPARISON MATRIX
-═══════════════════════════════════════════════════════════════════
-
-                    │ Scalable │ Reliable │ Zero-Sum │ Simple │
-────────────────────┼──────────┼──────────┼──────────┼────────┤
-Centralized Eff.    │    ❌    │    ❌    │    ✅    │   ❌   │
-Epoch Snapshots     │    ✅    │    ⚠️    │    ✅    │   ⚠️   │
-Bonus Pool          │    ✅    │    ✅    │    ❌    │   ✅   │
-DISCRETE TIERS      │    ✅    │    ✅    │    ✅    │   ✅   │
-────────────────────┴──────────┴──────────┴──────────┴────────┘
-```
-
-### Key Advantages of Discrete Tiers
-
-1. **O(1) Complexity**: Only 4 tier totals, not per-user multipliers
-2. **Stable Between Syncs**: Tier totals only change on stake/unstake/upgrade
-3. **Zero-Sum Guaranteed**: Each tier pool is fully distributed within tier
-4. **Intuitive UX**: Clear progression (Bronze → Silver → Gold → Diamond)
-5. **Gamification**: Tier badges, progress bars, milestone celebrations
-6. **Predictable Rates**: Users can see each tier's current APY
 
 ---
 
-## 6. Implementation Details
+## 9. User Interest Calculation
 
-### Data Structures
+### 9.1 The "Lazy Evaluation" Approach
 
-**staking_hub — GlobalStats (updated)**
+User interest is NOT calculated during distribution. It is calculated **on-demand** when the user:
+- Views their profile
+- Claims rewards
+- Stakes/Unstakes
+- Submits a quiz
 
-```rust
-pub const NUM_TIERS: usize = 4;
-pub const TIER_WEIGHTS: [u8; 4] = [20, 25, 30, 25]; // % of pool per tier
+### 9.2 The Calculation Formula
 
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct GlobalStats {
-    // Existing
-    pub total_staked: u64,
-    pub interest_pool: u64,
-    pub total_unstaked: u64,
-    pub total_allocated: u64,
-    pub total_rewards_distributed: u64,
-    
-    // NEW
-    pub tier_staked: [u64; 4],
-    pub tier_reward_indexes: [u128; 4],
+```text
+FORMULA:
+
+  My_Interest = My_Balance * (Current_Tier_Index - My_Last_Recorded_Index)
+
+WHERE:
+- My_Balance: How many tokens I have staked
+- Current_Tier_Index: The global index for my current tier (from staking_hub)
+- My_Last_Recorded_Index: Snapshot of the index when I last calculated
+```
+
+### 9.3 Step-by-Step Calculation
+
+```text
++=======================================================================+
+|                    USER INTEREST CALCULATION                           |
++=======================================================================+
+
+STEP 1: DETERMINE USER'S TIER
++-----------------------------------------------------------------------+
+| Calculate: Staking_Age = Current_Time - Staking_Time            |
+|                                                                       |
+| Example:                                                              |
+| - Staking_Time: Day 0                                           |
+| - Current_Time: Day 400                                               |
+| - Staking_Age: 400 days                                               |
+| - Tier: DIAMOND (365+ days)                                           |
++-----------------------------------------------------------------------+
+
+STEP 2: FETCH CURRENT GLOBAL INDEX FOR THAT TIER
++-----------------------------------------------------------------------+
+| The staking_hub provides the current Diamond Index.                   |
+|                                                                       |
+| Example:                                                              |
+| - Current_Diamond_Index: 0.750                                        |
++-----------------------------------------------------------------------+
+
+STEP 3: CALCULATE INDEX DIFFERENCE
++-----------------------------------------------------------------------+
+| Index_Diff = Current_Index - User_Last_Recorded_Index                 |
+|                                                                       |
+| Example:                                                              |
+| - Current_Index: 0.750                                                |
+| - User's Last Index: 0.500 (from when they last checked)              |
+| - Index_Diff: 0.750 - 0.500 = 0.250                                   |
++-----------------------------------------------------------------------+
+
+STEP 4: CALCULATE INTEREST EARNED
++-----------------------------------------------------------------------+
+| Interest = User_Balance * Index_Diff                                  |
+|                                                                       |
+| Example:                                                              |
+| - User Balance: 1,000 GHC                                             |
+| - Index_Diff: 0.250                                                   |
+| - Interest: 1,000 * 0.250 = 250 GHC                                   |
++-----------------------------------------------------------------------+
+
+STEP 5: UPDATE USER'S SNAPSHOT
++-----------------------------------------------------------------------+
+| User's Last Index = Current Index                                     |
+|                                                                       |
+| So next time, they only earn from NEW index growth.                   |
++-----------------------------------------------------------------------+
+```
+
+---
+
+## 10. Complete Flow Diagrams
+
+### 10.1 End-to-End Flow: From Penalty to Interest
+
+```text
++=======================================================================+
+|                    COMPLETE INTEREST LIFECYCLE                         |
++=======================================================================+
+
+PHASE 1: REVENUE GENERATION
+============================
+
+  User A decides to unstake 10,000 GHC
+                |
+                v
+  +---------------------------+
+  |  STAKING HUB PROCESSES    |
+  |  UNSTAKE REQUEST          |
+  +---------------------------+
+                |
+                v
+  +---------------------------+
+  |  APPLY 10% PENALTY        |
+  |  Penalty = 1,000 GHC      |
+  +---------------------------+
+                |
+         +------+------+
+         |             |
+         v             v
+  +-----------+  +-----------+
+  | Return    |  | Add to    |
+  | 9,000 GHC |  | Interest  |
+  | to User A |  | Pool      |
+  +-----------+  +-----------+
+
+
+PHASE 2: INTEREST POOL ACCUMULATION
+====================================
+
+  INTEREST POOL
+  +-------------------------------------------+
+  | Previous Balance:        5,000 GHC        |
+  | + Penalty from User A:   1,000 GHC        |
+  | + Penalty from User B:     500 GHC        |
+  | + Penalty from User C:     800 GHC        |
+  +-------------------------------------------+
+  | Current Balance:         7,300 GHC        |
+  +-------------------------------------------+
+  
+  (Pool accumulates until distribution is triggered)
+
+
+PHASE 3: DISTRIBUTION
+======================
+
+  Admin calls distribute_interest()
+                |
+                v
+  +-------------------------------------------+
+  |  SPLIT 7,300 GHC BY TIER WEIGHTS          |
+  +-------------------------------------------+
+                |
+  +-------------+-------------+-------------+-------------+
+  |             |             |             |             |
+  v             v             v             v
++---------+  +---------+  +---------+  +---------+
+| BRONZE  |  | SILVER  |  |  GOLD   |  | DIAMOND |
+| 1,460   |  | 1,825   |  | 2,190   |  | 1,825   |
+| GHC     |  | GHC     |  | GHC     |  | GHC     |
++---------+  +---------+  +---------+  +---------+
+     |            |            |            |
+     v            v            v            v
+  Update      Update       Update       Update
+  Bronze      Silver       Gold         Diamond
+  Index       Index        Index        Index
+
+
+PHASE 4: USER CLAIMS INTEREST
+==============================
+
+  User B (Diamond, 1,000 GHC staked) views profile
+                |
+                v
+  +-------------------------------------------+
+  |  1. Calculate Staking Age: 400 days       |
+  |  2. Determine Tier: DIAMOND               |
+  |  3. Fetch Diamond Index: 0.750            |
+  |  4. Get User's Last Index: 0.500          |
+  |  5. Index Diff: 0.250                     |
+  |  6. Interest: 1,000 * 0.250 = 250 GHC     |
+  +-------------------------------------------+
+                |
+                v
+  +-------------------------------------------+
+  |  User's unclaimed_interest += 250 GHC     |
+  |  User's last_index = 0.750                |
+  +-------------------------------------------+
+                |
+                v
+  User clicks "Claim Rewards"
+                |
+                v
+  +-------------------------------------------+
+  |  staked_balance += unclaimed_interest     |
+  |  unclaimed_interest = 0                   |
+  +-------------------------------------------+
+```
+
+### 10.2 Tier Upgrade Flow
+
+```text
++=======================================================================+
+|                    TIER UPGRADE PROCESS                                |
++=======================================================================+
+
+USER STATUS:
+- Staking Age: 29 days (BRONZE)
+- Balance: 1,000 GHC
+- Last Bronze Index: 0.100
+                |
+                | (1 day passes)
+                v
+USER STATUS:
+- Staking Age: 30 days (qualifies for SILVER!)
+                |
+                v
+UPGRADE DETECTED ON NEXT INTERACTION:
++---------------------------------------------------+
+|  STEP 1: CLAIM PENDING BRONZE INTEREST            |
+|  - Current Bronze Index: 0.105                    |
+|  - User's Last Index: 0.100                       |
+|  - Diff: 0.005                                    |
+|  - Interest: 1,000 * 0.005 = 5 GHC                |
+|  - Add to unclaimed_interest: +5 GHC              |
++---------------------------------------------------+
+                |
+                v
++---------------------------------------------------+
+|  STEP 2: MOVE TO SILVER TIER                      |
+|  - Set current_tier = SILVER                      |
+|  - Snapshot Silver Index for future calculations  |
+|  - User's Last_Silver_Index = Current Silver Index|
++---------------------------------------------------+
+                |
+                v
++---------------------------------------------------+
+|  STEP 3: UPDATE GLOBAL TIER POPULATIONS           |
+|  - Bronze total staked: -1,000 GHC                |
+|  - Silver total staked: +1,000 GHC                |
++---------------------------------------------------+
+```
+
+### 10.3 Weighted Age Update on Deposit
+
+```text
++=======================================================================+
+|                    AGE RECALCULATION ON DEPOSIT                        |
++=======================================================================+
+
+BEFORE DEPOSIT:
++-------------------------------------------+
+|  User Status:                             |
+|  - Balance: 500 GHC                       |
+|  - Staking_Time: Day 0              |
+|  - Current Day: Day 100                   |
+|  - Staking Age: 100 days                  |
+|  - Current Tier: GOLD (90-365)            |
++-------------------------------------------+
+
+USER EARNS 5 GHC FROM QUIZ:
++-------------------------------------------+
+|  Amount_Added: 5 GHC                      |
+|  Age of New Tokens: 0 days                |
++-------------------------------------------+
+
+CALCULATION:
++-------------------------------------------+
+|  Old Coin-Days: 500 * 100 = 50,000        |
+|  New Coin-Days: 5 * 0 = 0                 |
+|  Total Coin-Days: 50,000                  |
+|  New Balance: 500 + 5 = 505               |
+|  New Average Age: 50,000 / 505 = 99.01    |
++-------------------------------------------+
+
+UPDATE VIRTUAL TIMESTAMP:
++-------------------------------------------+
+|  New_Staking_Time = 100 - 99.01     |
+|                         = Day 0.99        |
+|                         ~ Day 1           |
++-------------------------------------------+
+
+AFTER DEPOSIT:
++-------------------------------------------+
+|  User Status:                             |
+|  - Balance: 505 GHC                       |
+|  - Staking_Time: Day 1 (shifted!)   |
+|  - Current Day: Day 100                   |
+|  - Staking Age: 99 days                   |
+|  - Current Tier: GOLD (still!)            |
++-------------------------------------------+
+
+IMPACT: Minimal! Age only dropped by 1 day.
+```
+
+---
+
+## 11. Edge Cases and Examples
+
+### 11.1 Small Daily Earnings (Normal Case)
+
+**Scenario:** User with large mature stack earns 5 tokens daily.
+
+```text
+  Before: 2,000 GHC @ 400 days (Diamond)
+  Earn: 5 GHC
+  
+  Calculation:
+  - Old Coin-Days: 2,000 * 400 = 800,000
+  - New Balance: 2,005
+  - New Age: 800,000 / 2,005 = 399.00 days
+  
+  Result: Still Diamond (dropped by only 1 day)
+```
+
+### 11.2 Consistent Daily Earnings (Realistic Case)
+
+**Scenario:** User earns 5 tokens every day for a full year while already having a mature stack.
+
+```text
+  Starting Point: 500 GHC @ 365 days (Diamond)
+  Daily Earnings: 5 GHC per day for 365 days = 1,825 GHC total added
+  
+  DAY 1:
+  - Old Coin-Days: 500 * 365 = 182,500
+  - New Balance: 505
+  - New Age: 182,500 / 505 = 361.4 days (still Diamond)
+  
+  DAY 100:
+  - Balance has grown to ~1,000 GHC
+  - Age has stabilized around 350+ days
+  - Still Diamond
+  
+  DAY 365 (End of Year):
+  - Balance: ~2,325 GHC
+  - Age: Still well above 365 days
+  
+  Result: User REMAINS Diamond throughout the year.
+  
+  WHY: Each daily 5-token addition is so small relative to the
+       existing balance that the age dilution is negligible.
+       The natural passage of time (1 day) offsets the dilution.
+```
+
+### 11.3 New User Building Up (Starting from Zero)
+
+**Scenario:** Brand new user earns 5 tokens daily. When do they reach each tier?
+
+```text
+  DAY 1: 5 GHC @ 0 days = BRONZE
+  DAY 30: ~150 GHC @ weighted age ~15 days = BRONZE
+  
+  WHY NOT 30 DAYS OLD?
+  - Every day's 5 tokens are "age 0" when earned
+  - Day 1 tokens are 30 days old
+  - Day 30 tokens are 0 days old
+  - Weighted average is roughly half: ~15 days
+  
+  ACTUAL TIER PROGRESSION (Approximate):
+  - Reach SILVER (~30 day avg): Around Day 60
+  - Reach GOLD (~90 day avg): Around Day 180
+  - Reach DIAMOND (~365 day avg): Around Day 730 (2 years)
+  
+  IMPORTANT: Because new tokens constantly dilute the average,
+             it takes roughly TWICE as long to reach each tier
+             compared to a single-deposit scenario.
+```
+
+### 11.3 Unstaking Does NOT Change Age
+
+**Scenario:** User unstakes some tokens.
+
+```text
+  Before: 1,000 GHC @ 200 days (Gold)
+  Unstake: 500 GHC
+  
+  Age Calculation: UNCHANGED
+  - Staking_Time stays the same
+  - Age is still 200 days
+  
+  Result: Still Gold with 500 GHC @ 200 days
+  
+  WHY: Removing tokens doesn't add "new" age-0 tokens.
+       The remaining tokens keep their maturity.
+```
+
+### 11.4 Empty Tier Edge Case
+
+**Scenario:** What if nobody is in the Diamond tier?
+
+```text
+  Distribution: 10,000 GHC
+  Diamond Share: 2,500 GHC
+  Diamond Total Staked: 0 GHC
+  
+  Problem: Division by zero!
+  
+  Solution: Skip index update for empty tiers.
+            The 2,500 GHC stays in the Interest Pool
+            OR is redistributed to other tiers (implementation choice).
+```
+
+---
+
+## 12. Implementation Reference
+
+### 12.1 Data Structures
+
+**staking_hub - Global State:**
+```text
+GlobalStats {
+    total_staked: u64,              // Sum of all staked tokens
+    interest_pool: u64,             // Accumulated penalties waiting to distribute
+    tier_staked: [u64; 4],          // [Bronze, Silver, Gold, Diamond] totals
+    tier_reward_indexes: [u128; 4], // Cumulative index per tier (scaled by 1e18)
 }
 ```
 
-**user_profile — UserProfile (updated)**
-
-```rust
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct UserProfile {
-    // Existing
-    pub email: String,
-    pub name: String,
-    pub education: String,
-    pub gender: String,
-    pub staked_balance: u64,
-    pub unclaimed_interest: u64,
-    pub transaction_count: u64,
-    
-    // NEW (replacing last_reward_index)
-    pub current_tier: u8,
-    pub tier_start_index: u128,
-    pub initial_stake_time: u64,
-    pub last_tier_check: u64,
+**user_profile - User State:**
+```text
+UserProfile {
+    staked_balance: u64,            // User's staked tokens
+    unclaimed_interest: u64,        // Pending rewards to claim
+    current_tier: u8,               // 0=Bronze, 1=Silver, 2=Gold, 3=Diamond
+    tier_start_index: u128,         // Index snapshot when entered current tier
+    staking_time: u64,        // Virtual timestamp for age calculation
 }
 ```
 
-### Core Functions
-
-**distribute_interest() — staking_hub**
-
-```rust
-#[update]
-fn distribute_interest() -> Result<String, String> {
-    GLOBAL_STATS.with(|s| {
-        let mut cell = s.borrow_mut();
-        let mut stats = cell.get().clone();
-        
-        if stats.interest_pool == 0 {
-            return Err("No interest to distribute".to_string());
-        }
-        
-        let pool = stats.interest_pool;
-        let mut distributed = 0u64;
-        
-        for tier in 0..NUM_TIERS {
-            if stats.tier_staked[tier] > 0 {
-                let tier_pool = (pool as u128 * TIER_WEIGHTS[tier] as u128 / 100) as u64;
-                let index_increase = (tier_pool as u128 * 1e18 as u128) 
-                                     / stats.tier_staked[tier] as u128;
-                stats.tier_reward_indexes[tier] += index_increase;
-                distributed += tier_pool;
-            }
-        }
-        
-        stats.interest_pool = pool - distributed;
-        stats.total_rewards_distributed += distributed;
-        
-        cell.set(stats).unwrap();
-        Ok(format!("Distributed {} GHC", distributed))
-    })
-}
-```
-
-**compound_interest() — user_profile**
-
-```rust
-fn compound_interest(user: Principal) {
-    let now = ic_cdk::api::time();
-    
-    // 1. Check for tier upgrade
-    check_and_handle_tier_upgrade(user, now);
-    
-    // 2. Calculate interest in current tier
-    let tier_indexes = TIER_REWARD_INDEXES.with(|i| i.borrow().clone());
-    
-    USER_PROFILES.with(|p| {
-        let mut map = p.borrow_mut();
-        if let Some(mut profile) = map.get(&user) {
-            let tier = profile.current_tier as usize;
-            let current_index = tier_indexes[tier];
-            
-            if current_index > profile.tier_start_index {
-                let index_diff = current_index - profile.tier_start_index;
-                let interest = (profile.staked_balance as u128 * index_diff) / 1e18 as u128;
-                
-                if interest > 0 {
-                    profile.unclaimed_interest += interest as u64;
-                    profile.tier_start_index = current_index;
-                    map.insert(user, profile);
-                }
-            }
-        }
-    });
-}
-```
-
----
-
-## 9. Migration Plan
-
-### Phase 1: Update staking_hub
-
-1. Add `tier_staked` and `tier_reward_indexes` to GlobalStats
-2. Initialize all existing stakers in Bronze tier
-3. Set Bronze index equal to current cumulative_reward_index
-4. Deploy and verify
-
-### Phase 2: Update user_profile Shards
-
-1. Add new fields to UserProfile
-2. Migrate existing users:
-   - `current_tier = 0` (Bronze)
-   - `tier_start_index = last_reward_index`
-   - `initial_stake_time = now` (or estimate from history)
-3. Update sync protocol to use `sync_shard_v2`
-4. Deploy shards one-by-one
-
-### Phase 3: Gradual Tier Population
-
-After migration:
-- All users start in Bronze
-- Over 30/90/365 days, users naturally progress
-- Tier distribution stabilizes organically
-
-```
-═══════════════════════════════════════════════════════════════════
-                    MIGRATION TIMELINE
-═══════════════════════════════════════════════════════════════════
-
-Day 0:    All users in Bronze
-          ├── Bronze: 100% of stakers
-          └── Others: 0%
-
-Day 30:   Early stakers reach Silver
-          ├── Bronze: 70%
-          ├── Silver: 30%
-          └── Others: 0%
-
-Day 90:   First Gold members
-          ├── Bronze: 50%
-          ├── Silver: 35%
-          ├── Gold: 15%
-          └── Diamond: 0%
-
-Day 365:  Full tier distribution
-          ├── Bronze: 40%
-          ├── Silver: 25%
-          ├── Gold: 20%
-          └── Diamond: 15%
-```
-
----
-
-## 10. Frontend Integration
-
-### Display User Tier
-
-```javascript
-const TIER_NAMES = ['Bronze', 'Silver', 'Gold', 'Diamond'];
-const TIER_COLORS = ['#CD7F32', '#C0C0C0', '#FFD700', '#B9F2FF'];
-const TIER_THRESHOLDS_DAYS = [0, 30, 90, 365];
-
-const profile = await userProfileActor.get_profile(userPrincipal);
-
-const currentTier = TIER_NAMES[profile.current_tier];
-const tierColor = TIER_COLORS[profile.current_tier];
-
-const daysStaked = Math.floor(
-    (Date.now() * 1_000_000 - Number(profile.initial_stake_time)) 
-    / (86400 * 1e9)
-);
-
-const nextTier = profile.current_tier < 3 
-    ? TIER_NAMES[profile.current_tier + 1] 
-    : null;
-const daysToNext = nextTier 
-    ? TIER_THRESHOLDS_DAYS[profile.current_tier + 1] - daysStaked 
-    : 0;
-
-console.log(`🏆 Tier: ${currentTier}`);
-console.log(`📅 Days Staked: ${daysStaked}`);
-if (nextTier) {
-    console.log(`⏳ ${daysToNext} days until ${nextTier}`);
-}
-```
-
-### Display Tier APY Comparison
-
-```javascript
-const stats = await stakingHubActor.get_global_stats();
-const TIER_WEIGHTS = [20, 25, 30, 25];
-
-console.log('📊 Current Tier Rates:');
-
-for (let i = 0; i < 4; i++) {
-    const staked = Number(stats.tier_staked[i]) / 1e8;
-    const poolShare = (Number(stats.interest_pool) / 1e8) * TIER_WEIGHTS[i] / 100;
-    const apy = staked > 0 
-        ? ((poolShare / staked) * 365 * 100).toFixed(2) 
-        : '∞';
-    
-    console.log(`  ${TIER_NAMES[i]}: ${staked.toFixed(0)} GHC staked → ~${apy}% APY`);
-}
-```
-
----
-
-## 11. Security Analysis
-
-This section provides a comprehensive security assessment of the Discrete Tier System, covering potential attack vectors, mitigations, and security guarantees.
-
-### Threat Model Overview
-
-```
-╔═══════════════════════════════════════════════════════════════════╗
-║                      THREAT MODEL                                  ║
-╠═══════════════════════════════════════════════════════════════════╣
-║                                                                    ║
-║   ADVERSARY GOALS:                                                ║
-║   ├─ Steal interest that belongs to others                       ║
-║   ├─ Inflate their tier status without staking duration          ║
-║   ├─ Manipulate tier totals to increase their share              ║
-║   ├─ Game the system by timing stakes around distributions       ║
-║   └─ Cause denial of service or state corruption                 ║
-║                                                                    ║
-║   TRUST ASSUMPTIONS:                                              ║
-║   ├─ IC consensus is secure                                       ║
-║   ├─ Canister code executes as written                           ║
-║   ├─ Time source (ic_cdk::api::time) is reliable                 ║
-║   └─ Inter-canister calls are authenticated                      ║
-║                                                                    ║
-╚═══════════════════════════════════════════════════════════════════╝
-```
-
-### Security Properties
-
-| Property | Status | Description |
-|----------|--------|-------------|
-| **Tier Integrity** | ✅ Secure | Users cannot fake their tier status |
-| **Interest Accuracy** | ✅ Secure | Users receive exactly their share |
-| **Zero-Sum Guarantee** | ✅ Secure | Total distributed = Total collected |
-| **Time Manipulation** | ✅ Secure | Uses IC system time, not user input |
-| **Sybil Resistance** | ✅ Secure | Splitting accounts provides no benefit |
-| **Front-Running** | ✅ Secure | Distribution timing is unpredictable |
-
----
-
-### Detailed Threat Analysis
-
-#### Threat 1: Tier Status Forgery
-
-**Attack:** Attacker tries to claim a higher tier than earned.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  ATTACK SCENARIO                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Attacker stakes on Day 1                                       │
-│   On Day 5, tries to claim Diamond tier interest                │
-│                                                                  │
-│   Expected: Bronze rate (4%)                                     │
-│   Attempted: Diamond rate (50%)                                  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Mitigation:**
-
-```rust
-// Tier is calculated from initial_stake_time, not user input
-fn get_user_tier(profile: &UserProfile, now: u64) -> u8 {
-    let duration = now.saturating_sub(profile.initial_stake_time);
-    get_tier_for_duration(duration)  // Deterministic calculation
-}
-
-// initial_stake_time is set ONCE when user first stakes
-// Cannot be modified by user afterward
-```
-
-**Security Guarantee:** Tier status is derived from immutable, system-controlled timestamps.
-
----
-
-#### Threat 2: Time Manipulation
-
-**Attack:** Attacker tries to manipulate the time source to accelerate tier progression.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  ATTACK SCENARIO                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Attacker attempts to:                                          │
-│   ├─ Pass fake timestamp to tier calculation                    │
-│   ├─ Modify initial_stake_time to earlier date                  │
-│   └─ Exploit clock skew between canisters                       │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Mitigation:**
-
-```rust
-// Time comes from IC system, not user input
-let now = ic_cdk::api::time();  // Nanoseconds since epoch
-
-// initial_stake_time is set internally, never from user input
-fn add_tokens_to_user(user: Principal, amount: u64) {
-    let now = ic_cdk::api::time();  // System time
-    
-    if profile.initial_stake_time == 0 {
-        profile.initial_stake_time = now;  // Set once, immutable
-    }
-}
-```
-
-**Security Guarantee:** The IC provides a consistent, tamper-proof time source across all subnet replicas.
-
----
-
-#### Threat 3: Sybil Attack (Account Splitting)
-
-**Attack:** Attacker splits stake across multiple accounts to gain advantage.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  ATTACK SCENARIO                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Instead of: 1 account with 100 GHC                            │
-│   Attacker creates: 10 accounts with 10 GHC each                │
-│                                                                  │
-│   Goal: Get more interest by having multiple tier entries       │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Analysis:**
-
-```
-Single account:
-  100 GHC in Bronze → earns share of Bronze pool based on 100 GHC
-
-10 accounts:
-  10 GHC × 10 in Bronze → each earns share based on 10 GHC
-  Total: Same as single account (100 GHC worth of shares)
-```
-
-**Security Guarantee:** Interest is proportional to staked amount, not account count. Splitting provides zero benefit and actually costs gas for multiple transactions.
-
----
-
-#### Threat 4: Front-Running Distribution
-
-**Attack:** Attacker stakes right before distribution, claims, then unstakes.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  ATTACK SCENARIO                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   T=0:  Attacker monitors for pending distribution              │
-│   T=1:  Stakes 1000 GHC just before distribute_interest()       │
-│   T=2:  Distribution happens, attacker gets large share         │
-│   T=3:  Attacker unstakes immediately                           │
-│         (pays 10% penalty but keeps interest profit)            │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Mitigations:**
-
-1. **Tier System Itself:** New stakers are in Bronze (lowest reward rate)
-2. **10% Unstake Penalty:** Attacker loses 10% of principal immediately
-3. **Unpredictable Timing:** Admin can trigger distribution at any time
-4. **Sync Delay:** Staked amount isn't reflected until next sync (5 sec)
-
-**Economic Analysis:**
-
-```
-Attacker stakes 1000 GHC, gets Bronze rate (4%)
-If pool has 100 GHC and Bronze has 500 GHC staked:
-  Attacker's share = 20 × (1000/1500) = 13.3 GHC
-
-But attacker loses on unstake:
-  Penalty = 1000 × 10% = 100 GHC
-
-Net loss: 100 - 13.3 = 86.7 GHC ❌
-```
-
-**Security Guarantee:** Front-running is economically unprofitable due to the 10% unstake penalty.
-
----
-
-#### Threat 5: Tier Total Manipulation
-
-**Attack:** Malicious shard reports fake tier_staked values to inflate attacker's share.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  ATTACK SCENARIO                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Malicious shard reports:                                       │
-│   tier_staked[Diamond] = -99999 (reduce total)                  │
-│                                                                  │
-│   Result: Attacker's 100 GHC becomes larger share               │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Mitigations:**
-
-```rust
-// In staking_hub: Only registered shards can sync
-#[update]
-fn sync_shard_v2(...) -> Result<..., String> {
-    let caller = ic_cdk::caller();
-    
-    // CRITICAL: Verify caller is a registered shard
-    let is_registered = REGISTERED_SHARDS.with(|m| 
-        m.borrow().contains_key(&caller)
-    );
-    
-    if !is_registered {
-        return Err("Unauthorized".to_string());
-    }
-    
-    // Additional: Use saturating arithmetic to prevent underflow
-    stats.tier_staked[tier] = stats.tier_staked[tier]
-        .saturating_sub(delta.abs() as u64);
-}
-```
-
-**Security Guarantees:**
-
-1. Only shards created by staking_hub can report stats
-2. Shards are deployed with embedded WASM from hub
-3. `saturating_sub` prevents underflow attacks
-4. Hub is the controller of all shards
-
----
-
-#### Threat 6: Interest Calculation Overflow
-
-**Attack:** Large values cause arithmetic overflow, corrupting interest calculations.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  ATTACK SCENARIO                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   If: staked_balance × index_diff > u128::MAX                   │
-│   Result: Overflow, incorrect interest calculated               │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Mitigations:**
-
-```rust
-// Use checked/saturating arithmetic
-let interest = (profile.staked_balance as u128)
-    .saturating_mul(index_diff)
-    .checked_div(1_000_000_000_000_000_000)
-    .unwrap_or(0);  // Safe default on division issues
-
-// Maximum values analysis:
-//   Max staked_balance: 4.2B × 1e8 = 4.2e17
-//   Max index_diff (realistic): 1e20 (100x total supply distributed)
-//   Product: 4.2e37 < u128::MAX (3.4e38) ✓
-```
-
-**Security Guarantee:** Using u128 for intermediate calculations and saturating arithmetic prevents overflow.
-
----
-
-#### Threat 7: Tier Downgrade on Unstake
-
-**Attack:** User unstakes partial amount, resets tier to Bronze.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  ATTACK SCENARIO                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   User at Diamond tier (365+ days) with 100 GHC                 │
-│   Unstakes 10 GHC                                                │
-│   Still has 90 GHC staked                                        │
-│                                                                  │
-│   Question: Should they stay Diamond or reset to Bronze?        │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Design Decision:**
-
-```rust
-// POLICY: Tier is based on CONTINUOUS staking duration
-// Partial unstake maintains tier if balance remains positive
-
-fn process_unstake(user: Principal, amount: u64) {
-    // After unstake, check if balance > 0
-    if profile.staked_balance > amount {
-        // Keep current tier, no reset
-        profile.staked_balance -= amount;
-    } else {
-        // Full unstake: reset everything
-        profile.staked_balance = 0;
-        profile.initial_stake_time = 0;  // Reset timer
-        profile.current_tier = 0;         // Back to Bronze when restaking
-    }
-}
-```
-
-**Security Guarantee:** Clear, documented policy for tier behavior on unstake prevents ambiguity.
-
----
-
-### Security Checklist
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SECURITY CHECKLIST                            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│ ✅ Input Validation                                              │
-│    ├─ All amounts validated (> 0, <= balance)                   │
-│    ├─ Principal verification on all shard calls                 │
-│    └─ Tier values bounded to 0-3                                │
-│                                                                  │
-│ ✅ Arithmetic Safety                                             │
-│    ├─ saturating_add/sub for balance changes                    │
-│    ├─ u128 for intermediate calculations                        │
-│    └─ Division-by-zero checks on tier_staked                    │
-│                                                                  │
-│ ✅ Access Control                                                │
-│    ├─ Only registered shards can sync                           │
-│    ├─ distribute_interest() callable by admin only              │
-│    └─ Users can only modify their own profile                   │
-│                                                                  │
-│ ✅ State Consistency                                             │
-│    ├─ Tier deltas sum to zero on upgrade                        │
-│    ├─ Interest claimed before tier change                       │
-│    └─ Atomic operations on profile updates                      │
-│                                                                  │
-│ ✅ Economic Security                                             │
-│    ├─ 10% penalty prevents stake-and-run attacks                │
-│    ├─ Zero-sum distribution prevents inflation                  │
-│    └─ Tier pools are isolated (no cross-contamination)          │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Invariants to Maintain
-
-The system must maintain these invariants at all times:
-
-```rust
-// INVARIANT 1: Tier totals match sum of user balances
-assert_eq!(
-    sum(tier_staked),
-    sum(all_user_staked_balances)
-);
-
-// INVARIANT 2: User is in exactly one tier
-assert!(profile.current_tier <= 3);
-
-// INVARIANT 3: Distribution is zero-sum
-assert_eq!(
-    interest_pool_before,
-    sum(tier_distributions) + interest_pool_after
-);
-
-// INVARIANT 4: Tier progression is monotonic (within a staking session)
-// User can only move UP in tiers while continuously staking
-assert!(new_tier >= old_tier || profile.staked_balance == 0);
-
-// INVARIANT 5: initial_stake_time is immutable once set
-assert!(
-    profile.initial_stake_time == old_initial_stake_time ||
-    old_staked_balance == 0
-);
-```
-
----
-
-### Comparison: Security vs. Alternatives
-
-```
-═══════════════════════════════════════════════════════════════════
-                    SECURITY COMPARISON
-═══════════════════════════════════════════════════════════════════
-
-                     │ Discrete │ Centralized │ Epoch  │ Bonus  │
-                     │  Tiers   │  Effective  │ Snap   │  Pool  │
-─────────────────────┼──────────┼─────────────┼────────┼────────┤
- Time Manipulation   │    ✅    │      ✅     │   ⚠️   │   ✅   │
- Front-Running       │    ✅    │      ⚠️     │   ❌   │   ✅   │
- Sybil Resistance    │    ✅    │      ✅     │   ✅   │   ✅   │
- Overflow Safety     │    ✅    │      ⚠️     │   ✅   │   ✅   │
- State Consistency   │    ✅    │      ❌     │   ✅   │   ✅   │
- Zero-Sum Guarantee  │    ✅    │      ✅     │   ✅   │   ❌   │
-─────────────────────┴──────────┴─────────────┴────────┴────────┘
-
-Legend:
-  ✅ = Secure by design
-  ⚠️ = Requires additional mitigations
-  ❌ = Vulnerable or not applicable
-```
-
-**Key Insight:** The Discrete Tier System has the best security profile because:
-1. Tier status is derived from immutable system time
-2. Isolated pools prevent cross-tier contamination
-3. Simple state model reduces consistency bugs
-4. Economic penalties deter gaming
+### 12.2 Key Functions
+
+**On Deposit (Earning/Staking):**
+1. Calculate new weighted average age
+2. Update `staking_time` (virtual timestamp)
+3. Check for tier upgrade
+4. Update balance
+
+**On Distribution:**
+1. Split `interest_pool` by tier weights
+2. For each non-empty tier: `tier_index += tier_share / tier_staked`
+3. Reset `interest_pool` to 0
+
+**On Profile View / Claim:**
+1. Calculate current staking age
+2. Determine current tier
+3. If tier changed: claim old tier interest, move to new tier
+4. Calculate interest: `balance * (current_index - last_index)`
+5. Update user's `tier_start_index`
 
 ---
 
 ## Summary
 
-The Discrete Tier System provides:
+The GHC Interest System achieves fair, scalable, and sustainable reward distribution through:
 
-| Property | Value |
-|----------|-------|
-| **Fairness** | Long-term stakers earn more per token |
-| **Sustainability** | Zero-sum distribution, no inflation |
-| **Scalability** | O(1) global tracking (just 4 tiers) |
-| **Simplicity** | Clear tier progression, easy to understand |
-| **Gamification** | Badges, progress, milestone celebrations |
+1. **Zero-Sum Model:** No inflation; all yields come from penalties
+2. **Tier System:** 4 pools with different populations create natural yield multipliers
+3. **Weighted Average Age:** Single timestamp tracks maturity across multiple deposits
+4. **Global Reward Index:** O(1) distribution scales to millions of users
+5. **Lazy Evaluation:** Interest calculated on-demand, not per-block
 
-```
-╔═══════════════════════════════════════════════════════════════════╗
-║                                                                    ║
-║   "The longer you stake, the more you make"                       ║
-║                                                                    ║
-║   Bronze ──▶ Silver ──▶ Gold ──▶ Diamond                          ║
-║     20%       25%       30%       25%                              ║
-║                                                                    ║
-╚═══════════════════════════════════════════════════════════════════╝
-```
-
----
-
-## Related Documentation
-
-- [INTEREST_FLOW.md](./INTEREST_FLOW.md) — Base interest mechanics
-- [STAKING_MECHANICS.md](./STAKING_MECHANICS.md) — Staking operations
-- [FRONTEND_INTEGRATION.md](./FRONTEND_INTEGRATION.md) — API reference
+This design ensures that loyal, long-term stakers are rewarded with significantly higher yields without creating unsustainability or token inflation.

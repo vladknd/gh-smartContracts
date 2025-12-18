@@ -2535,3 +2535,4 @@ URLs:
     staking_hub: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ucwa4-rx777-77774-qaada-cai
     user_profile: http://127.0.0.1:4943/?canisterId=vizcg-th777-77774-qaaea-cai&id=ufxgi-4p777-77774-qaadq-cai
 Deployment Complete!
+./scripts/tests/comprehensive_system_test.sh: line 40: ./deploy.sh: No such file or directory

@@ -1,0 +1,47 @@
+type InitArgs = record {
+  learning_content_id : principal;
+  staking_hub_id : principal;
+};
+type TransactionRecord = record {
+  timestamp : nat64;
+  tx_type : TransactionType;
+  amount : nat64;
+};
+type TransactionType = variant { Unstake; QuizReward };
+type UserDailyStats = record {
+  quizzes_taken : nat8;
+  tokens_earned : nat64;
+  day_index : nat64;
+};
+type UserProfile = record {
+  initial_stake_time : nat64;
+  name : text;
+  education : text;
+  unclaimed_interest : nat64;
+  email : text;
+  staked_balance : nat64;
+  last_reward_index : nat;
+  tier_start_index : nat;
+  gender : text;
+  current_tier : nat8;
+  transaction_count : nat64;
+};
+type UserProfileUpdate = record {
+  name : text;
+  education : text;
+  email : text;
+  gender : text;
+};
+service : (InitArgs) -> {
+  claim_rewards : () -> (variant { Ok : nat64; Err : text });
+  debug_force_sync : () -> (variant { Ok; Err : text });
+  get_profile : (principal) -> (opt UserProfile) query;
+  get_user_count : () -> (nat64) query;
+  get_user_daily_status : (principal) -> (UserDailyStats) query;
+  get_user_transactions : (principal) -> (vec TransactionRecord) query;
+  is_quiz_completed : (principal, text) -> (bool) query;
+  register_user : (UserProfileUpdate) -> (variant { Ok; Err : text });
+  submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
+  unstake : (nat64) -> (variant { Ok : nat64; Err : text });
+  update_profile : (UserProfileUpdate) -> (variant { Ok; Err : text });
+}

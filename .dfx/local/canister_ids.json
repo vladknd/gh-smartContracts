@@ -1,14 +1,29 @@
 {
   "__Candid_UI": {
-    "local": "umunu-kh777-77774-qaaca-cai"
+    "local": "vpyes-67777-77774-qaaeq-cai"
   },
-  "ghc_ledger": {
+  "content_governance": {
     "local": "uxrrr-q7777-77774-qaaaq-cai"
   },
-  "learning_engine": {
+  "ghc_ledger": {
+    "local": "u6s2n-gx777-77774-qaaba-cai"
+  },
+  "icrc1_index_canister": {
     "local": "uzt4z-lp777-77774-qaabq-cai"
   },
+  "internet_identity": {
+    "local": "umunu-kh777-77774-qaaca-cai"
+  },
+  "learning_engine": {
+    "local": "ulvla-h7777-77774-qaacq-cai"
+  },
+  "operational_governance": {
+    "local": "ucwa4-rx777-77774-qaada-cai"
+  },
   "staking_hub": {
-    "local": "u6s2n-gx777-77774-qaaba-cai"
+    "local": "ufxgi-4p777-77774-qaadq-cai"
+  },
+  "user_profile": {
+    "local": "vizcg-th777-77774-qaaea-cai"
   }
 }

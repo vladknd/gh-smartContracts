@@ -24,51 +24,73 @@ const SHARD_HARD_LIMIT: u64 = 100_000; // Max users per shard
 const AUTO_SCALE_INTERVAL_SECS: u64 = 60; // Check every minute
 
 // ===============================
-// Data Structures
+// Tier System Constants
 // ===============================
+pub const NUM_TIERS: usize = 4;
 
+// Tier thresholds in nanoseconds (Bronze=0, Silver=30 days, Gold=90 days, Diamond=365 days)
+pub const TIER_THRESHOLDS_NANOS: [u64; 4] = [
+    0,                                      // Bronze: 0+ days
+    30 * 24 * 60 * 60 * 1_000_000_000,      // Silver: 30+ days
+    90 * 24 * 60 * 60 * 1_000_000_000,      // Gold: 90+ days
+    365 * 24 * 60 * 60 * 1_000_000_000,     // Diamond: 365+ days
+];
+
+// Pool weight percentages (must sum to 100)
+pub const TIER_WEIGHTS: [u8; 4] = [20, 25, 30, 25]; // Bronze, Silver, Gold, Diamond
+
+// ============================================================================
+// DATA STRUCTURES
+// ============================================================================
+
+/// Arguments passed during canister initialization
 #[derive(CandidType, Deserialize, Clone)]
 struct InitArgs {
+    /// Principal ID of the GHC ledger canister (ICRC1)
     ledger_id: Principal,
+    /// Principal ID of the learning content canister
     learning_content_id: Principal,
-    user_profile_wasm: Vec<u8>, // Embedded WASM for auto-deployment
+    /// Embedded WASM binary for auto-deploying user_profile shard canisters
+    user_profile_wasm: Vec<u8>,
 }
 
-// Global stats with migration support
-#[derive(CandidType, Deserialize, Clone, Debug)]
-struct GlobalStatsV2 {
-    total_staked: u64,
-    interest_pool: u64,
-    cumulative_reward_index: u128,
-    total_unstaked: u64,
-    total_mined: u64,
-    total_rewards_distributed: u64,
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug)]
-struct GlobalStatsV1_5 {
-    total_staked: u64,
-    interest_pool: u64,
-    cumulative_reward_index: u128,
-    total_unstaked: u64,
-    total_mined: u64,
-}
-
+/// Global statistics tracked by the staking hub
+/// 
+/// This is the central source of truth for all staking-related metrics.
+/// Interest is distributed across 4 tiers based on staking duration:
+/// - Bronze (0-30 days): 20% of interest pool
+/// - Silver (30-90 days): 25% of interest pool  
+/// - Gold (90-365 days): 30% of interest pool
+/// - Diamond (365+ days): 25% of interest pool
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct GlobalStats {
+    /// Total tokens currently staked across all users (sum of all tier_staked)
     pub total_staked: u64,
+    
+    /// Accumulated penalty pool from unstaking (10% of unstaked amounts)
+    /// This is distributed to stakers when distribute_interest() is called
     pub interest_pool: u64,
-    pub cumulative_reward_index: u128, // Scaled by 1e18
+    
+    /// Legacy cumulative reward index (kept for backwards compatibility)
+    /// New code should use tier_reward_indexes instead
+    pub cumulative_reward_index: u128,
+    
+    /// Total tokens that have been unstaked (before penalty deduction)
     pub total_unstaked: u64,
-    pub total_allocated: u64, // Tracked against MAX_SUPPLY
+    
+    /// Total tokens allocated for minting (tracked against MAX_SUPPLY cap)
+    pub total_allocated: u64,
+    
+    /// Total interest rewards distributed to stakers
     pub total_rewards_distributed: u64,
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug)]
-struct GlobalStatsV1 {
-    total_staked: u64,
-    interest_pool: u64,
-    cumulative_reward_index: u128,
+    
+    /// Tokens staked per tier: [Bronze, Silver, Gold, Diamond]
+    /// Users move between tiers based on continuous staking duration
+    pub tier_staked: [u64; 4],
+    
+    /// Reward index per tier, scaled by 1e18 for precision
+    /// Each tier has its own index because they receive different pool shares
+    pub tier_reward_indexes: [u128; 4],
 }
 
 impl Storable for GlobalStats {
@@ -77,70 +99,7 @@ impl Storable for GlobalStats {
     }
 
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        if let Ok(stats) = Decode!(bytes.as_ref(), Self) {
-            return stats;
-        }
-        if let Ok(v2) = Decode!(bytes.as_ref(), GlobalStatsV2) {
-            return Self {
-                total_staked: v2.total_staked,
-                interest_pool: v2.interest_pool,
-                cumulative_reward_index: v2.cumulative_reward_index,
-                total_unstaked: v2.total_unstaked,
-                total_allocated: v2.total_mined,
-                total_rewards_distributed: v2.total_rewards_distributed,
-            };
-        }
-        if let Ok(v1_5) = Decode!(bytes.as_ref(), GlobalStatsV1_5) {
-            return Self {
-                total_staked: v1_5.total_staked,
-                interest_pool: v1_5.interest_pool,
-                cumulative_reward_index: v1_5.cumulative_reward_index,
-                total_unstaked: v1_5.total_unstaked,
-                total_allocated: v1_5.total_mined,
-                total_rewards_distributed: 0,
-            };
-        }
-        if let Ok(v1) = Decode!(bytes.as_ref(), GlobalStatsV1) {
-            return Self {
-                total_staked: v1.total_staked,
-                interest_pool: v1.interest_pool,
-                cumulative_reward_index: v1.cumulative_reward_index,
-                total_unstaked: 0,
-                total_allocated: 0,
-                total_rewards_distributed: 0,
-            };
-        }
-        panic!("Failed to decode GlobalStats");
-    }
-
-    const BOUND: Bound = Bound::Bounded {
-        max_size: 100,
-        is_fixed_size: false,
-    };
-}
-
-// Shard Info stored in the registry
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct ShardInfo {
-    pub canister_id: Principal,
-    pub created_at: u64,
-    pub user_count: u64,
-    pub status: ShardStatus,
-}
-
-#[derive(CandidType, Deserialize, Clone, Debug, PartialEq)]
-pub enum ShardStatus {
-    Active,
-    Full,     // No longer accepting new users
-}
-
-impl Storable for ShardInfo {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
+        Decode!(bytes.as_ref(), Self).expect("Failed to decode GlobalStats")
     }
 
     const BOUND: Bound = Bound::Bounded {
@@ -149,7 +108,50 @@ impl Storable for ShardInfo {
     };
 }
 
-// Wrapper for storing large WASM blob
+/// Information about a user_profile shard canister
+/// 
+/// Shards are automatically deployed by the staking hub to distribute
+/// user load. Each shard can hold up to SHARD_HARD_LIMIT (100K) users.
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct ShardInfo {
+    /// Principal ID of the shard canister
+    pub canister_id: Principal,
+    /// Timestamp when this shard was created (nanoseconds)
+    pub created_at: u64,
+    /// Current number of registered users in this shard
+    pub user_count: u64,
+    /// Operational status of the shard
+    pub status: ShardStatus,
+}
+
+/// Operational status of a shard canister
+#[derive(CandidType, Deserialize, Clone, Debug, PartialEq)]
+pub enum ShardStatus {
+    /// Shard is accepting new user registrations
+    Active,
+    /// Shard has reached capacity and is not accepting new users
+    Full,
+}
+
+impl Storable for ShardInfo {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).expect("Failed to decode ShardInfo")
+    }
+
+    const BOUND: Bound = Bound::Bounded {
+        max_size: 200,
+        is_fixed_size: false,
+    };
+}
+
+/// Wrapper for storing large WASM binary in stable memory
+/// 
+/// The embedded WASM is used by the hub to deploy new shard canisters
+/// automatically when existing shards reach capacity.
 #[derive(CandidType, Deserialize, Clone, Default)]
 struct WasmBlob {
     data: Vec<u8>,
@@ -167,15 +169,40 @@ impl Storable for WasmBlob {
     const BOUND: Bound = Bound::Unbounded;
 }
 
-// ==========================================================================================================
-// Thread-Local Storage
-// ==========================================================================================================
+// ============================================================================
+// THREAD-LOCAL STORAGE
+// ============================================================================
+// 
+// All persistent state is stored in stable memory using ic_stable_structures.
+// Each storage item is assigned a unique MemoryId for isolation.
+// 
+// Memory IDs:
+//   0 - LEDGER_ID: GHC ledger canister principal
+//   1 - GLOBAL_STATS: Aggregate staking statistics
+//   3 - REGISTERED_SHARDS: Set of authorized shard canisters
+//   4 - SHARD_REGISTRY: Detailed info about each shard
+//   5 - SHARD_COUNT: Number of shards created
+//   6 - LEARNING_CONTENT_ID: Learning engine canister principal
+//   7 - EMBEDDED_WASM: User profile WASM for auto-deployment
+//   8 - INITIALIZED: Whether init() has been called
 
 thread_local! {
+    // ─────────────────────────────────────────────────────────────────────
+    // Memory Management
+    // ─────────────────────────────────────────────────────────────────────
+    
+    /// Memory manager for allocating virtual memory regions to each storage
+    /// Allows multiple stable data structures to coexist
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
         MemoryManager::init(DefaultMemoryImpl::default())
     );
 
+    // ─────────────────────────────────────────────────────────────────────
+    // Configuration (Set once during init, immutable after)
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// Principal ID of the GHC ICRC-1 ledger canister
+    /// Used for token transfers during unstaking
     static LEDGER_ID: RefCell<StableCell<Principal, Memory>> = RefCell::new(
         StableCell::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))),
@@ -183,6 +210,44 @@ thread_local! {
         ).unwrap()
     );
 
+    /// Principal ID of the learning_engine canister
+    /// Passed to new shard canisters during auto-deployment
+    static LEARNING_CONTENT_ID: RefCell<StableCell<Principal, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(6))),
+            Principal::anonymous()
+        ).unwrap()
+    );
+
+    /// Embedded user_profile WASM binary for auto-deploying new shards
+    /// Stored in stable memory to survive upgrades
+    /// Empty if auto-scaling is not enabled
+    static EMBEDDED_WASM: RefCell<StableCell<WasmBlob, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(7))),
+            WasmBlob::default()
+        ).unwrap()
+    );
+
+    /// Flag indicating whether init() has been called
+    /// Prevents re-initialization attacks
+    static INITIALIZED: RefCell<StableCell<bool, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(8))),
+            false
+        ).unwrap()
+    );
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Global Economy State
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// Aggregate staking statistics across all shards
+    /// This is the source of truth for:
+    /// - Total staked tokens (by tier and overall)
+    /// - Interest pool balance
+    /// - Reward indexes for interest calculation
+    /// - Death & Taxes tracking (total_unstaked, total_allocated)
     static GLOBAL_STATS: RefCell<StableCell<GlobalStats, Memory>> = RefCell::new(
         StableCell::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))),
@@ -193,54 +258,41 @@ thread_local! {
                 total_unstaked: 0,
                 total_allocated: 0,
                 total_rewards_distributed: 0,
+                tier_staked: [0; 4],
+                tier_reward_indexes: [0; 4],
             }
         ).unwrap()
     );
 
-    // Registered Shards - Principal -> bool
+    // ─────────────────────────────────────────────────────────────────────
+    // Shard Management
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// Set of registered shard canister principals: Principal -> true
+    /// Only registered shards can call sync_shard and process_unstake
+    /// Used for O(1) authorization checks
     static REGISTERED_SHARDS: RefCell<StableBTreeMap<Principal, bool, Memory>> = RefCell::new(
         StableBTreeMap::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(3)))
         )
     );
 
-    // Shard Registry - Index -> ShardInfo
+    /// Detailed information about each shard: index -> ShardInfo
+    /// Used for shard discovery and load balancing
+    /// Index is sequential, starting at 0
     static SHARD_REGISTRY: RefCell<StableBTreeMap<u64, ShardInfo, Memory>> = RefCell::new(
         StableBTreeMap::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(4)))
         )
     );
 
-    // Shard Counter
+    /// Counter for the number of shards created
+    /// Used to generate sequential shard indexes
+    /// Also used to iterate over SHARD_REGISTRY
     static SHARD_COUNT: RefCell<StableCell<u64, Memory>> = RefCell::new(
         StableCell::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(5))),
             0
-        ).unwrap()
-    );
-
-    // Learning Content ID (immutable after init)
-    static LEARNING_CONTENT_ID: RefCell<StableCell<Principal, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(6))),
-            Principal::anonymous()
-        ).unwrap()
-    );
-
-    // Embedded user_profile WASM (immutable after init)
-    // Stored in stable memory using a special memory region
-    static EMBEDDED_WASM: RefCell<StableCell<WasmBlob, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(7))),
-            WasmBlob::default()
-        ).unwrap()
-    );
-
-    // Initialization flag
-    static INITIALIZED: RefCell<StableCell<bool, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(8))),
-            false
         ).unwrap()
     );
 }
@@ -512,6 +564,22 @@ fn get_shard_count() -> u64 {
     SHARD_COUNT.with(|c| *c.borrow().get())
 }
 
+// ============================================================================
+// ADMIN FUNCTIONS
+// ============================================================================
+
+/// Manually register a canister as an allowed shard (minter)
+/// 
+/// This is used when deploying user_profile canisters manually
+/// instead of using the auto-scaling mechanism.
+/// 
+/// SECURITY: This should only be callable by controllers in production
+#[update]
+fn add_allowed_minter(canister_id: Principal) {
+    // Register the shard
+    register_shard_internal(canister_id);
+}
+
 // ===============================
 // Shard Update Functions (Called by Shards)
 // ===============================
@@ -552,12 +620,36 @@ fn update_shard_user_count(user_count: u64) -> Result<(), String> {
     })
 }
 
-/// Sync shard stats and request minting allowance (called by shards only)
+/// Synchronize shard statistics with the hub and request minting allowance
+/// 
+/// This function is called periodically by each user_profile shard to:
+/// 1. Report tier-specific stake changes (users moving between tiers)
+/// 2. Report unstaking activity
+/// 3. Request additional minting allowance when running low
+/// 4. Receive the latest tier reward indexes for interest calculation
+/// 
+/// # Arguments
+/// * `tier_deltas` - Change in staked amounts per tier [Bronze, Silver, Gold, Diamond]
+/// * `unstaked_delta` - Total amount unstaked since last sync
+/// * `distributed_delta` - Total rewards distributed since last sync
+/// * `requested_allowance` - Amount of minting allowance to request
+/// 
+/// # Returns
+/// * `(granted_allowance, tier_reward_indexes)` - Allowance granted and current indexes
+/// 
+/// # Security
+/// - Only registered shards can call this function
+/// - Uses saturating arithmetic to prevent overflow/underflow
 #[update]
-fn sync_shard(staked_delta: i64, unstaked_delta: u64, distributed_delta: u64, requested_allowance: u64) -> Result<(u64, u128), String> {
+fn sync_shard(
+    tier_deltas: [i64; 4],
+    unstaked_delta: u64,
+    distributed_delta: u64,
+    requested_allowance: u64
+) -> Result<(u64, [u128; 4]), String> {
     let caller = ic_cdk::caller();
     
-    // Check if caller is a registered shard (ONLY shards created by this hub)
+    // SECURITY: Only shards created by this hub can report stats
     let is_registered = REGISTERED_SHARDS.with(|m| m.borrow().contains_key(&caller));
     if !is_registered {
         return Err("Unauthorized: Caller is not a registered shard".to_string());
@@ -567,18 +659,38 @@ fn sync_shard(staked_delta: i64, unstaked_delta: u64, distributed_delta: u64, re
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
         
-        // 1. Update Stats (Batch Reporting)
-        if staked_delta > 0 {
-            stats.total_staked += staked_delta as u64;
-        } else {
-            let abs_delta = staked_delta.abs() as u64;
-            stats.total_staked = stats.total_staked.saturating_sub(abs_delta);
+        // ─────────────────────────────────────────────────────────────────
+        // Step 1: Update per-tier staked amounts
+        // ─────────────────────────────────────────────────────────────────
+        let mut total_delta: i64 = 0;
+        for tier in 0..NUM_TIERS {
+            let delta = tier_deltas[tier];
+            total_delta += delta;
+            
+            // Use saturating arithmetic to prevent underflow attacks
+            if delta > 0 {
+                stats.tier_staked[tier] = stats.tier_staked[tier].saturating_add(delta as u64);
+            } else {
+                stats.tier_staked[tier] = stats.tier_staked[tier].saturating_sub(delta.abs() as u64);
+            }
         }
+        
+        // Update total_staked to maintain consistency
+        if total_delta > 0 {
+            stats.total_staked = stats.total_staked.saturating_add(total_delta as u64);
+        } else {
+            stats.total_staked = stats.total_staked.saturating_sub(total_delta.abs() as u64);
+        }
+        
+        // Update other aggregate stats
         stats.total_unstaked += unstaked_delta;
         stats.total_rewards_distributed += distributed_delta;
 
-        // 2. Handle Allowance Request (Hard Cap Check)
+        // ─────────────────────────────────────────────────────────────────
+        // Step 2: Handle Allowance Request (Hard Cap Enforcement)
+        // ─────────────────────────────────────────────────────────────────
         let granted_allowance = if requested_allowance > 0 {
+            // Never allocate beyond MAX_SUPPLY (4.2B tokens)
             let remaining = MAX_SUPPLY.saturating_sub(stats.total_allocated);
             let to_grant = remaining.min(requested_allowance);
             stats.total_allocated += to_grant;
@@ -587,19 +699,48 @@ fn sync_shard(staked_delta: i64, unstaked_delta: u64, distributed_delta: u64, re
             0
         };
         
-        let current_index = stats.cumulative_reward_index;
+        // Return current tier indexes so shard can calculate user interest
+        let tier_indexes = stats.tier_reward_indexes;
         
         cell.set(stats).expect("Failed to update global stats");
-        Ok((granted_allowance, current_index))
+        Ok((granted_allowance, tier_indexes))
     })
 }
 
+// ============================================================================
+// INTEREST DISTRIBUTION
+// ============================================================================
+
+/// Distribute accumulated interest pool across all tiers
+/// 
+/// This function should be called periodically (e.g., daily) to distribute
+/// the penalty pool (from unstaking) to all stakers based on their tier.
+/// 
+/// # Distribution Formula
+/// Each tier receives a percentage of the total pool:
+/// - Bronze (0-30 days): 20%
+/// - Silver (30-90 days): 25%
+/// - Gold (90-365 days): 30%
+/// - Diamond (365+ days): 25%
+/// 
+/// Within each tier, interest is distributed proportionally to stake:
+/// ```
+/// user_interest = (tier_pool / tier_total_staked) * user_stake
+/// ```
+/// 
+/// # Example
+/// If pool = 1000 GHC and tier_staked = [500, 300, 200, 0]:
+/// - Bronze gets 200 GHC (20%), index increases by 200/500 = 0.4
+/// - Silver gets 250 GHC (25%), index increases by 250/300 = 0.83
+/// - Gold gets 300 GHC (30%), index increases by 300/200 = 1.5
+/// - Diamond gets 0 GHC (empty tier, added back to pool)
 #[update]
 fn distribute_interest() -> Result<String, String> {
     GLOBAL_STATS.with(|s| {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
         
+        // Validate preconditions
         if stats.interest_pool == 0 {
             return Err("No interest to distribute".to_string());
         }
@@ -608,14 +749,53 @@ fn distribute_interest() -> Result<String, String> {
             return Err("No stakers to distribute to".to_string());
         }
 
-        let increase = (stats.interest_pool as u128 * 1_000_000_000_000_000_000) / stats.total_staked as u128;
+        let pool = stats.interest_pool;
+        let mut total_distributed: u64 = 0;
+        let mut tier_increases: [u128; 4] = [0; 4];
         
-        stats.cumulative_reward_index += increase;
-        let distributed = stats.interest_pool;
-        stats.interest_pool = 0;
+        // ─────────────────────────────────────────────────────────────────
+        // Calculate and apply distribution for each tier
+        // ─────────────────────────────────────────────────────────────────
+        for tier in 0..NUM_TIERS {
+            let tier_staked = stats.tier_staked[tier];
+            
+            if tier_staked > 0 {
+                // Calculate this tier's share of the pool
+                let tier_pool = (pool as u128 * TIER_WEIGHTS[tier] as u128 / 100) as u64;
+                
+                // Calculate index increase (scaled by 1e18 for precision)
+                // This represents: (tier_pool / tier_staked) * 1e18
+                let index_increase = (tier_pool as u128 * 1_000_000_000_000_000_000) / tier_staked as u128;
+                
+                stats.tier_reward_indexes[tier] = stats.tier_reward_indexes[tier].saturating_add(index_increase);
+                tier_increases[tier] = index_increase;
+                total_distributed += tier_pool;
+            }
+            // Empty tiers: their share remains in the pool for next distribution
+        }
+        
+        // Keep remainder for next distribution (handles rounding and empty tiers)
+        stats.interest_pool = pool.saturating_sub(total_distributed);
+        stats.total_rewards_distributed += total_distributed;
+        
+        // Update legacy index (average of active tiers) for backwards compatibility
+        let active_tiers = stats.tier_staked.iter().filter(|&&x| x > 0).count();
+        if active_tiers > 0 {
+            let avg_increase: u128 = tier_increases.iter().sum::<u128>() / active_tiers as u128;
+            stats.cumulative_reward_index += avg_increase;
+        }
         
         cell.set(stats).expect("Failed to update global stats");
-        Ok(format!("Distributed {} tokens. Index increased by {}", distributed, increase))
+        
+        Ok(format!(
+            "Distributed {} tokens across {} tiers. Indexes: Bronze={}, Silver={}, Gold={}, Diamond={}",
+            total_distributed,
+            active_tiers,
+            tier_increases[0],
+            tier_increases[1],
+            tier_increases[2],
+            tier_increases[3]
+        ))
     })
 }
 
