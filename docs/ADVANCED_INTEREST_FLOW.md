@@ -71,15 +71,10 @@ Before diving into the mechanics, here are the critical terms used throughout th
 Staking_Age = Current_Time - Staking_Time
 ```
 
-**Purpose:** Determines which tier a user belongs to.
+**Where:**
+- **Current_Time:** The current global system time (e.g., `ic_cdk::time`).
+- **Staking_Time:** The virtual (averaged) timestamp representing the duration of the user's staking. This value is adjusted when new tokens are added (see Weighted Average Age).
 
-**Example:**
-- User started staking on January 1, 2025
-- Today is April 15, 2025
-- Staking Age = 104 days
-- User qualifies for **Gold Tier** (90-365 days)
-
----
 
 ### 2.2 Weighted Average Age
 
@@ -99,7 +94,7 @@ Weighted_Avg_Age = --------------------------------------------------
 
 Since new tokens always have Age = 0:
 
-User mines 5 coins (New_Tokens), before he had 
+User mines 5 coins (New_Tokens), before he had 5 coins staked.
 ```text
                     (staked_balance * Staking_Age)
 Weighted_Avg_Age = --------------------------
