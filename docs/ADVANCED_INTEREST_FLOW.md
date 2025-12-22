@@ -64,7 +64,7 @@ Before diving into the mechanics, here are the critical terms used throughout th
 
 ### 2.1 Staking Age
 
-**Definition:** The amount of time (in days) that has passed since a user beginning of staking process.
+**Definition:** The amount of time (in days) that has passed since the beginning of staking process.
 
 **Formula:**
 ```text
@@ -94,7 +94,7 @@ staking_time = Current_Time - Weighted_Avg_Age
 
 **Formula:**
 ```
-Coin_Days = Number_of_Tokens * Days_Held
+Coin_Days = Number_of_Tokens * Staking_Age
 ```
 
 **Example:**
@@ -112,18 +112,14 @@ Coin_Days = Number_of_Tokens * Days_Held
 **Why Needed:** Users earn tokens daily from quizzes. Each batch of tokens has a different "birthday." Instead of tracking thousands of individual deposits, we calculate one weighted average.
 
 **Formula:**
-```text
-                    (staked_balance * Old_Age) + (New_Tokens * New_Age)
-Weighted_Avg_Age = --------------------------------------------------
-                              staked_balance + New_Tokens
-```
+
 ```text
                     (staked_balance * Staking_Age)
 Weighted_Avg_Age = --------------------------
                     staked_balance + New_Tokens
 
 
-staking_time = Current_Time - Weighted_Avg_Age
+staking_time x  = Current_Time - Weighted_Avg_Age
 ```
 
 **How to Calculate Each Piece:**
@@ -210,7 +206,7 @@ STEP 3: Calculate New Total Balance (denominator)
               = 10 GHC
 
 STEP 4: Calculate Weighted Average Age
-  Weighted_Avg_Age = Coin_Days / New_Balance
+  Weighted_Avg_Age = Coin_Days_before / New_Balance
                    = 5 / 10
                    = 0.5 days
 
