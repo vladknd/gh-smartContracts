@@ -70,8 +70,6 @@ Before diving into the mechanics, here are the critical terms used throughout th
 ```text
 Staking_Age = Current_Time - Staking_Time
 ```
-
-
 ### 2.2 Staking_Time:
 **Definition:** The virtual (averaged) timestamp representing the beggining of staking process of user's tokens. This value is adjusted when new tokens are added.
 **Purpose:** Determines the start of staking period for Staking Age calculation.
@@ -83,44 +81,44 @@ Staking_Age = Current_Time - Staking_Time
 - User qualifies for **Gold Tier** (90-365 days)
 
 **Formula:**
-```
+```text
 staking_time = Current_Time - Weighted_Avg_Age
 ```
+---
 
-
-### 2.3 Coin-Days
-
-**Definition:** A unit measuring the "investment weight" of tokens over time.
-
-**Formula:**
-```
-Coin_Days = Number_of_Tokens * Staking_Age
-```
-
-**Example:**
-- 100 tokens held for 10 days = 1,000 Coin-Days
-- 10 tokens held for 100 days = 1,000 Coin-Days
-- Both have equal "investment weight" to the system
-
-**Purpose:** Used as the numerator when calculating Weighted Average Age.
-
-
-### 2.4 Weighted Average Age
+### 2.3 Weighted Average Age
 
 **Definition:** A single number representing the "effective maturity" of a user's entire token balance, accounting for tokens deposited at different times.
 
 **Why Needed:** Users earn tokens daily from quizzes. Each batch of tokens has a different "birthday." Instead of tracking thousands of individual deposits, we calculate one weighted average.
 
-**Formula:**
+**Key Design: 80% Maturity Factor**
 
+To reward loyal stakers and prevent excessive age dilution from small daily deposits, we apply an **80% Multiplication Factor (α = 0.8)**. This means new tokens only contribute **20%** of their dilution effect, preserving most of the existing tokens' earned age.
+
+**Formula:**
 ```text
-                    (staked_balance * Staking_Age)
-Weighted_Avg_Age = --------------------------
-                    staked_balance + New_Tokens
+MULTIPLICATION_FACTOR = 0.8  (configurable, currently 80%)
+
+                         (staked_balance * Staking_Age)
+Weighted_Avg_Age = -----------------------------------------------
+                    staked_balance + New_Tokens * (1 - MULTIPLICATION_FACTOR)
+
+
+Simplified (with α = 0.8):
+                         (staked_balance * Staking_Age)
+Weighted_Avg_Age = -----------------------------------------
+                         staked_balance + New_Tokens * 0.2
 
 
 staking_time x  = Current_Time - Weighted_Avg_Age
 ```
+
+**Why 80%?**
+- **Without offset (50%):** User earning daily takes ~730 days to reach Diamond
+- **With 80% offset:** User earning daily reaches Diamond in ~456 days
+- The 80% factor rewards consistent participation while still requiring genuine time commitment
+- Prevents gaming: depositing 1 token doesn't "game" the age, but also doesn't destroy it
 
 **How to Calculate Each Piece:**
 
@@ -200,25 +198,25 @@ STEP 2: Calculate Coin-Days (numerator)
             = 5 * 1
             = 5 coin-days
 
-STEP 3: Calculate New Total Balance (denominator)
-  New_Balance = staked_balance + New_Tokens
-              = 5 + 5
-              = 10 GHC
+STEP 3: Calculate Effective Denominator (with 80% maturity factor)
+  Effective_Denominator = staked_balance + (New_Tokens * 0.2)
+                        = 5 + (5 * 0.2)
+                        = 5 + 1 = 6
 
 STEP 4: Calculate Weighted Average Age
-  Weighted_Avg_Age = Coin_Days_before / New_Balance
-                   = 5 / 10
-                   = 0.5 days
+  Weighted_Avg_Age = Coin_Days / Effective_Denominator
+                   = 5 / 6
+                   = 0.833 days
 
 STEP 5: Convert Age back to Timestamp
   new_staking_time = Current_Time - Weighted_Avg_Age
-                         = Day 2 - 0.5
-                         = Day 1.5
+                         = Day 2 - 0.833
+                         = Day 1.167
 
 AFTER UPDATE (written to user_profile canister):
   ┌─────────────────────────────────────────┐
   │ staked_balance     = 10 GHC             │ ← STORED
-  │ staking_time       = Day 1.5            │ ← STORED (drifted +0.5)
+  │ staking_time       = Day 1.167          │ ← STORED (drifted +0.167)
   └─────────────────────────────────────────┘
 
 ```
@@ -226,11 +224,11 @@ TIMELINE:
         (+5GHC)                   (+5GHC)               
            │                         │                   
            ▼                         ▼                   
-         Day(1)     Day(1.5)       Day(2)          
+         Day(1)  Day(1.167)        Day(2)          
 ─────────────────────────────────────────────────────────────────────▶
-                       ^
-                       |
-                   staking_time
+                    ^
+                    |
+                staking_time
 ```
 
 
@@ -240,90 +238,94 @@ TIMELINE:
 
 BEFORE (from user_profile canister):
   staked_balance     = 10 GHC
-  staking_time       = Day 1.5
+  staking_time       = Day 1.167
 
 EVENT: User earns 5 GHC from today's quiz
   Current_Time       = Day 3
   New_Tokens         = 5 GHC
 
 STEP 1: Calculate Staking_Age
-  Staking_Age = Day 3 - Day 1.5 = 1.5 days
+  Staking_Age = Day 3 - Day 1.167 = 1.833 days
 
 STEP 2: Calculate Coin-Days
-  Coin_Days = 10 * 1.5 = 15 coin-days
+  Coin_Days = 10 * 1.833 = 18.33 coin-days
 
-STEP 3: Calculate New Total Balance
-  New_Balance = 10 + 5 = 15 GHC
+STEP 3: Calculate Effective Denominator (with 80% maturity factor)
+  Effective_Denominator = 10 + (5 * 0.2) = 11
 
 STEP 4: Calculate Weighted Average Age
-  Weighted_Avg_Age = 15 / 15 = 1.0 day
+  Weighted_Avg_Age = 18.33 / 11 = 1.667 days
 
 STEP 5: Convert to Timestamp
-  new_staking_time = Day 3 - 1.0 = Day 2
+  new_staking_time = Day 3 - 1.667 = Day 1.333
 
 AFTER UPDATE (written to user_profile canister):
   ┌─────────────────────────────────────────┐
   │ staked_balance     = 15 GHC             │ ← STORED
-  │ staking_time       = Day 2              │ ← STORED (drifted +0.5)
+  │ staking_time       = Day 1.333          │ ← STORED (drifted +0.166)
   └─────────────────────────────────────────┘
 ```
 TIMELINE: 
         (+5GHC)                   (+5GHC)               (+5GHC)
            │                         │                    │
            ▼                         ▼                    ▼
-         Day(1)                    Day(2)               Day(3)
+         Day(1)  Day(1.333)        Day(2)               Day(3)
 ─────────────────────────────────────────────────────────────────────▶
-                                     ^
-                                     |
-                                 staking_time
+                    ^
+                    |
+                staking_time
+
+                    |◄───── ~1.67 days (Staking_Age)─────►|
 ```
 
 +=======================================================================+
 |                 DAY 10: PATTERN CONTINUES                             |
 +=======================================================================+
 
-Let's fast-forward to see the accumulated effect:
+Let's fast-forward to see the accumulated effect WITH the 80% maturity factor:
 
 BEFORE (from user_profile canister):
   staked_balance     = 45 GHC    (9 days × 5 GHC)
-  staking_time = Day 5.5   (drifted from Day 1)
+  staking_time       = Day 2.2   (drifted from Day 1 - much slower drift!)
 
 EVENT: User earns 5 GHC from today's quiz
   Current_Time = Day 10
   New_Tokens   = 5 GHC
 
 STEP 1: Calculate Staking_Age
-  Staking_Age = Day 10 - Day 5.5 = 4.5 days
+  Staking_Age = Day 10 - Day 2.2 = 7.8 days
 
 STEP 2: Calculate Coin-Days
-  Coin_Days = 45 * 4.5 = 202.5 coin-days
+  Coin_Days = 45 * 7.8 = 351 coin-days
 
-STEP 3: Calculate New Total Balance
-  New_Balance = 45 + 5 = 50 GHC
+STEP 3: Calculate Effective Denominator (with 80% maturity factor)
+  Effective_Denominator = 45 + (5 * 0.2) = 46
 
 STEP 4: Calculate Weighted Average Age
-  Weighted_Avg_Age = 202.5 / 50 = 4.05 days
+  Weighted_Avg_Age = 351 / 46 = 7.63 days
 
 STEP 5: Convert to Timestamp
-  new_staking_time = Day 10 - 4.05 = Day 5.95
+  new_staking_time = Day 10 - 7.63 = Day 2.37
 
 AFTER UPDATE (written to user_profile canister):
   ┌─────────────────────────────────────────┐
   │ staked_balance     = 50 GHC             │ ← STORED
-  │ staking_time       = Day 5.95           │ ← STORED (drifted +0.45)
+  │ staking_time       = Day 2.37           │ ← STORED (drifted +0.17)
   └─────────────────────────────────────────┘
   
 ```
-TIMELINE: 
+TIMELINE (80% Maturity Factor): 
         (+5GHC)                                         (+5GHC)
            │                         ...                   │
            ▼                                               ▼
-         Day(1)                 Day(5.95)                Day(10)
+         Day(1)   Day(2.37)                              Day(10)
 ─────────────────────────────────────────────────────────────────────▶
-                                  ^
-                                  |
-                              staking_time
-```
+                     ^
+                     |
+                 staking_time 
+
+                     |◄───── ~7.63 days (Staking_Age)─────►|
+``` 
 
 +=======================================================================+
 |                 DAY 10: USER DECIDES TO UNSTAKE                       |
@@ -409,51 +411,71 @@ WHY staking_time UNCHANGED ON PARTIAL UNSTAKE?
 |                 DAY 100: LONG-TERM VIEW                               |
 +=======================================================================+
 
-After 100 daily deposits of 5 GHC each:
+After 100 daily deposits of 5 GHC each (WITH 80% Maturity Factor):
 
 BEFORE (from user_profile canister):
   staked_balance     = 495 GHC
-  staking_time = Day 50.25 (drifted from Day 1)
+  staking_time       = Day 20.5 (drifted from Day 1 - much slower!)
 
 EVENT: User earns 5 GHC from today's quiz
   Current_Time = Day 100
   New_Tokens   = 5 GHC
 
 STEP 1: Calculate Staking_Age
-  Staking_Age = Day 100 - Day 50.25 = 49.75 days
+  Staking_Age = Day 100 - Day 20.5 = 79.5 days
 
 STEP 2: Calculate Coin-Days
-  Coin_Days = 495 * 49.75 = 24,626.25 coin-days
+  Coin_Days = 495 * 79.5 = 39,352.5 coin-days
 
-STEP 3: Calculate New Total Balance
-  New_Balance = 495 + 5 = 500 GHC
+STEP 3: Calculate Effective Denominator (with 80% maturity factor)
+  Effective_Denominator = 495 + (5 * 0.2) = 496
 
 STEP 4: Calculate Weighted Average Age
-  Weighted_Avg_Age = 24,626.25 / 500 = 49.25 days
+  Weighted_Avg_Age = 39,352.5 / 496 = 79.34 days
 
 STEP 5: Convert to Timestamp
-  new_staking_time = Day 100 - 49.25 = Day 50.75
+  new_staking_time = Day 100 - 79.34 = Day 20.66
 
 AFTER UPDATE (written to user_profile canister):
   ┌─────────────────────────────────────────┐
   │ staked_balance     = 500 GHC            │ ← STORED
-  │ staking_time = Day 50.75          `     │ ← STORED (drifted +0.50)
+  │ staking_time       = Day 20.66          │ ← STORED (drifted +0.16)
   └─────────────────────────────────────────┘
 
+```
+TIMELINE (80% Maturity Factor - 100 Days): 
+        (+5GHC)                                                        (+5GHC)
+           │              ...daily deposits...                            │
+           ▼                                                              ▼
+         Day(1)             Day(20.66)                                  Day(100)
+─────────────────────────────────────────────────────────────────────────────────▶
+                               ^
+                               |
+                           staking_time (only ~21% drift after 100 days!)
+                                   
+                                |◄─────── ~79 days (Staking_Age) ───────►|
+```
+
 +=======================================================================+
-|                 OBSERVATION                                           |
+|                 OBSERVATION (WITH 80% MATURITY FACTOR)                |
 +=======================================================================+
 
-Even after 100 days of continuous daily deposits:
-- The effective staking age is ~49.25 days (almost exactly half!)
-- Each new deposit only reduces the age by ~0.5 days
+After 100 days of continuous daily deposits:
+- The effective staking age is ~79.34 days (~80% of elapsed time!)
+- Each new deposit only reduces the age by ~0.16 days (vs ~0.5 with 50%)
 
-This shows why the weighted average age is important:
-Without it, adding ANY new tokens would either:
-- Reset age to 0 (unfair to loyal users)
-- Keep age unchanged (unfair to the system)
+COMPARISON:
+┌─────────────────────┬──────────────────┬──────────────────┐
+│ Metric              │ No Offset (50%)  │ With 80% Factor  │
+├─────────────────────┼──────────────────┼──────────────────┤
+│ Day 100 Age         │ ~49 days         │ ~79 days         │
+│ Drift per deposit   │ ~0.5 days        │ ~0.16 days       │
+│ Days to reach Gold  │ ~180 days        │ ~112 days        │
+│ Days to reach Diamond│ ~730 days       │ ~456 days        │
+└─────────────────────┴──────────────────┴──────────────────┘
 
-The weighted average strikes a balance that rewards consistent participation.
+The 80% maturity factor rewards consistent participation MORE STRONGLY
+while still preventing gaming through tiny deposits.
 ```
 
 **Why Not Track Each Batch Separately?**
@@ -541,7 +563,7 @@ COMPARISON SUMMARY:
 
 CONCLUSION:
 The weighted average approach trades a small amount of precision
-(~0.5 day drift per deposit) for massive gains in:
+(~0.16 day drift per deposit with 80% factor) for massive gains in:
 - Storage efficiency (1800x less data)
 - Computational efficiency (O(1) vs O(n))
 - Code simplicity and maintainability
@@ -550,6 +572,26 @@ The weighted average approach trades a small amount of precision
 This is why virtually all staking systems use a weighted average or
 similar aggregation technique rather than tracking individual deposits.
 ```
+
+---
+
+### 2.3 Coin-Days
+
+**Definition:** A unit measuring the "investment weight" of tokens over time.
+
+**Formula:**
+```text
+Coin_Days = Number_of_Tokens * Days_Held
+```
+
+**Example:**
+- 100 tokens held for 10 days = 1,000 Coin-Days
+- 10 tokens held for 100 days = 1,000 Coin-Days
+- Both have equal "investment weight" to the system
+
+**Purpose:** Used as the numerator when calculating Weighted Average Age.
+
+---
 
 ### 2.4 Tier
 
@@ -764,26 +806,41 @@ Users earn ~5 GHC per day from quizzes. Each day's earnings have a different "bi
 
 ### 6.1 The Core Formula
 
-When a user deposits new tokens, we recalculate their "Virtual Start Date":
+When a user deposits new tokens, we recalculate their "Virtual Start Date" using the **80% Maturity Factor**:
 
 ```text
-FORMULA:
+FORMULA (with 80% Maturity Factor):
 
-                     (Current_Balance * Staking_Age)
-New_Average_Age  =  ----------------------------------
-                     (Current_Balance + Amount_Added)
+MATURITY_FACTOR = 0.8
+
+                         (Current_Balance * Staking_Age)
+New_Average_Age  =  -----------------------------------------------
+                    Current_Balance + Amount_Added * (1 - MATURITY_FACTOR)
+
+Simplified:
+                         (Current_Balance * Staking_Age)
+New_Average_Age  =  -----------------------------------------
+                         Current_Balance + Amount_Added * 0.2
 
 WHERE:
 - Current_Balance: Tokens already staked
 - Staking_Age: Days since staking_time (calculated as Now - Staking_Time)
 - Amount_Added: New tokens being deposited (always Age = 0)
+- MATURITY_FACTOR: 0.8 (80%) - reduces dilution from new deposits
 ```
+
+**Why the 0.2 multiplier on new tokens?**
+With MATURITY_FACTOR = 0.8, we only count 20% of new tokens in the denominator. This means:
+- New tokens still "dilute" the average age, but only by 20%
+- Existing tokens' age is preserved much more strongly
+- Users reach higher tiers faster with consistent participation
 
 ### 6.2 Formula Breakdown (Each Piece Explained)
 
 ```text
 +=======================================================================+
 |                    FORMULA COMPONENT BREAKDOWN                         |
+|                    (WITH 80% MATURITY FACTOR)                          |
 +=======================================================================+
 
 NUMERATOR: (Current_Balance * Staking_Age)
@@ -798,27 +855,33 @@ NUMERATOR: (Current_Balance * Staking_Age)
 | This number represents your "Investment Weight" or "Loyalty Score"    |
 +-----------------------------------------------------------------------+
 
-DENOMINATOR: (Current_Balance + Amount_Added)
+DENOMINATOR: (Current_Balance + Amount_Added * 0.2)
 +-----------------------------------------------------------------------+
-| This is simply your NEW total balance after the deposit.              |
+| This is your balance PLUS 20% of new tokens (reduced dilution!)       |
 |                                                                       |
 | Example:                                                              |
 | - Old balance: 100 tokens                                             |
 | - New deposit: 100 tokens                                             |
-| - New total: 200 tokens                                               |
+| - Effective denominator: 100 + (100 * 0.2) = 120                     |
+|                                                                       |
+| NOTE: Without the 80% factor, denominator would be 200.               |
+|       With 80% factor, it's only 120 - much less dilution!            |
 +-----------------------------------------------------------------------+
 
 THE DIVISION:
 +-----------------------------------------------------------------------+
-| We spread the existing Coin-Days across the new larger balance.       |
+| We spread the existing Coin-Days across the effective balance.        |
 |                                                                       |
-| Example:                                                              |
+| Example (WITH 80% Maturity Factor):                                   |
 | - Coin-Days: 5,000                                                    |
-| - New Balance: 200                                                    |
-| - New Average Age: 5,000 / 200 = 25 days                              |
+| - Effective Denominator: 120                                          |
+| - New Average Age: 5,000 / 120 = 41.67 days                          |
 |                                                                       |
-| Your effective age DROPPED from 50 days to 25 days because you        |
-| added tokens that are 0 days old.                                     |
+| COMPARISON:                                                           |
+| - Without factor: 5,000 / 200 = 25 days (50% retention)              |
+| - With 80% factor: 5,000 / 120 = 41.67 days (83% retention)          |
+|                                                                       |
+| The 80% factor preserves much more of your earned age!               |
 +-----------------------------------------------------------------------+
 ```
 
@@ -845,12 +908,22 @@ THE DIVISION:
   TOTAL COIN-DAYS: 5,000 + 0 = 5,000
 
 +=======================================================================+
-|                    AFTER CALCULATION                                   |
+|                    AFTER CALCULATION (WITH 80% FACTOR)                 |
 +=======================================================================+
 
-  NEW AVERAGE AGE:  5,000 / 200 = 25 days
+  EFFECTIVE DENOMINATOR: 100 + (100 * 0.2) = 120
+  NEW AVERAGE AGE:       5,000 / 120 = 41.67 days
   
-  TIER:        BRONZE (0-30 days)  <-- DROPPED FROM SILVER!
+  TIER:        SILVER (30-90 days)  <-- STAYS IN SILVER!
+  
+  COMPARISON:
+  ┌──────────────────┬────────────────────┬────────────────────┐
+  │                  │ Without 80% Factor │ With 80% Factor    │
+  ├──────────────────┼────────────────────┼────────────────────┤
+  │ New Average Age  │ 25 days            │ 41.67 days         │
+  │ Age Retained     │ 50%                │ 83%                │
+  │ Tier After       │ BRONZE (dropped!)  │ SILVER (stays!)    │
+  └──────────────────┴────────────────────┴────────────────────┘
 ```
 
 ### 6.4 Converting Age to Virtual Timestamp
@@ -860,13 +933,13 @@ After calculating the new age, we store it as a timestamp:
 ```text
   New_Staking_Time = Current_Time - New_Average_Age
 
-  EXAMPLE:
+  EXAMPLE (with 80% factor):
   - Current Day: Day 100
-  - New Average Age: 25 days
-  - New Virtual Start: Day 100 - 25 = Day 75
+  - New Average Age: 41.67 days
+  - New Virtual Start: Day 100 - 41.67 = Day 58.33
 
-  The system now thinks this user "started staking" on Day 75,
-  even though they actually started on Day 0.
+  The system now thinks this user "started staking" on Day 58.33,
+  preserving much more of their earned maturity.
 ```
 
 ---
@@ -1265,13 +1338,14 @@ UPGRADE DETECTED ON NEXT INTERACTION:
 ```text
 +=======================================================================+
 |                    AGE RECALCULATION ON DEPOSIT                        |
+|                    (WITH 80% MATURITY FACTOR)                          |
 +=======================================================================+
 
 BEFORE DEPOSIT:
 +-------------------------------------------+
 |  User Status:                             |
 |  - Balance: 500 GHC                       |
-|  - Staking_Time: Day 0              |
+|  - Staking_Time: Day 0                    |
 |  - Current Day: Day 100                   |
 |  - Staking Age: 100 days                  |
 |  - Current Tier: GOLD (90-365)            |
@@ -1281,35 +1355,35 @@ USER EARNS 5 GHC FROM QUIZ:
 +-------------------------------------------+
 |  Amount_Added: 5 GHC                      |
 |  Age of New Tokens: 0 days                |
+|  Maturity Factor: 0.8 (80%)               |
 +-------------------------------------------+
 
-CALCULATION:
+CALCULATION (WITH 80% FACTOR):
 +-------------------------------------------+
 |  Old Coin-Days: 500 * 100 = 50,000        |
-|  New Coin-Days: 5 * 0 = 0                 |
-|  Total Coin-Days: 50,000                  |
-|  New Balance: 500 + 5 = 505               |
-|  New Average Age: 50,000 / 505 = 99.01    |
+|  Effective Denominator: 500 + (5 * 0.2)   |
+|                       = 500 + 1 = 501     |
+|  New Average Age: 50,000 / 501 = 99.80    |
 +-------------------------------------------+
 
 UPDATE VIRTUAL TIMESTAMP:
 +-------------------------------------------+
-|  New_Staking_Time = 100 - 99.01     |
-|                         = Day 0.99        |
-|                         ~ Day 1           |
+|  New_Staking_Time = 100 - 99.80           |
+|                   = Day 0.20              |
+|                   ~ Day 0.2               |
 +-------------------------------------------+
 
 AFTER DEPOSIT:
 +-------------------------------------------+
 |  User Status:                             |
 |  - Balance: 505 GHC                       |
-|  - Staking_Time: Day 1 (shifted!)   |
+|  - Staking_Time: Day 0.2 (barely moved!)  |
 |  - Current Day: Day 100                   |
-|  - Staking Age: 99 days                   |
+|  - Staking Age: 99.8 days                 |
 |  - Current Tier: GOLD (still!)            |
 +-------------------------------------------+
 
-IMPACT: Minimal! Age only dropped by 1 day.
+IMPACT: Minimal! Age only dropped by 0.2 days (vs 1 day without factor).
 ```
 
 ---
@@ -1324,12 +1398,16 @@ IMPACT: Minimal! Age only dropped by 1 day.
   Before: 2,000 GHC @ 400 days (Diamond)
   Earn: 5 GHC
   
-  Calculation:
+  Calculation (WITH 80% MATURITY FACTOR):
   - Old Coin-Days: 2,000 * 400 = 800,000
-  - New Balance: 2,005
-  - New Age: 800,000 / 2,005 = 399.00 days
+  - Effective Denominator: 2,000 + (5 * 0.2) = 2,001
+  - New Age: 800,000 / 2,001 = 399.80 days
   
-  Result: Still Diamond (dropped by only 1 day)
+  Result: Still Diamond (dropped by only 0.2 days!)
+  
+  COMPARISON:
+  - Without 80% factor: 800,000 / 2,005 = 399.00 days (dropped 1 day)
+  - With 80% factor: 800,000 / 2,001 = 399.80 days (dropped 0.2 days)
 ```
 
 ### 11.2 Consistent Daily Earnings (Realistic Case)
@@ -1340,14 +1418,14 @@ IMPACT: Minimal! Age only dropped by 1 day.
   Starting Point: 500 GHC @ 365 days (Diamond)
   Daily Earnings: 5 GHC per day for 365 days = 1,825 GHC total added
   
-  DAY 1:
+  DAY 1 (WITH 80% MATURITY FACTOR):
   - Old Coin-Days: 500 * 365 = 182,500
-  - New Balance: 505
-  - New Age: 182,500 / 505 = 361.4 days (still Diamond)
+  - Effective Denominator: 500 + (5 * 0.2) = 501
+  - New Age: 182,500 / 501 = 364.27 days (still Diamond!)
   
   DAY 100:
   - Balance has grown to ~1,000 GHC
-  - Age has stabilized around 350+ days
+  - Age has stabilized around 360+ days
   - Still Diamond
   
   DAY 365 (End of Year):
@@ -1356,9 +1434,9 @@ IMPACT: Minimal! Age only dropped by 1 day.
   
   Result: User REMAINS Diamond throughout the year.
   
-  WHY: Each daily 5-token addition is so small relative to the
-       existing balance that the age dilution is negligible.
-       The natural passage of time (1 day) offsets the dilution.
+  WHY: With the 80% factor, each daily 5-token addition causes
+       minimal dilution. The natural passage of time (1 day)
+       more than offsets the reduced dilution effect.
 ```
 
 ### 11.3 New User Building Up (Starting from Zero)
@@ -1366,23 +1444,32 @@ IMPACT: Minimal! Age only dropped by 1 day.
 **Scenario:** Brand new user earns 5 tokens daily. When do they reach each tier?
 
 ```text
-  DAY 1: 5 GHC @ 0 days = BRONZE
-  DAY 30: ~150 GHC @ weighted age ~15 days = BRONZE
+  WITH 80% MATURITY FACTOR:
   
-  WHY NOT 30 DAYS OLD?
+  DAY 1: 5 GHC @ 0 days = BRONZE
+  DAY 30: ~150 GHC @ weighted age ~24 days = BRONZE
+  
+  WHY 24 DAYS (NOT 30 OR 15)?
   - Every day's 5 tokens are "age 0" when earned
   - Day 1 tokens are 30 days old
-  - Day 30 tokens are 0 days old
-  - Weighted average is roughly half: ~15 days
+  - But with 80% factor, dilution is reduced by 80%
+  - Effective age is ~80% of elapsed time
   
-  ACTUAL TIER PROGRESSION (Approximate):
-  - Reach SILVER (~30 day avg): Around Day 60
-  - Reach GOLD (~90 day avg): Around Day 180
-  - Reach DIAMOND (~365 day avg): Around Day 730 (2 years)
+  TIER PROGRESSION WITH 80% FACTOR:
+  ┌─────────────────────┬──────────────────┬──────────────────┐
+  │ Tier                │ Without Factor   │ With 80% Factor  │
+  ├─────────────────────┼──────────────────┼──────────────────┤
+  │ SILVER (~30 days)   │ ~Day 60          │ ~Day 38          │
+  │ GOLD (~90 days)     │ ~Day 180         │ ~Day 112         │
+  │ DIAMOND (~365 days) │ ~Day 730         │ ~Day 456         │
+  └─────────────────────┴──────────────────┴──────────────────┘
   
-  IMPORTANT: Because new tokens constantly dilute the average,
-             it takes roughly TWICE as long to reach each tier
-             compared to a single-deposit scenario.
+  BENEFIT: The 80% factor means users reach higher tiers in ~1.25x
+           the actual time, instead of ~2x the time.
+           
+  This rewards consistent daily participation MORE FAIRLY while still
+  ensuring genuine time commitment is required for higher tiers.
+```
 ```
 
 ### 11.3 Unstaking Does NOT Change Age
