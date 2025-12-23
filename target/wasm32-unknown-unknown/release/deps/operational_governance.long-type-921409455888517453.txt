@@ -1,1 +1,0 @@
-RefMut<'_, StableBTreeMap<u64, Proposal, VirtualMemory<Ic0StableMemory>>>
