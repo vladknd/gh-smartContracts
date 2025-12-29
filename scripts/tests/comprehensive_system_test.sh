@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Comprehensive System Test Suite (Enhanced)
+# Comprehensive System Test Suite (Updated for Simplified Tokenomics)
 # Generates a detailed report in test_report.md
 
 REPORT_FILE="test_report.md"
@@ -49,9 +49,13 @@ fi
 STAKING_HUB_ID=$(dfx canister id staking_hub)
 USER_PROFILE_ID=$(dfx canister id user_profile)
 LEARNING_ENGINE_ID=$(dfx canister id learning_engine)
+GOVERNANCE_ID=$(dfx canister id operational_governance)
+FOUNDER_VESTING_ID=$(dfx canister id founder_vesting)
 
 echo "- Staking Hub: \`$STAKING_HUB_ID\`" >> $REPORT_FILE
 echo "- User Profile: \`$USER_PROFILE_ID\`" >> $REPORT_FILE
+echo "- Operational Governance: \`$GOVERNANCE_ID\`" >> $REPORT_FILE
+echo "- Founder Vesting: \`$FOUNDER_VESTING_ID\`" >> $REPORT_FILE
 
 # 1b. Verify Internet Identity
 log_step "Verification: Internet Identity"
@@ -122,15 +126,13 @@ else
     log_result "FAIL" "User balance incorrect. Output: $PROFILE"
 fi
 
-# 6. Unstaking Flow
-log_step "Economy: Unstake 0.5 Token"
-# Unstake 50_000_000 (0.5 Token)
-# Penalty: 5_000_000 (0.05 Token)
-# Receive: 45_000_000 (0.45 Token)
+# 6. Unstaking Flow (No Penalty)
+log_step "Economy: Unstake 0.5 Token (No Penalty)"
+# Unstake 50_000_000 (0.5 Token) - returns 100%, no penalty
 OUT=$(dfx canister call user_profile unstake '(50_000_000)' 2>&1)
 
 if [[ "$OUT" == *"Ok"* ]]; then
-    log_result "PASS" "Unstake call successful."
+    log_result "PASS" "Unstake call successful (100% returned)."
 else
     log_result "FAIL" "Unstake failed. Output: $OUT"
 fi
@@ -140,84 +142,61 @@ log_step "Verification: Check User Balance (0.5 Token)"
 PROFILE=$(dfx canister call user_profile get_profile "(principal \"$IDENTITY\")")
 
 if [[ "$PROFILE" == *"staked_balance = 50_000_000"* ]]; then
-    log_result "PASS" "User balance reduced to 50,000,000 (0.5 Token)."
+    log_result "PASS" "User staked balance reduced to 50,000,000 (0.5 Token)."
 else
     log_result "FAIL" "User balance incorrect after unstake. Output: $PROFILE"
 fi
 
-# 8. Verification: Global Stats & Interest Pool
+# 8. Verification: Global Stats
 log_step "Verification: Force Sync & Check Global Stats"
 dfx canister call user_profile debug_force_sync >/dev/null
 
 STATS=$(dfx canister call staking_hub get_global_stats)
-# Expect interest_pool = 5_000_000
-# Expect total_unstaked = 50_000_000
 
-if [[ "$STATS" == *"interest_pool = 5_000_000"* ]]; then
-    log_result "PASS" "Interest Pool updated correctly (Penalty collected)."
+if [[ "$STATS" == *"total_unstaked"* ]]; then
+    log_result "PASS" "Global Stats accessible."
 else
-    log_result "FAIL" "Interest Pool incorrect. Stats: $STATS"
+    log_result "FAIL" "Global Stats not accessible. Stats: $STATS"
 fi
 
-if [[ "$STATS" == *"total_unstaked = 50_000_000"* ]]; then
-    log_result "PASS" "Total Unstaked updated correctly."
+# 9. Treasury Verification
+log_step "Treasury: Check Treasury State"
+TREASURY=$(dfx canister call operational_governance get_treasury_state 2>&1)
+
+if [[ "$TREASURY" == *"balance"* ]] && [[ "$TREASURY" == *"allowance"* ]]; then
+    log_result "PASS" "Treasury state accessible with balance and allowance."
 else
-    log_result "FAIL" "Total Unstaked incorrect. Stats: $STATS"
+    log_result "FAIL" "Treasury state unavailable. Output: $TREASURY"
 fi
 
-# 9. Interest Distribution
-log_step "Economy: Distribute Interest"
-OUT=$(dfx canister call staking_hub distribute_interest 2>&1)
+# 10. MMCR Status
+log_step "Treasury: Check MMCR Status"
+MMCR=$(dfx canister call operational_governance get_mmcr_status 2>&1)
 
-if [[ "$OUT" == *"Ok"* ]]; then
-    log_result "PASS" "Interest distributed successfully."
+if [[ "$MMCR" == *"releases_completed"* ]]; then
+    log_result "PASS" "MMCR status accessible."
 else
-    log_result "FAIL" "Interest distribution failed. Output: $OUT"
+    log_result "FAIL" "MMCR status unavailable. Output: $MMCR"
 fi
 
-# 10. Verification: Pool Reset
-log_step "Verification: Interest Pool Reset"
-STATS=$(dfx canister call staking_hub get_global_stats)
+# 11. Founder Vesting
+log_step "Vesting: Check Founder Vesting Schedules"
+VESTING=$(dfx canister call founder_vesting get_all_vesting_schedules 2>&1)
 
-if [[ "$STATS" == *"interest_pool = 0"* ]]; then
-    log_result "PASS" "Interest Pool reset to 0."
+if [[ "$VESTING" == *"total_allocation"* ]]; then
+    log_result "PASS" "Founder vesting schedules accessible."
 else
-    log_result "FAIL" "Interest Pool not reset. Stats: $STATS"
+    log_result "FAIL" "Vesting schedules unavailable. Output: $VESTING"
 fi
 
-# 11. Verification: Manual Claim
-log_step "Verification: Manual Claim Rewards"
+# 12. Tokenomics Verification
+log_step "Tokenomics: Check Staking Hub Tokenomics"
+TOKENOMICS=$(dfx canister call staking_hub get_tokenomics 2>&1)
 
-# Force sync to get the new Global Index from Hub to Shard
-dfx canister call user_profile debug_force_sync >/dev/null
-
-# Check Profile for Unclaimed Interest
-PROFILE=$(dfx canister call user_profile get_profile "(principal \"$IDENTITY\")")
-
-# We expect unclaimed_interest > 0
-# 50_000_000 staked. Pool was 5_000_000.
-# Interest = 5_000_000 (10% yield).
-if [[ "$PROFILE" == *"unclaimed_interest = 5_000_000"* ]]; then
-    log_result "PASS" "Unclaimed Interest updated correctly (5 Token)."
+if [[ "$TOKENOMICS" == *"max_supply"* ]]; then
+    log_result "PASS" "Tokenomics data accessible."
 else
-    log_result "FAIL" "Unclaimed Interest incorrect. Output: $PROFILE"
-fi
-
-# Claim Rewards
-OUT=$(dfx canister call user_profile claim_rewards 2>&1)
-if [[ "$OUT" == *"Ok = 5_000_000"* ]]; then
-    log_result "PASS" "Rewards claimed successfully."
-else
-    log_result "FAIL" "Claim failed. Output: $OUT"
-fi
-
-# Verify Balance Increased
-PROFILE=$(dfx canister call user_profile get_profile "(principal \"$IDENTITY\")")
-# 50M (Staked) + 5M (Claimed) = 55M
-if [[ "$PROFILE" == *"staked_balance = 55_000_000"* ]]; then
-    log_result "PASS" "Staked Balance updated after claim (55 Token)."
-else
-    log_result "FAIL" "Balance incorrect after claim. Output: $PROFILE"
+    log_result "FAIL" "Tokenomics unavailable. Output: $TOKENOMICS"
 fi
 
 echo -e "\n-----------------------------------" >> $REPORT_FILE

@@ -10,30 +10,48 @@
 dfx start --background --clean
 
 # Deploy everything
-./deploy.sh
+./scripts/deploy.sh
 ```
 
 ## Testing
 ```bash
 # Get canister IDs
-dfx canister id learning_engine
 dfx canister id staking_hub
+dfx canister id user_profile
+dfx canister id operational_governance
+dfx canister id founder_vesting
+
+# Register user
+dfx canister call user_profile register_user '(record { email = "test@example.com"; name = "Test"; education = "Test"; gender = "Test" })'
 
 # Submit a quiz (Mine tokens)
-dfx canister call learning_engine submit_quiz '("1.0", vec {0})'
+dfx canister call user_profile submit_quiz '("unit_id", vec {0})'
 
-# Check Virtual Balance (Auto-Staked)
-dfx canister call staking_hub get_user_stats "(principal \"$(dfx identity get-principal)\")"
+# Check User Profile (Staked Balance)
+dfx canister call user_profile get_profile "(principal \"$(dfx identity get-principal)\")"
 
-# Vote on proposal
-dfx canister call operational_governance vote '(1, true)'
-
-# Unstake (10% Penalty)
-dfx canister call staking_hub unstake '(100000000)'
-
-# Check Interest Pool
+# Check Global Stats
 dfx canister call staking_hub get_global_stats
 
-# Distribute Interest (Admin)
-dfx canister call staking_hub distribute_interest
+# Unstake (100% returned, no penalty)
+dfx canister call user_profile unstake '(100000000)'
+
+# Check Treasury State
+dfx canister call operational_governance get_treasury_state
+
+# Check MMCR Status
+dfx canister call operational_governance get_mmcr_status
+
+# Check Spendable Balance
+dfx canister call operational_governance get_spendable_balance
+
+# Check Founder Vesting
+dfx canister call founder_vesting get_all_vesting_schedules
 ```
+
+## Token Distribution (9.5B Total)
+- **MUC (Mined Utility Coins)**: 4.75B (staking_hub)
+- **MC (Market Coins)**: 4.75B
+  - Treasury: 4.25B (operational_governance)
+  - Founder 1: 0.35B (founder_vesting)
+  - Founder 2: 0.15B (founder_vesting)

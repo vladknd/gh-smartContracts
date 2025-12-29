@@ -5,6 +5,7 @@ members = [
     "src/content_governance",
     "src/learning_engine",
     "src/user_profile",
+    "src/founder_vesting",
 ]
 resolver = "2"
 

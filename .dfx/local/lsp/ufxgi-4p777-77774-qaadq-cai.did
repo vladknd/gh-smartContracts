@@ -1,42 +1,50 @@
-type GlobalStats = record {
-  cumulative_reward_index : nat;
-  tier_reward_indexes : vec nat;
-  total_staked : nat64;
-  total_allocated : nat64;
-  tier_staked : vec nat64;
-  total_unstaked : nat64;
-  interest_pool : nat64;
-  total_rewards_distributed : nat64;
+type DailyStatus = record {
+  quizzes_taken : nat8;
+  tokens_earned : nat64;
+  daily_limit : nat8;
 };
-type InitArgs = record {
-  learning_content_id : principal;
-  ledger_id : principal;
-  user_profile_wasm : blob;
+type InitArgs = record { staking_hub_id : principal };
+type LearningUnit = record {
+  content : text;
+  head_unit_title : text;
+  paraphrase : text;
+  quiz : vec QuizQuestion;
+  chapter_title : text;
+  unit_id : text;
+  chapter_id : text;
+  head_unit_id : text;
+  unit_title : text;
 };
-type ShardInfo = record {
-  user_count : nat64;
-  status : ShardStatus;
-  canister_id : principal;
-  created_at : nat64;
+type LearningUnitMetadata = record {
+  chapter_title : text;
+  unit_id : text;
+  chapter_id : text;
+  unit_title : text;
 };
-type ShardStatus = variant { Full; Active };
-type TierDeltas = vec int64;
-type TierIndexes = vec nat;
+type PublicLearningUnit = record {
+  content : text;
+  head_unit_title : text;
+  paraphrase : text;
+  quiz : vec PublicQuizQuestion;
+  chapter_title : text;
+  unit_id : text;
+  chapter_id : text;
+  head_unit_id : text;
+  unit_title : text;
+};
+type PublicQuizQuestion = record { question : text; options : vec text };
+type QuizQuestion = record {
+  question : text;
+  answer : nat8;
+  options : vec text;
+};
 service : {
-  add_allowed_minter : (principal) -> ();
-  distribute_interest : () -> (variant { Ok : text; Err : text });
-  ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
-  get_active_shards : () -> (vec ShardInfo) query;
-  get_config : () -> (principal, principal, bool) query;
-  get_global_stats : () -> (GlobalStats) query;
-  get_limits : () -> (nat64, nat64) query;
-  get_shard_count : () -> (nat64) query;
-  get_shard_for_new_user : () -> (opt principal) query;
-  get_shards : () -> (vec ShardInfo) query;
-  is_registered_shard : (principal) -> (bool) query;
-  process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
-  sync_shard : (TierDeltas, nat64, nat64, nat64) -> (
-      variant { Ok : record { nat64; TierIndexes }; Err : text },
-    );
-  update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
+  add_learning_unit : (LearningUnit) -> (variant { Ok; Err : text });
+  get_learning_unit : (text) -> (
+      variant { Ok : PublicLearningUnit; Err : text },
+    ) query;
+  get_learning_units_metadata : () -> (vec LearningUnitMetadata) query;
+  get_user_daily_status : (principal) -> (DailyStatus) query;
+  is_quiz_completed : (principal, text) -> (bool) query;
+  submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
 }

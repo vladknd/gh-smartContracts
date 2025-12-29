@@ -1,6 +1,6 @@
 +-------------------------------------------------------+       +-------------------------------------------------------+
 |                operational_governance                 |       |                  content_governance                   |
-|           (Controls Treasury: 3.6B GHC)               |       |              (Manages Content Updates)                |
+|           (Controls Treasury: 4.25B GHC)              |       |              (Manages Content Updates)                |
 |                                                       |       |                                                       |
 |  [STORES]                                             |       |  [STORES]                                             |
 |   - Proposals (ID, Amount, Votes)                     |       |   - Book Count                                        |
@@ -18,9 +18,9 @@
             |                                 (The Central Bank & Treasury)                               |
             |                                                                                             |
             |  [STORES]                                                                                   |
-            |   - Global Stats (Total Staked, Total Mined, Interest Pool)                                 |
+            |   - Global Stats (Total Staked, Total Unstaked, Total Allocated)                              |
             |   - Allowed Minters (List of trusted User Profile Shards)                                   |
-            |   - MAX_SUPPLY (4.2B Hard Cap)                                                              |
+            |   - MAX_SUPPLY (4.75B MUC Hard Cap)                                                          |
             |                                                                                             |
             |  [READS]                                                                                    |
             |   - get_global_stats()                                                                      |

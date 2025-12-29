@@ -4,13 +4,14 @@ A comprehensive Internet Computer Protocol (ICP) project for the GreenHero Coin 
 
 ## 🏗️ Architecture
  
- This project consists of 6 core smart contracts (canisters):
+ This project consists of 7 core smart contracts (canisters):
  
  ### Core Financial & Governance Canisters
  
  - **ghc_ledger** - ICRC-1 compliant token ledger recording all balances and transfers.
- - **staking_hub** - Central Bank holding the "Mined Utility Partition" (4.1B tokens), managing Global Stats, and handling real settlement.
- - **operational_governance** - Manages the Treasury (3.6B tokens) and handles spending proposals.
+ - **staking_hub** - Central Bank holding the "Mined Utility Coins" (4.75B MUC), managing Global Stats, and handling real settlement.
+ - **operational_governance** - Manages the Treasury (4.25B MC) and handles spending proposals with MMCR (Monthly Market Coin Release).
+ - **founder_vesting** - Manages time-locked founder allocations (0.5B MC with 10%/year vesting).
  - **content_governance** - Manages educational content proposals (whitelisting books/NFTs).
  
  ### User & Educational Canisters
@@ -105,7 +106,7 @@ A comprehensive Internet Computer Protocol (ICP) project for the GreenHero Coin 
  ```
  +-------------------------------------------------------+       +-------------------------------------------------------+
  |                operational_governance                 |       |                  content_governance                   |
- |           (Controls Treasury: 3.6B GHC)               |       |              (Manages Content Updates)                |
+ |           (Controls Treasury: 4.25B GHC)              |       |              (Manages Content Updates)                |
  +--------------------------+----------------------------+       +---------------------------+---------------------------+
                             |                                                                |
                             | (queries voting power)                                         | (queries voting power)
@@ -115,14 +116,14 @@ A comprehensive Internet Computer Protocol (ICP) project for the GreenHero Coin 
              |                                 (Central Bank & Global Stats)                               |
              |                                                                                             |
              |  [STORES]                                                                                   |
-             |   - Global Stats (Total Staked, Interest Pool, Index)                                       |
+             |   - Global Stats (Total Staked, Total Unstaked, Total Allocated)                            |
              |   - Minting Allowances                                                                      |
              |                                                                                             |
              |  [READS]                                                                                    |
              |   - get_global_stats()                                                                      |
              +-------------+---------------------------------------------------------------+---------------+
                            |                                                               ^
-                           | (transfers real tokens on unstake)                            | (reports stats / requests allowance)
+                           | (transfers real tokens on unstake - 100%)                     | (reports stats / requests allowance)
                            v                                                               |
  +-------------------------------------------------------+       +-------------------------+-----------------------------+
  |                      ghc_ledger                       |       |                      user_profile                     |
@@ -131,7 +132,6 @@ A comprehensive Internet Computer Protocol (ICP) project for the GreenHero Coin 
  |  [STORES]                                             |       |  [STORES]                                             |
  |   - Real Token Balances                               |       |   - User Profile & Progress                           |
  |                                                       |       |   - Staked Balance (Virtual)                          |
- |                                                       |       |   - Unclaimed Interest                                |
  |                                                       |       |                                                       |
  |  [READS]                                              |       |  [READS]                                              |
  |   - icrc1_balance_of(account)                         |       |   - get_profile(user)                                 |
@@ -160,11 +160,11 @@ A comprehensive Internet Computer Protocol (ICP) project for the GreenHero Coin 
  3.  **Local Mint**: If correct, `user_profile` updates the user's local balance immediately.
  4.  **Batch Sync**: Periodically, the shard reports stats to `staking_hub` and requests a new "Minting Allowance".
  
- **2. Interest Payouts (Lazy Distribution)**
- The system incentivizes long-term holding through a "Lazy Distribution" model:
- *   **Collection**: When a user unstakes, a **10% penalty** is deducted and added to a `Pending Interest Pool` in the Hub.
- *   **Distribution**: Periodically, the Hub updates the `Global Reward Index`.
- *   **Lazy Payout**: When a user interacts with their profile, the shard calculates pending interest based on the Index growth and adds it to their `unclaimed_interest`.
+ **2. Unstaking (No Penalty)**
+ Users can withdraw their earned tokens at any time:
+ *   **Request**: User calls `unstake(amount)` on their shard.
+ *   **Transfer**: The Hub transfers **100%** of the amount via the ICRC-1 ledger.
+ *   **Receipt**: User receives real GHC tokens in their wallet.
 
 ## 🧪 Testing
 

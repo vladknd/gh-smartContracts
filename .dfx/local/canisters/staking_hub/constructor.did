@@ -1,12 +1,7 @@
 type GlobalStats = record {
-  cumulative_reward_index : nat;
-  tier_reward_indexes : vec nat;
   total_staked : nat64;
   total_allocated : nat64;
-  tier_staked : vec nat64;
   total_unstaked : nat64;
-  interest_pool : nat64;
-  total_rewards_distributed : nat64;
 };
 type InitArgs = record {
   learning_content_id : principal;
@@ -20,11 +15,8 @@ type ShardInfo = record {
   created_at : nat64;
 };
 type ShardStatus = variant { Full; Active };
-type TierDeltas = vec int64;
-type TierIndexes = vec nat;
 service : (InitArgs) -> {
   add_allowed_minter : (principal) -> ();
-  distribute_interest : () -> (variant { Ok : text; Err : text });
   ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
   get_active_shards : () -> (vec ShardInfo) query;
   get_config : () -> (principal, principal, bool) query;
@@ -35,8 +27,6 @@ service : (InitArgs) -> {
   get_shards : () -> (vec ShardInfo) query;
   is_registered_shard : (principal) -> (bool) query;
   process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
-  sync_shard : (TierDeltas, nat64, nat64, nat64) -> (
-      variant { Ok : record { nat64; TierIndexes }; Err : text },
-    );
+  sync_shard : (int64, nat64, nat64) -> (variant { Ok : nat64; Err : text });
   update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
 }

@@ -44,17 +44,17 @@ type LearningUnitMetadata = record {
     chapter_title : text;
 };
 
-type DailyStatus = record {
-    quizzes_taken : nat8;
-    daily_limit : nat8;
-    tokens_earned : nat64;
-};
-
 service : (InitArgs) -> {
+    // Add a new learning unit (admin function)
     "add_learning_unit": (LearningUnit) -> (variant { Ok: null; Err: text });
+    
+    // Get a learning unit by ID (returns public version without answers)
     "get_learning_unit": (text) -> (variant { Ok: PublicLearningUnit; Err: text }) query;
+    
+    // Get metadata for all learning units (for curriculum listing)
     "get_learning_units_metadata": () -> (vec LearningUnitMetadata) query;
-    "get_user_daily_status": (principal) -> (DailyStatus) query;
-    "submit_quiz": (text, vec nat8) -> (variant { Ok: nat64; Err: text });
-    "is_quiz_completed": (principal, text) -> (bool) query;
+    
+    // Verify quiz answers (called by user_profile shards)
+    // Returns: (passed: bool, correct_count: u64, total_questions: u64)
+    "verify_quiz": (text, vec nat8) -> (bool, nat64, nat64) query;
 }

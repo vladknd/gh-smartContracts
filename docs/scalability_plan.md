@@ -85,7 +85,7 @@ To solve the bottleneck of millions of users hitting the `staking_hub` for rewar
 - `staking_hub` only holds the Real Token Treasury and Global Stats.
 
 ### B. Batching & Allowance
-- **Hard Cap**: `staking_hub` enforces the 4.2B limit.
+- **Hard Cap**: `staking_hub` enforces the 4.75B MUC limit.
 - **Allowance**: Shards request a "Minting Allowance" (e.g., 100k tokens).
 - **Batching**: Shards report stats (Total Staked changes) only when requesting a new allowance.
 - **Result**: Network traffic reduced by 1000x+.

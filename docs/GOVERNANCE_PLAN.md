@@ -40,7 +40,7 @@ This design ensures:
 
 | Domain | Purpose | Manages |
 |--------|---------|---------|
-| **Operational Governance** | Treasury management | 3.6B Market Coin Treasury |
+| **Operational Governance** | Treasury management | 4.25B Market Coin Treasury |
 | **Content Governance** | Educational content | Learning units, quizzes, books |
 
 Both governance canisters use the same voting power sources: **VUC (founders) + staked tokens (users)**.
@@ -58,7 +58,7 @@ The governance system uses a **dual voting power model** that progressively shif
 TOTAL VOTING POWER = VUC (Founders) + Staked Tokens (Users)
 
 Where:
-  VUC = 4.2B - total_allocated (Utility Partition CAP minus mined tokens)
+  VUC = 4.75B - total_allocated (Utility Coin CAP minus mined tokens)
   Staked Tokens = Sum of all users' staked_balance
 
 As more tokens are mined → VUC decreases → Users gain more control
@@ -68,10 +68,10 @@ As more tokens are mined → VUC decreases → Users gain more control
 
 | Source | Who Exercises | Formula | Behavior |
 |--------|---------------|---------|----------|
-| **VUC** | Founders | 4.2B - total_allocated | Decreases as tokens are mined |
+| **VUC** | Founders | 4.75B - total_allocated | Decreases as tokens are mined |
 | **Staked Tokens** | Users | Sum of staked_balance | Increases as users mine & stake |
 
-> **Note:** `unclaimed_interest` does NOT count as voting power. Interest must be claimed (added to staked_balance) to exercise voting power.
+> **Note:** The system no longer uses interest mechanics. Voting power is based purely on `staked_balance`.
 
 ### Progressive Decentralization Visualization
 
@@ -80,7 +80,7 @@ As more tokens are mined → VUC decreases → Users gain more control
 │                    PROGRESSIVE DECENTRALIZATION                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-  UTILITY PARTITION CAP: 4.2 BILLION GHC
+  UTILITY COIN CAP: 4.75 BILLION GHC
   
   ═══════════════════════════════════════════════════════════════════════════
   
@@ -129,11 +129,11 @@ As more tokens are mined → VUC decreases → Users gain more control
   FINAL STAGE (All tokens mined)
   ──────────────────────────────
   
-  total_allocated = 4.2B
+  total_allocated = 4.75B
   
   ┌───────────────────────────────────────────────────────────────────────┐
   │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-  │                     Users: 4.2B (100%)                               │
+  │                     Users: 4.75B (100%)                              │
   │                  VUC: 0 (Founders have no voting power)              │
   └───────────────────────────────────────────────────────────────────────┘
   
@@ -144,12 +144,11 @@ As more tokens are mined → VUC decreases → Users gain more control
 
 | Token Type | Voting Power | Who | Explanation |
 |------------|--------------|-----|-------------|
-| **VUC** | ✅ YES | Founders | 4.2B - total_allocated (unmined tokens) |
+| **VUC** | ✅ YES | Founders | 4.75B - total_allocated (unmined tokens) |
 | **staked_balance** | ✅ YES | Users | User's staked tokens in user_profile |
-| `unclaimed_interest` | ❌ NO | - | Must claim (add to staked_balance) first |
 | Unstaked tokens | ❌ NO | - | Becomes market coins, loses voting power |
 | Founder's 0.5B | ❌ NO | - | Pre-allocated market coins, not VUC |
-| Treasury 3.6B | ❌ NO | - | Managed BY governance, not voting WITH it |
+| Treasury 4.25B | ❌ NO | - | Managed BY governance, not voting WITH it |
 
 ### Voting Power Formula
 
@@ -164,7 +163,7 @@ fn get_total_voting_power() -> u64 {
 
 // VUC = Unmined tokens (founders' voting power)
 fn get_vuc() -> u64 {
-    const UTILITY_CAP: u64 = 4_200_000_000 * 100_000_000; // 4.2B
+    const UTILITY_CAP: u64 = 4_750_000_000 * 100_000_000; // 4.75B
     let total_allocated = GLOBAL_STATS.total_allocated;
     
     UTILITY_CAP.saturating_sub(total_allocated)
@@ -174,8 +173,6 @@ fn get_vuc() -> u64 {
 fn get_user_voting_power(user: Principal) -> u64 {
     // Query user's shard
     let profile = get_user_profile(user);
-    
-    // ONLY staked_balance counts (NOT unclaimed_interest)
     profile.staked_balance
 }
 
@@ -195,12 +192,12 @@ fn get_founder_voting_power(founder: Principal) -> u64 {
 
 | Stage | total_allocated | VUC (Founders) | Staked (Users) | Founder % | User % |
 |-------|-----------------|----------------|----------------|-----------|--------|
-| Launch | 0 | 4.2B | 0 | 100% | 0% |
+| Launch | 0 | 4.75B | 0 | 100% | 0% |
 | Year 1 | 500M | 3.7B | 500M | 88% | 12% |
 | Year 2 | 1.5B | 2.7B | 1.5B | 64% | 36% |
 | Year 3 | 2.5B | 1.7B | 2.5B | 40% | 60% |
 | Year 5 | 3.5B | 700M | 3.5B | 17% | 83% |
-| Maturity | 4.2B | 0 | 4.2B | 0% | 100% |
+| Maturity | 4.75B | 0 | 4.75B | 0% | 100% |
 
 ### Why This Design?
 
@@ -224,7 +221,7 @@ fn get_founder_voting_power(founder: Principal) -> u64 {
                     │  FOUNDERS           │     │   USERS             │
                     │                     │     │                     │
                     │  Voting Power =     │     │  Voting Power =     │
-                    │  VUC (4.2B - mined) │     │  staked_balance     │
+                    │  VUC (4.75B - mined)│     │  staked_balance     │
                     │                     │     │  (from user_profile)│
                     └──────────┬──────────┘     └──────────┬──────────┘
                                │                           │
@@ -239,7 +236,7 @@ fn get_founder_voting_power(founder: Principal) -> u64 {
        ├────────────────────────┤                ├────────────────────────┤
        │                        │                │                        │
        │ Manages:               │                │ Manages:               │
-       │ • Treasury (3.6B)      │                │ • Learning units       │
+       │ • Treasury (4.25B MC)  │                │ • Learning units       │
        │ • DEX liquidity        │                │ • Quiz content         │
        │ • Partnerships         │                │ • Book whitelist       │
        │ • Marketing spend      │                │ • Content moderation   │
@@ -256,7 +253,7 @@ fn get_founder_voting_power(founder: Principal) -> u64 {
                     ├────────────────────────────────────────┤
                     │                                        │
                     │  VUC Calculation:                      │
-                    │  get_vuc() = 4.2B - total_allocated    │
+                    │  get_vuc() = 4.75B - total_allocated   │
                     │                                        │
                     │  User Voting Power:                    │
                     │  get_user_voting_power(user)           │
@@ -292,7 +289,7 @@ fn get_founder_voting_power(founder: Principal) -> u64 {
 
 ### Purpose
 
-Manages the **3.6B Market Coin Treasury** with democratic oversight from founders (VUC) and stakers (users).
+Manages the **4.25B Market Coin Treasury** with democratic oversight from founders (VUC) and stakers (users).
 
 ### Proposal Types
 
@@ -944,9 +941,8 @@ service : {
 | Aspect | Implementation |
 |--------|----------------|
 | **Voting Power Model** | Progressive Decentralization (VUC + Staked) |
-| **VUC (Founders)** | 4.2B - total_allocated (decreases as tokens mined) |
+| **VUC (Founders)** | 4.75B - total_allocated (decreases as tokens mined) |
 | **Staked Tokens (Users)** | Sum of staked_balance (increases as users mine) |
-| **unclaimed_interest** | NOT voting power (must claim first) |
 | **Unstaked Tokens** | NO voting power (market coins) |
 | **Snapshot Voting** | Power frozen at proposal creation |
 | **User Registry** | O(1) lookup via staking_hub |

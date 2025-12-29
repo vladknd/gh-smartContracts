@@ -253,8 +253,6 @@ struct UserProfile {
     education: String,       // 4 bytes length prefix + ~20 chars = ~24 bytes  
     gender: String,          // 4 bytes length prefix + ~10 chars = ~14 bytes
     staked_balance: u64,     // 8 bytes
-    unclaimed_interest: u64, // 8 bytes
-    last_reward_index: u128, // 16 bytes
     transaction_count: u64,  // 8 bytes
 }
 ```
@@ -263,15 +261,15 @@ struct UserProfile {
 ```
 String overhead:       4 bytes × 4 fields = 16 bytes
 String content:        30 + 25 + 20 + 10  = 85 bytes  
-Numeric fields:        8 + 8 + 16 + 8     = 40 bytes
+Numeric fields:        8 + 8              = 16 bytes
 Candid type headers:   ~15 bytes (magic bytes, type table)
 ─────────────────────────────────────────────────────────
-TOTAL UserProfile:     ~156 bytes (rounded to 160 bytes)
+TOTAL UserProfile:     ~132 bytes (rounded to 140 bytes)
 ```
 
 **Key in StableBTreeMap (Principal):** 29 bytes (typical compressed format)
 
-**UserProfile Entry Total:** `160 + 29 = ~190 bytes`
+**UserProfile Entry Total:** `140 + 29 = ~170 bytes`
 
 ---
 

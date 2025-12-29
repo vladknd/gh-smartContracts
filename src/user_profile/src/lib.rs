@@ -14,28 +14,6 @@ use candid::{Encode, Decode};
 type Memory = VirtualMemory<DefaultMemoryImpl>;
 
 // ============================================================================
-// TIER SYSTEM CONSTANTS
-// ============================================================================
-// These must match the constants in staking_hub
-
-/// Number of tiers in the system
-pub const NUM_TIERS: usize = 4;
-
-/// Tier thresholds based on continuous staking duration (in nanoseconds)
-/// 
-/// Users automatically progress through tiers as they stake longer:
-/// - Bronze (Tier 0): 0+ days - New stakers
-/// - Silver (Tier 1): 30+ days - Committed stakers
-/// - Gold (Tier 2): 90+ days - Long-term stakers  
-/// - Diamond (Tier 3): 365+ days - Diamond hands
-pub const TIER_THRESHOLDS_NANOS: [u64; 4] = [
-    0,                                      // Bronze: 0+ days
-    30 * 24 * 60 * 60 * 1_000_000_000,      // Silver: 30+ days
-    90 * 24 * 60 * 60 * 1_000_000_000,      // Gold: 90+ days
-    365 * 24 * 60 * 60 * 1_000_000_000,     // Diamond: 365+ days
-];
-
-// ============================================================================
 // DATA STRUCTURES
 // ============================================================================
 
@@ -50,9 +28,8 @@ struct InitArgs {
 
 /// User profile containing personal info and staking state
 /// 
-/// The economy state tracks the user's staked tokens, unclaimed interest,
-/// and their current tier in the staking system. Tier is determined by
-/// how long they've been continuously staking (initial_stake_time).
+/// Simplified version without interest/tier system.
+/// Users earn tokens from quizzes and can unstake them at any time with no penalty.
 #[derive(CandidType, Deserialize, Clone, Debug)]
 struct UserProfile {
     // ─────────────────────────────────────────────────────────────────
@@ -69,28 +46,8 @@ struct UserProfile {
     /// Total tokens currently staked by this user
     staked_balance: u64,
     
-    /// Interest that has been calculated but not yet claimed/compounded
-    unclaimed_interest: u64,
-    
-    /// Legacy reward index (kept for compatibility, not used in tier system)
-    last_reward_index: u128,
-    
     /// Number of transactions for this user (used for indexing)
     transaction_count: u64,
-    
-    // ─────────────────────────────────────────────────────────────────
-    // Tier Tracking
-    // ─────────────────────────────────────────────────────────────────
-    /// Current tier: 0=Bronze, 1=Silver, 2=Gold, 3=Diamond
-    current_tier: u8,
-    
-    /// Reward index of user's current tier when they entered it
-    /// Used to calculate interest: (current_index - tier_start_index) * stake
-    tier_start_index: u128,
-    
-    /// Timestamp (nanoseconds) when user first staked
-    /// Tier is calculated as: now - initial_stake_time
-    initial_stake_time: u64,
 }
 
 impl Storable for UserProfile {
@@ -240,11 +197,8 @@ struct PendingStats {
     /// Negative = unstakes
     staked_delta: i64,
     
-    /// Total amount unstaked since last sync (before penalty)
+    /// Total amount unstaked since last sync
     unstaked_delta: u64,
-    
-    /// Total rewards distributed to users since last sync
-    rewards_delta: u64,
 }
 
 impl Storable for PendingStats {
@@ -278,11 +232,6 @@ impl Storable for PendingStats {
 //   5 - MINTING_ALLOWANCE: Economy state
 //   6 - PENDING_STATS: Batched sync data
 //   7 - USER_TRANSACTIONS: Transaction history
-//   8 - GLOBAL_REWARD_INDEX: Interest calculation (legacy)
-// 
-// Non-stable (heap) storage:
-//   TIER_REWARD_INDEXES: Refreshed from hub on each sync
-//   PENDING_TIER_DELTAS: Accumulated tier changes for next sync
 
 thread_local! {
     // ─────────────────────────────────────────────────────────────────────
@@ -370,39 +319,14 @@ thread_local! {
     );
 
     /// Pending statistics to report to the hub on next sync
-    /// Accumulates stake changes, unstakes, and reward distributions
+    /// Accumulates stake changes and unstakes
     /// Cleared after successful sync, rolled back on failure
     static PENDING_STATS: RefCell<StableCell<PendingStats, Memory>> = RefCell::new(
         StableCell::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(6))),
-            PendingStats { staked_delta: 0, unstaked_delta: 0, rewards_delta: 0 }
+            PendingStats { staked_delta: 0, unstaked_delta: 0 }
         ).unwrap()
     );
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Interest Calculation State
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// Legacy global reward index (kept for backwards compatibility)
-    /// New code uses TIER_REWARD_INDEXES instead
-    static GLOBAL_REWARD_INDEX: RefCell<StableCell<u128, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(8))),
-            0
-        ).unwrap()
-    );
-
-    /// Current reward index for each tier: [Bronze, Silver, Gold, Diamond]
-    /// Synced from the staking hub on each sync cycle
-    /// Used to calculate unclaimed interest: (current_index - user.tier_start_index) * stake
-    /// NOT stored in stable memory - refreshed from hub on every sync
-    static TIER_REWARD_INDEXES: RefCell<[u128; 4]> = RefCell::new([0; 4]);
-    
-    /// Pending tier deltas to report to hub: [Bronze, Silver, Gold, Diamond]
-    /// Accumulated when users move between tiers
-    /// Sent to hub during sync, then cleared
-    /// NOT stored in stable memory - volatile between syncs
-    static PENDING_TIER_DELTAS: RefCell<[i64; 4]> = RefCell::new([0; 4]);
 }
 
 #[init]
@@ -440,22 +364,13 @@ fn register_user(args: UserProfileUpdate) -> Result<(), String> {
         return Err("User already registered".to_string());
     }
 
-    // Get current tier indexes to set tier_start_index
-    let bronze_index = TIER_REWARD_INDEXES.with(|i| i.borrow()[0]);
-
     let new_profile = UserProfile {
         email: args.email,
         name: args.name,
         education: args.education,
         gender: args.gender,
         staked_balance: 0,
-        unclaimed_interest: 0,
-        last_reward_index: 0,
         transaction_count: 0,
-        // New tier fields
-        current_tier: 0,              // Start in Bronze
-        tier_start_index: bronze_index, // Will receive interest from current index
-        initial_stake_time: 0,        // Set on first stake
     };
 
     USER_PROFILES.with(|p| p.borrow_mut().insert(user, new_profile));
@@ -481,128 +396,9 @@ fn update_profile(args: UserProfileUpdate) -> Result<(), String> {
     })
 }
 
-// ===============================
-// Tier Helper Functions
-// ===============================
-
-/// Calculate which tier a user should be in based on staking duration
-fn get_tier_for_duration(duration_nanos: u64) -> u8 {
-    for tier in (0..NUM_TIERS).rev() {
-        if duration_nanos >= TIER_THRESHOLDS_NANOS[tier] {
-            return tier as u8;
-        }
-    }
-    0 // Default to Bronze
-}
-
-/// Get user's expected tier based on their staking duration
-fn get_expected_tier(profile: &UserProfile, now: u64) -> u8 {
-    if profile.initial_stake_time == 0 || profile.staked_balance == 0 {
-        return 0; // Bronze for new users or zero balance
-    }
-    let duration = now.saturating_sub(profile.initial_stake_time);
-    get_tier_for_duration(duration)
-}
-
 #[query]
 fn get_profile(user: Principal) -> Option<UserProfile> {
-    let now = ic_cdk::api::time();
-    
-    USER_PROFILES.with(|p| {
-        if let Some(profile) = p.borrow().get(&user) {
-            let mut display_profile = profile.clone();
-            
-            // Calculate pending interest using tier indexes
-            let tier_indexes = TIER_REWARD_INDEXES.with(|i| i.borrow().clone());
-            let current_tier = profile.current_tier as usize;
-            let current_index = tier_indexes[current_tier];
-            
-            if current_index > profile.tier_start_index && profile.staked_balance > 0 {
-                let index_diff = current_index - profile.tier_start_index;
-                let interest = (profile.staked_balance as u128 * index_diff) / 1_000_000_000_000_000_000;
-                display_profile.unclaimed_interest = display_profile.unclaimed_interest.saturating_add(interest as u64);
-            }
-            
-            // Update display tier based on expected tier (for display only, actual upgrade happens on compound)
-            let expected_tier = get_expected_tier(&profile, now);
-            display_profile.current_tier = expected_tier;
-            
-            Some(display_profile)
-        } else {
-            None
-        }
-    })
-}
-
-/// Check if user should be upgraded and handle the upgrade
-fn check_and_handle_tier_upgrade(profile: &mut UserProfile, now: u64) -> bool {
-    let expected_tier = get_expected_tier(profile, now);
-    
-    if expected_tier > profile.current_tier {
-        let tier_indexes = TIER_REWARD_INDEXES.with(|i| i.borrow().clone());
-        let old_tier = profile.current_tier as usize;
-        let old_index = tier_indexes[old_tier];
-        
-        // Claim interest from old tier before upgrading
-        if old_index > profile.tier_start_index && profile.staked_balance > 0 {
-            let index_diff = old_index - profile.tier_start_index;
-            let interest = (profile.staked_balance as u128 * index_diff) / 1_000_000_000_000_000_000;
-            profile.unclaimed_interest = profile.unclaimed_interest.saturating_add(interest as u64);
-        }
-        
-        // Update pending tier deltas for sync
-        let balance = profile.staked_balance as i64;
-        PENDING_TIER_DELTAS.with(|d| {
-            let mut deltas = d.borrow_mut();
-            deltas[old_tier] -= balance;           // Remove from old tier
-            deltas[expected_tier as usize] += balance; // Add to new tier
-        });
-        
-        // Move to new tier
-        let new_tier = expected_tier as usize;
-        profile.current_tier = expected_tier;
-        profile.tier_start_index = tier_indexes[new_tier];
-        
-        return true;
-    }
-    
-    false
-}
-
-// Helper to compound interest for a user (Updates Unclaimed Interest)
-fn compound_interest(user: Principal) {
-    let now = ic_cdk::api::time();
-    let tier_indexes = TIER_REWARD_INDEXES.with(|i| i.borrow().clone());
-    
-    USER_PROFILES.with(|p| {
-        let mut map = p.borrow_mut();
-        if let Some(mut profile) = map.get(&user) {
-            // 1. Check for and handle tier upgrade
-            let upgraded = check_and_handle_tier_upgrade(&mut profile, now);
-            
-            // 2. Calculate interest in current tier
-            let current_tier = profile.current_tier as usize;
-            let current_index = tier_indexes[current_tier];
-            
-            if current_index > profile.tier_start_index && profile.staked_balance > 0 {
-                let index_diff = current_index - profile.tier_start_index;
-                let interest = (profile.staked_balance as u128 * index_diff) / 1_000_000_000_000_000_000;
-                
-                if interest > 0 {
-                    profile.unclaimed_interest = profile.unclaimed_interest.saturating_add(interest as u64);
-                }
-                profile.tier_start_index = current_index;
-            } else if profile.tier_start_index == 0 && profile.staked_balance > 0 {
-                // Initialize index for first time
-                profile.tier_start_index = current_index;
-            }
-            
-            // Always save if we did any work
-            if upgraded || profile.tier_start_index == current_index {
-                map.insert(user, profile);
-            }
-        }
-    });
+    USER_PROFILES.with(|p| p.borrow().get(&user))
 }
 
 // ============================================================================
@@ -612,10 +408,9 @@ fn compound_interest(user: Principal) {
 /// Periodically sync local statistics with the staking hub
 /// 
 /// This function runs every 5 seconds and performs these operations:
-/// 1. Reports tier-specific stake changes to the hub
-/// 2. Reports unstaking and reward distribution
+/// 1. Reports stake changes to the hub
+/// 2. Reports unstaking activity
 /// 3. Requests more minting allowance if running low
-/// 4. Receives updated tier reward indexes for interest calculation
 /// 
 /// Uses optimistic reset pattern: values are cleared before the call
 /// and rolled back if the call fails.
@@ -625,35 +420,21 @@ async fn sync_with_hub_internal() -> Result<(), String> {
     // ─────────────────────────────────────────────────────────────────
     // Step 1: Optimistic Reset - Capture and clear pending stats
     // ─────────────────────────────────────────────────────────────────
-    let (staked_delta, unstaked_delta, rewards_delta) = PENDING_STATS.with(|s| {
+    let (staked_delta, unstaked_delta) = PENDING_STATS.with(|s| {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
         
         let s_delta = stats.staked_delta;
         let u_delta = stats.unstaked_delta;
-        let r_delta = stats.rewards_delta;
         
         // Clear for next cycle
         stats.staked_delta = 0;
         stats.unstaked_delta = 0;
-        stats.rewards_delta = 0;
         
         cell.set(stats).expect("Failed to update pending stats");
         
-        (s_delta, u_delta, r_delta)
+        (s_delta, u_delta)
     });
-
-    // Capture tier deltas (from tier upgrades)
-    let tier_deltas = PENDING_TIER_DELTAS.with(|d| {
-        let mut deltas = d.borrow_mut();
-        let captured: [i64; 4] = *deltas;
-        *deltas = [0; 4];
-        captured
-    });
-
-    // Combine regular staked_delta with tier 0 (Bronze) for new stakes
-    let mut combined_tier_deltas = tier_deltas;
-    combined_tier_deltas[0] += staked_delta;
 
     // ─────────────────────────────────────────────────────────────────
     // Step 2: Smart Allowance Request
@@ -669,33 +450,22 @@ async fn sync_with_hub_internal() -> Result<(), String> {
     };
 
     // ─────────────────────────────────────────────────────────────────
-    // Step 3: Call hub with tier-aware sync
+    // Step 3: Call hub with simplified sync
     // ─────────────────────────────────────────────────────────────────
-    let result: Result<(Result<(u64, [u128; 4]), String>,), _> = ic_cdk::call(
+    let result: Result<(Result<u64, String>,), _> = ic_cdk::call(
         staking_hub_id,
         "sync_shard",
-        (combined_tier_deltas, unstaked_delta, rewards_delta, requested_allowance)
+        (staked_delta, unstaked_delta, requested_allowance)
     ).await;
 
     match result {
-        Ok((Ok((granted, tier_indexes)),)) => {
+        Ok((Ok(granted),)) => {
             // Success! Update local state with hub data
             
             // Update minting allowance
             MINTING_ALLOWANCE.with(|a| {
                 let current = *a.borrow().get();
                 a.borrow_mut().set(current + granted).expect("Failed to update allowance");
-            });
-
-            // Update tier reward indexes (for interest calculation)
-            TIER_REWARD_INDEXES.with(|i| {
-                *i.borrow_mut() = tier_indexes;
-            });
-
-            // Update legacy global index (for backwards compatibility)
-            let avg_index: u128 = tier_indexes.iter().sum::<u128>() / 4;
-            GLOBAL_REWARD_INDEX.with(|i| {
-                i.borrow_mut().set(avg_index).expect("Failed to update global index");
             });
 
             // Report user count to hub for load balancing
@@ -710,33 +480,25 @@ async fn sync_with_hub_internal() -> Result<(), String> {
         },
         Ok((Err(msg),)) => {
             // Hub rejected our request - rollback local stats
-            rollback_pending_stats(staked_delta, unstaked_delta, rewards_delta, tier_deltas);
+            rollback_pending_stats(staked_delta, unstaked_delta);
             Err(format!("Hub Rejected Sync: {}", msg))
         },
         Err((code, msg)) => {
             // Network/system error - rollback local stats
-            rollback_pending_stats(staked_delta, unstaked_delta, rewards_delta, tier_deltas);
+            rollback_pending_stats(staked_delta, unstaked_delta);
             Err(format!("Hub Call Failed: {:?} {}", code, msg))
         }
     }
 }
 
 /// Rollback pending stats after a failed sync attempt
-fn rollback_pending_stats(staked_delta: i64, unstaked_delta: u64, rewards_delta: u64, tier_deltas: [i64; 4]) {
+fn rollback_pending_stats(staked_delta: i64, unstaked_delta: u64) {
     PENDING_STATS.with(|s| {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
         stats.staked_delta += staked_delta;
         stats.unstaked_delta += unstaked_delta;
-        stats.rewards_delta += rewards_delta;
         cell.set(stats).expect("Failed to rollback pending stats");
-    });
-    
-    PENDING_TIER_DELTAS.with(|d| {
-        let mut deltas = d.borrow_mut();
-        for i in 0..NUM_TIERS {
-            deltas[i] += tier_deltas[i];
-        }
     });
 }
 
@@ -812,21 +574,10 @@ async fn submit_quiz(unit_id: String, answers: Vec<u8>) -> Result<u64, String> {
     USER_DAILY_STATS.with(|s| s.borrow_mut().insert(user, daily_stats));
 
     // Update User Profile Balance
-    compound_interest(user); // Apply interest first!
-    
     USER_PROFILES.with(|p| {
         let mut map = p.borrow_mut();
         if let Some(mut profile) = map.get(&user) {
-            // Set initial_stake_time on first stake (for tier calculation)
             let now = ic_cdk::api::time();
-            if profile.initial_stake_time == 0 {
-                profile.initial_stake_time = now;
-                // Initialize tier_start_index if needed
-                if profile.tier_start_index == 0 {
-                    let bronze_index = TIER_REWARD_INDEXES.with(|i| i.borrow()[0]);
-                    profile.tier_start_index = bronze_index;
-                }
-            }
             
             profile.staked_balance += reward_amount;
             
@@ -861,13 +612,8 @@ async fn submit_quiz(unit_id: String, answers: Vec<u8>) -> Result<u64, String> {
         let mut cell = s.borrow_mut();
         let mut stats = cell.get().clone();
         stats.staked_delta += reward_amount as i64;
-        stats.rewards_delta += reward_amount;
         cell.set(stats).expect("Failed to update pending stats");
     });
-
-    // Trigger Refill if Low (Async/Fire-and-forget ideally, but here we just check)
-    // For simplicity, we rely on the check at the start of the next call.
-    // Or we could spawn a timer.
 
     // 7. Mark Completed
     COMPLETED_QUIZZES.with(|q| q.borrow_mut().insert(key, true));
@@ -902,9 +648,6 @@ async fn unstake(amount: u64) -> Result<u64, String> {
     let user = ic_cdk::caller();
     
     // 1. Check Balance and Registration
-    // Apply Interest First!
-    compound_interest(user);
-    
     let mut profile = USER_PROFILES.with(|p| p.borrow().get(&user).ok_or("User not registered".to_string()))?;
 
     if profile.staked_balance < amount {
@@ -921,7 +664,7 @@ async fn unstake(amount: u64) -> Result<u64, String> {
     let tx_record = TransactionRecord {
         timestamp: ic_cdk::api::time(),
         tx_type: TransactionType::Unstake,
-        amount: amount,
+        amount,
     };
     
     USER_TRANSACTIONS.with(|t| t.borrow_mut().insert(TransactionKey { user, index: tx_index }, tx_record));
@@ -936,7 +679,7 @@ async fn unstake(amount: u64) -> Result<u64, String> {
         cell.set(stats).expect("Failed to update pending stats");
     });
 
-    // 4. Call Hub to Process Unstake (Transfer Tokens)
+    // 4. Call Hub to Process Unstake (Transfer Tokens) - No penalty!
     let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
     let result: Result<(Result<u64, String>,), _> = ic_cdk::call(
         staking_hub_id,
@@ -1005,46 +748,6 @@ async fn debug_force_sync() -> Result<(), String> {
     sync_with_hub_internal().await
 }
 
-#[update]
-fn claim_rewards() -> Result<u64, String> {
-    let user = ic_cdk::caller();
-    
-    // 1. Calculate latest interest
-    compound_interest(user);
-    
-    // 2. Move Unclaimed -> Staked
-    USER_PROFILES.with(|p| {
-        let mut map = p.borrow_mut();
-        if let Some(mut profile) = map.get(&user) {
-            let amount = profile.unclaimed_interest;
-            
-            if amount == 0 {
-                return Err("No rewards to claim".to_string());
-            }
-            
-            profile.staked_balance += amount;
-            profile.unclaimed_interest = 0;
-            
-            // Log Transaction
-            let tx_index = profile.transaction_count;
-            profile.transaction_count += 1;
-            
-            let tx_record = TransactionRecord {
-                timestamp: ic_cdk::api::time(),
-                tx_type: TransactionType::QuizReward, // Using QuizReward as placeholder for now
-                amount: amount,
-            };
-            
-            USER_TRANSACTIONS.with(|t| t.borrow_mut().insert(TransactionKey { user, index: tx_index }, tx_record));
-            
-            map.insert(user, profile);
-            Ok(amount)
-        } else {
-            Err("User not registered".to_string())
-        }
-    })
-}
-
 /// Get total number of registered users in this shard
 #[query]
 fn get_user_count() -> u64 {
@@ -1052,4 +755,3 @@ fn get_user_count() -> u64 {
 }
 
 ic_cdk::export_candid!();
-

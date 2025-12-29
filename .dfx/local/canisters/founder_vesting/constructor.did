@@ -1,0 +1,28 @@
+type InitArgs = record {
+  founder1 : principal;
+  founder2 : principal;
+  ledger_id : principal;
+};
+type VestingSchedule = record {
+  claimed : nat64;
+  vesting_start : nat64;
+  founder : principal;
+  total_allocation : nat64;
+};
+type VestingStatus = record {
+  years_elapsed : nat64;
+  claimed : nat64;
+  claimable : nat64;
+  founder : principal;
+  vested : nat64;
+  total_allocation : nat64;
+  unlock_percentage : nat64;
+};
+service : (InitArgs) -> {
+  claim_vested : () -> (variant { Ok : nat64; Err : text });
+  get_all_vesting_schedules : () -> (vec VestingStatus) query;
+  get_genesis_timestamp : () -> (nat64) query;
+  get_total_unclaimed : () -> (nat64) query;
+  get_vesting_status : (principal) -> (opt VestingStatus) query;
+  is_founder : (principal) -> (bool) query;
+}

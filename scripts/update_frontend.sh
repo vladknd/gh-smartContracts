@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Destination Directories
-DASHBOARD_ROOT="/Users/vladknd/LIB/CODE/gh-dashboard"
+DASHBOARD_ROOT="/mnt/c/LIB/CODE/gh-dashboard"
 DIDS_DIR="$DASHBOARD_ROOT/dids"
 CONFIG_FILE="$DASHBOARD_ROOT/ic.config.json"
 

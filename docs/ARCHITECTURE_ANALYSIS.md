@@ -18,7 +18,7 @@ Your system implements a **"Pre-Mint & Allocate" tokenomics model** on the Inter
 │                                    GOVERNANCE LAYER                                   │
 │  ┌───────────────────────────────┐    ┌───────────────────────────────┐             │
 │  │   operational_governance      │    │    content_governance         │             │
-│  │   (Treasury: 3.6B GHC)        │    │    (Content Whitelisting)     │             │
+│  │   (Treasury: 4.25B GHC)       │    │    (Content Whitelisting)     │             │
 │  └───────────────────────────────┘    └───────────────────────────────┘             │
 └─────────────────────────────────────────────────────────────────────────────────────┘
                                           │
@@ -27,7 +27,7 @@ Your system implements a **"Pre-Mint & Allocate" tokenomics model** on the Inter
 │                                   CENTRAL BANKING LAYER                               │
 │  ┌─────────────────────────────────────────────────────────────────────────────────┐│
 │  │                              staking_hub (Central Bank)                          ││
-│  │   • Holds 4.1B "Mined Utility" tokens       • Global Stats (Staked, Pool, Index) ││
+│  │   • Holds 4.75B "Mined Utility" tokens      • Global Stats (Staked, Allocated)  ││
 │  │   • Allowance Manager                       • Settlement (Unstaking)             ││
 │  └─────────────────────────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────────────────────────┘
@@ -271,13 +271,13 @@ Err((code, msg)) => {
 ### 3.2 Issues & Improvements
 
 #### **A. Partial Failure in `process_unstake`**
-**Location**: `staking_hub/src/lib.rs` lines 234-282
+**Location**: `staking_hub/src/lib.rs`
 
 **Problem**: You update `GLOBAL_STATS` **before** the ledger transfer. If the transfer fails, you rollback, but what if rollback itself fails (e.g., trap)?
 
 ```rust
 // Current flow:
-GLOBAL_STATS.with(|s| { ... stats.interest_pool += penalty ... }); // Step 1
+GLOBAL_STATS.with(|s| { ... stats.total_unstaked += amount ... }); // Step 1
 let result = ic_cdk::call(ledger).await;  // Step 2 (can fail)
 if Err { rollback(); } // Step 3 (can trap?)
 ```
@@ -378,7 +378,7 @@ static EVENTS: RefCell<Vec<CanisterEvent>> = ...;
 
 #### **A. Magic Numbers**
 ```rust
-const MAX_SUPPLY: u64 = 4_200_000_000 * 100_000_000; // Good! Named constant
+const MAX_SUPPLY: u64 = 4_750_000_000 * 100_000_000; // Good! Named constant
 let reward_amount = 100_000_000; // Bad! Magic number
 let penalty = amount / 10; // Bad! Magic number (10%)
 ```

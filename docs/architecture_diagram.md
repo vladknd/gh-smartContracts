@@ -1,7 +1,7 @@
 ```mermaid
 graph TD
     subgraph "Operational Governance"
-        OP_GOV[<b>operational_governance</b><br/><i>Controls Treasury: 3.6B GHC</i>]
+        OP_GOV[<b>operational_governance</b><br/><i>Controls Treasury: 4.25B GHC</i>]
         OP_STORE[<b>Stores:</b><br/>- Proposals ID, Amount, Votes<br/>- Total Spent Counter]
         OP_READ[<b>Reads:</b><br/>- get_proposal id<br/>- get_total_spent]
         OP_GOV --- OP_STORE
@@ -18,7 +18,7 @@ graph TD
 
     subgraph "Staking Hub"
         STAKE[<b>staking_hub</b><br/><i>The Central Bank & Treasury</i>]
-        STAKE_STORE[<b>Stores:</b><br/>- Global Stats Total Staked, Total Mined, Interest Pool<br/>- Allowed Minters List of trusted User Profile Shards<br/>- MAX_SUPPLY 4.2B Hard Cap]
+        STAKE_STORE[<b>Stores:</b><br/>- Global Stats Total Staked, Total Mined, Total Allocated<br/>- Allowed Minters List of trusted User Profile Shards<br/>- MAX_SUPPLY 4.75B MUC Hard Cap]
         STAKE_READ[<b>Reads:</b><br/>- get_global_stats]
         STAKE_ACTIONS[<b>Actions:</b><br/>- sync_shard stats, request_allowance -> Grants Allowance<br/>- process_unstake user, amount -> Sends Real Tokens]
         STAKE --- STAKE_STORE

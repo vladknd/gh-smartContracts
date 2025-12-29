@@ -3,14 +3,9 @@ import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
 export interface GlobalStats {
-  'cumulative_reward_index' : bigint,
-  'tier_reward_indexes' : Array<bigint>,
   'total_staked' : bigint,
   'total_allocated' : bigint,
-  'tier_staked' : BigUint64Array | bigint[],
   'total_unstaked' : bigint,
-  'interest_pool' : bigint,
-  'total_rewards_distributed' : bigint,
 }
 export interface InitArgs {
   'learning_content_id' : Principal,
@@ -25,15 +20,8 @@ export interface ShardInfo {
 }
 export type ShardStatus = { 'Full' : null } |
   { 'Active' : null };
-export type TierDeltas = BigInt64Array | bigint[];
-export type TierIndexes = Array<bigint>;
 export interface _SERVICE {
   'add_allowed_minter' : ActorMethod<[Principal], undefined>,
-  'distribute_interest' : ActorMethod<
-    [],
-    { 'Ok' : string } |
-      { 'Err' : string }
-  >,
   'ensure_capacity' : ActorMethod<
     [],
     { 'Ok' : [] | [Principal] } |
@@ -53,8 +41,8 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'sync_shard' : ActorMethod<
-    [TierDeltas, bigint, bigint, bigint],
-    { 'Ok' : [bigint, TierIndexes] } |
+    [bigint, bigint, bigint],
+    { 'Ok' : bigint } |
       { 'Err' : string }
   >,
   'update_shard_user_count' : ActorMethod<

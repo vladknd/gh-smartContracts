@@ -21,7 +21,7 @@
 
 ## 1. Overview
 
-The GreenHero Treasury (3.6B GHC) can provide liquidity to decentralized exchanges (DEXes) through governance proposals. This:
+The GreenHero Treasury (4.25B GHC) can provide liquidity to decentralized exchanges (DEXes) through governance proposals. This:
 
 - **Creates trading markets** for GHC token
 - **Earns trading fees** for the treasury

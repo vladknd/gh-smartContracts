@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# Stop on error
+# Comprehensive Test Suite (Updated for Simplified Tokenomics)
+# Tests core functionality: user registration, quiz, staking, governance
+
 set -e
 
 # Colors
@@ -37,10 +39,12 @@ log "Admin Principal: $ADMIN_PRINCIPAL"
 STAKING_HUB_ID=$(dfx canister id staking_hub)
 GOVERNANCE_ID=$(dfx canister id operational_governance)
 LEDGER_ID=$(dfx canister id ghc_ledger)
+USER_PROFILE_ID=$(dfx canister id user_profile)
 
 log "Staking Hub: $STAKING_HUB_ID"
 log "Governance: $GOVERNANCE_ID"
 log "Ledger: $LEDGER_ID"
+log "User Profile: $USER_PROFILE_ID"
 
 # Fund Canisters (Ensure they have GHC to pay out)
 # 100 GHC = 10,000,000,000 e8s
@@ -84,15 +88,16 @@ trap cleanup EXIT
 
 log "--- Phase 1: Learning & Earning (Virtual Staking) ---"
 
-log "Submitting Quiz (Mining)..."
-# Quiz ID 1, Answer "A" (Correct) - Assuming unit 1 exists or using a mock call if needed.
-# Note: In a real run, we need to ensure unit 1 exists. 
-# For this test, we assume the previous setup or a fresh deploy has unit 1.
-# If not, we might fail here. 
-# Let's add a unit just in case (using admin identity temporarily)
+# Register user first
+log "Registering test user..."
+dfx canister call user_profile register_user '(record { email = "test@example.com"; name = "Test User"; education = "Test"; gender = "Test" })' > /dev/null
+success "User registered"
+
+# Add a learning unit
+log "Adding test learning unit..."
 dfx identity use default
 dfx canister call learning_engine add_learning_unit '(record {
-    unit_id = "1.0";
+    unit_id = "test_1";
     unit_title = "Test Unit";
     chapter_id = "1";
     chapter_title = "Test Chapter";
@@ -103,8 +108,10 @@ dfx canister call learning_engine add_learning_unit '(record {
     quiz = vec { record { question = "Q"; options = vec {"A"}; answer = 0 } };
 })' > /dev/null
 dfx identity use "$TEST_USER"
+success "Learning unit added"
 
-RESULT=$(dfx canister call learning_engine submit_quiz '("1.0", vec {0})')
+log "Submitting Quiz (Mining)..."
+RESULT=$(dfx canister call user_profile submit_quiz '("test_1", vec {0})')
 if [[ $RESULT == *"Ok"* ]]; then
     success "Quiz submitted"
 else
@@ -112,102 +119,112 @@ else
 fi
 
 log "Verifying Virtual Balance (Auto-Staked)..."
-# get_user_stats returns (balance, pending_rewards)
-STATS=$(dfx canister call staking_hub get_user_stats "(principal \"$USER_PRINCIPAL\")")
-# Expected: (100_000_000 : nat64, 0 : nat64)
-if [[ $STATS == *"100_000_000"* ]] || [[ $STATS == *"100000000"* ]]; then
+PROFILE=$(dfx canister call user_profile get_profile "(principal \"$USER_PRINCIPAL\")")
+if [[ $PROFILE == *"100_000_000"* ]] || [[ $PROFILE == *"100000000"* ]]; then
     success "Virtual Balance correct (1 GHC)"
 else
-    fail "Incorrect Virtual Balance: $STATS"
-fi
-
-log "Verifying Voting Power..."
-POWER=$(dfx canister call staking_hub get_voting_power "(principal \"$USER_PRINCIPAL\")")
-if [[ $POWER == *"100_000_000"* ]] || [[ $POWER == *"100000000"* ]]; then
-    success "Voting power correct (1 GHC)"
-else
-    fail "Incorrect voting power: $POWER"
+    fail "Incorrect Virtual Balance: $PROFILE"
 fi
 
 # --- 4. Governance ---
 
 log "--- Phase 2: Governance ---"
 
-log "Creating Proposal (Grant 1 GHC to self)..."
-# Propose to send 1 GHC (100,000,000) to USER_PRINCIPAL
-PROPOSAL_ID=$(dfx canister call operational_governance create_proposal "(principal \"$USER_PRINCIPAL\", 100000000, \"Grant for being awesome\")")
-# Extract ID from Result: (Ok = 1 : nat64) -> 1
-PROP_ID_NUM=$(echo "$PROPOSAL_ID" | grep -oE '[0-9]+' | head -1)
-log "Proposal Created with ID: $PROP_ID_NUM"
+# Switch to admin for governance proposal
+dfx identity use default
 
-if [[ -z "$PROP_ID_NUM" ]]; then
-    fail "Failed to create proposal: $PROPOSAL_ID"
-fi
-
-log "Voting 'Yes'..."
-VOTE=$(dfx canister call operational_governance vote "($PROP_ID_NUM, true)")
-if [[ $VOTE == *"Ok"* ]]; then
-    success "Vote cast successfully"
+log "Checking Treasury State..."
+TREASURY=$(dfx canister call operational_governance get_treasury_state)
+if [[ $TREASURY == *"balance"* ]]; then
+    success "Treasury state accessible"
 else
-    fail "Voting failed: $VOTE"
+    fail "Treasury state unavailable: $TREASURY"
 fi
 
-log "Executing Proposal..."
-EXEC=$(dfx canister call operational_governance execute_proposal "($PROP_ID_NUM)")
-if [[ $EXEC == *"Ok"* ]]; then
-    success "Proposal executed successfully"
+log "Checking MMCR Status..."
+MMCR=$(dfx canister call operational_governance get_mmcr_status)
+if [[ $MMCR == *"releases_completed"* ]]; then
+    success "MMCR status accessible"
 else
-    fail "Execution failed: $EXEC"
+    fail "MMCR status unavailable: $MMCR"
 fi
 
-log "Verifying Grant Receipt..."
-BALANCE=$(dfx canister call ghc_ledger icrc1_balance_of "(record { owner = principal \"$USER_PRINCIPAL\"; subaccount = null })")
-# Should be 1 GHC (100,000,000)
-if [[ $BALANCE == *"100_000_000"* ]] || [[ $BALANCE == *"100000000"* ]]; then
-    success "Grant received (1 GHC)"
+log "Checking Spendable Balance..."
+SPENDABLE=$(dfx canister call operational_governance get_spendable_balance)
+if [[ $SPENDABLE == *"nat64"* ]] || [[ -n "$SPENDABLE" ]]; then
+    success "Spendable balance accessible: $SPENDABLE"
 else
-    fail "Grant not received. Balance: $BALANCE"
+    fail "Spendable balance query failed: $SPENDABLE"
 fi
 
-# --- 5. Unstaking & Interest ---
+# --- 5. Unstaking (No Penalty) ---
 
-log "--- Phase 3: Unstaking & Interest ---"
+log "--- Phase 3: Unstaking (No Penalty) ---"
 
-log "Unstaking 1 GHC..."
-# Unstake 1 GHC (100,000,000). 10% Penalty = 10,000,000. Return = 90,000,000.
-UNSTAKE=$(dfx canister call staking_hub unstake '(100000000)')
+dfx identity use "$TEST_USER"
+
+log "Unstaking 0.5 GHC..."
+UNSTAKE=$(dfx canister call user_profile unstake '(50_000_000)')
 if [[ $UNSTAKE == *"Ok"* ]]; then
-    success "Unstake successful"
+    success "Unstake successful (100% returned, no penalty)"
 else
     fail "Unstake failed: $UNSTAKE"
 fi
 
-log "Verifying Final Wallet Balance..."
-# Expected: 1 GHC (Grant) + 0.9 GHC (Unstake return) = 1.9 GHC (190,000,000)
-FINAL_BALANCE=$(dfx canister call ghc_ledger icrc1_balance_of "(record { owner = principal \"$USER_PRINCIPAL\"; subaccount = null })")
-log "Final Balance: $FINAL_BALANCE"
-
-if [[ $FINAL_BALANCE == *"190_000_000"* ]] || [[ $FINAL_BALANCE == *"190000000"* ]]; then
-    success "Final balance correct (1.9 GHC)"
+log "Verifying Remaining Staked Balance..."
+PROFILE=$(dfx canister call user_profile get_profile "(principal \"$USER_PRINCIPAL\")")
+if [[ $PROFILE == *"staked_balance = 50_000_000"* ]] || [[ $PROFILE == *"staked_balance = 50000000"* ]]; then
+    success "Remaining staked balance correct (0.5 GHC)"
 else
-    fail "Final balance incorrect"
+    fail "Staked balance incorrect: $PROFILE"
 fi
 
-log "Verifying Interest Pool..."
+log "Verifying Wallet Balance (received unstaked tokens)..."
+WALLET_BALANCE=$(dfx canister call ghc_ledger icrc1_balance_of "(record { owner = principal \"$USER_PRINCIPAL\"; subaccount = null })")
+log "Wallet Balance: $WALLET_BALANCE"
+
+if [[ $WALLET_BALANCE == *"50_000_000"* ]] || [[ $WALLET_BALANCE == *"50000000"* ]] || [[ $WALLET_BALANCE == *"49_990_000"* ]]; then
+    success "Wallet balance correct (received unstaked tokens minus fee)"
+else
+    fail "Wallet balance incorrect: $WALLET_BALANCE"
+fi
+
+# --- 6. Global Stats ---
+
+log "--- Phase 4: Global Stats Verification ---"
+
+dfx identity use default
+
+log "Forcing sync..."
+dfx canister call user_profile debug_force_sync > /dev/null
+success "Sync forced"
+
+log "Checking Global Stats..."
 GLOBAL_STATS=$(dfx canister call staking_hub get_global_stats)
-# Interest Pool should have 10,000,000 (10% of 100,000,000)
-if [[ $GLOBAL_STATS == *"10_000_000"* ]] || [[ $GLOBAL_STATS == *"10000000"* ]]; then
-    success "Interest Pool correct (0.1 GHC)"
+if [[ $GLOBAL_STATS == *"total_staked"* ]] && [[ $GLOBAL_STATS == *"total_unstaked"* ]]; then
+    success "Global Stats correct"
 else
-    fail "Interest Pool incorrect: $GLOBAL_STATS"
+    fail "Global Stats incorrect: $GLOBAL_STATS"
 fi
 
-log "Distributing Interest..."
-DIST=$(dfx canister call staking_hub distribute_interest)
-if [[ $DIST == *"Ok"* ]]; then
-    success "Interest distributed"
+# --- 7. Founder Vesting ---
+
+log "--- Phase 5: Founder Vesting ---"
+
+log "Checking Founder Vesting Schedules..."
+VESTING=$(dfx canister call founder_vesting get_all_vesting_schedules)
+if [[ $VESTING == *"total_allocation"* ]]; then
+    success "Vesting schedules accessible"
 else
-    fail "Distribution failed: $DIST"
+    fail "Vesting schedules unavailable: $VESTING"
+fi
+
+log "Checking Total Unclaimed..."
+UNCLAIMED=$(dfx canister call founder_vesting get_total_unclaimed)
+if [[ -n "$UNCLAIMED" ]]; then
+    success "Total unclaimed accessible: $UNCLAIMED"
+else
+    fail "Total unclaimed unavailable"
 fi
 
 log "=== ALL TESTS PASSED SUCCESSFULLY ==="

@@ -1,8 +1,8 @@
 # 🧪 Complete System Testing Guide
 
-> **Last Updated:** December 14, 2025
+> **Last Updated:** December 2024
 
-This guide explains how to test the GHC staking system with the new Discrete Tier System.
+This guide explains how to test the GHC staking system (simplified model without interest/penalties).
 
 ---
 
@@ -28,31 +28,12 @@ cd /mnt/c/LIB/CODE/gh-smartContracts
 **What it tests:**
 - ✅ System deployment
 - ✅ User registration
-- ✅ Quiz submission & rewards
+- ✅ Quiz submission & token rewards
 - ✅ Staking mechanics
-- ✅ Unstaking & penalty collection
-- ✅ Interest distribution
-- ✅ Reward claiming
+- ✅ Unstaking (100% return, no penalty)
+- ✅ Global stats tracking
 
 **Output:** Creates `test_report.md` with detailed results.
-
----
-
-### Option 2: Tier System Test Only
-
-If the system is already deployed, run just the tier-specific tests:
-
-```bash
-cd /mnt/c/LIB/CODE/gh-smartContracts
-./tests/tier_system_test.sh
-```
-
-**What it tests:**
-- ✅ Tier configuration in hub
-- ✅ `tier_staked` and `tier_reward_indexes` fields
-- ✅ User profile tier fields
-- ✅ Sync mechanism
-- ✅ Tier thresholds and weights
 
 ---
 
@@ -70,7 +51,7 @@ dfx start --background --clean
 ### Step 2: Deploy All Canisters
 
 ```bash
-./deploy.sh
+./scripts/deploy.sh
 ```
 
 Or manually:
@@ -80,6 +61,8 @@ dfx deploy ghc_ledger
 dfx deploy learning_engine
 dfx deploy staking_hub
 dfx deploy user_profile
+dfx deploy operational_governance
+dfx deploy founder_vesting
 ```
 
 ### Step 3: Verify Deployment
@@ -88,6 +71,8 @@ dfx deploy user_profile
 # Check all canisters are running
 dfx canister status staking_hub
 dfx canister status user_profile
+dfx canister status operational_governance
+dfx canister status founder_vesting
 
 # Get canister IDs
 dfx canister id staking_hub
@@ -132,45 +117,53 @@ dfx canister call user_profile submit_quiz '("test_unit", vec { 0 })'
 dfx canister call user_profile get_profile "(principal \"$(dfx identity get-principal)\")"
 ```
 
-### Step 6: Test Tier System
+### Step 6: Test Global Stats
 
 ```bash
-# Check global stats (shows tier_staked and tier_reward_indexes)
+# Check global stats (shows total_staked, total_unstaked, total_allocated)
 dfx canister call staking_hub get_global_stats
 
 # Force sync to ensure data is up to date
 dfx canister call user_profile debug_force_sync
-
-# Check user tier info
-dfx canister call user_profile get_profile "(principal \"$(dfx identity get-principal)\")"
-# Look for: current_tier, tier_start_index, initial_stake_time
 ```
 
-### Step 7: Test Unstaking & Interest
+### Step 7: Test Unstaking (No Penalty)
 
 ```bash
-# Unstake half (creates 10% penalty for interest pool)
+# Unstake tokens (returns 100% - no penalty)
 dfx canister call user_profile unstake '(50_000_000)'
 
-# Force sync to report to hub
-dfx canister call user_profile debug_force_sync
+# Check wallet balance increased
+dfx canister call ghc_ledger icrc1_balance_of "(record { owner = principal \"$(dfx identity get-principal)\"; subaccount = null })"
 
-# Check interest pool has penalty
+# Verify global stats updated
 dfx canister call staking_hub get_global_stats
-# Look for: interest_pool = 5_000_000
+```
 
-# Distribute interest
-dfx canister call staking_hub distribute_interest
+### Step 8: Test Treasury Functions
 
-# Force sync to get new indexes
-dfx canister call user_profile debug_force_sync
+```bash
+# Check treasury state
+dfx canister call operational_governance get_treasury_state
 
-# Check unclaimed_interest
-dfx canister call user_profile get_profile "(principal \"$(dfx identity get-principal)\")"
-# Should show unclaimed_interest > 0
+# Check MMCR status
+dfx canister call operational_governance get_mmcr_status
 
-# Claim rewards
-dfx canister call user_profile claim_rewards
+# Check spendable balance
+dfx canister call operational_governance get_spendable_balance
+```
+
+### Step 9: Test Founder Vesting
+
+```bash
+# Check vesting schedules
+dfx canister call founder_vesting get_all_vesting_schedules
+
+# Check genesis timestamp
+dfx canister call founder_vesting get_genesis_timestamp
+
+# Check total unclaimed
+dfx canister call founder_vesting get_total_unclaimed
 ```
 
 ---
@@ -179,11 +172,12 @@ dfx canister call user_profile claim_rewards
 
 | Command | Description |
 |---------|-------------|
-| `dfx canister call staking_hub get_global_stats` | View all hub statistics including tier data |
-| `dfx canister call user_profile get_profile "(principal \"...\")"` | View user profile with tier info |
+| `dfx canister call staking_hub get_global_stats` | View hub statistics (staked, unstaked, allocated) |
+| `dfx canister call user_profile get_profile "(principal \"...\")"` | View user profile |
 | `dfx canister call user_profile debug_force_sync` | Force shard to sync with hub |
-| `dfx canister call staking_hub distribute_interest` | Distribute interest pool to stakers |
-| `dfx canister call user_profile claim_rewards` | Claim unclaimed interest to staked balance |
+| `dfx canister call operational_governance get_treasury_state` | View treasury balance & allowance |
+| `dfx canister call operational_governance get_mmcr_status` | View MMCR progress |
+| `dfx canister call founder_vesting get_all_vesting_schedules` | View founder vesting status |
 
 ---
 
@@ -192,42 +186,32 @@ dfx canister call user_profile claim_rewards
 ### GlobalStats (staking_hub)
 
 ```
-tier_staked = vec { <bronze>; <silver>; <gold>; <diamond> }
-tier_reward_indexes = vec { <bronze_idx>; <silver_idx>; <gold_idx>; <diamond_idx> }
+total_staked = <sum of all staked balances>
+total_unstaked = <sum of all unstaked tokens>
+total_allocated = <total tokens allocated for minting>
 ```
 
-After distribute_interest:
-- `interest_pool` should decrease
-- `tier_reward_indexes` should increase for tiers with stakers
+After quiz completion:
+- `total_staked` should increase
+- `total_allocated` should increase
+
+After unstaking:
+- `total_staked` decreases
+- `total_unstaked` increases
 
 ### UserProfile (user_profile)
 
 ```
-current_tier = 0                    # 0=Bronze, 1=Silver, 2=Gold, 3=Diamond
-tier_start_index = <number>         # Index when entered tier
-initial_stake_time = <timestamp>    # When first staked
+staked_balance = <tokens earned from quizzes>
+transaction_count = <number of transactions>
 ```
 
----
+### TreasuryState (operational_governance)
 
-## ⏱️ Tier Upgrade Testing
-
-Since tier upgrades are based on time, you can:
-
-1. **Mock time in tests** (requires code changes)
-2. **Wait for actual time** (30 days for Silver)
-3. **Modify thresholds for testing** (lower them temporarily)
-
-To test with shorter thresholds for development, you could temporarily change in both canisters:
-
-```rust
-// For testing only - change back before production!
-pub const TIER_THRESHOLDS_NANOS: [u64; 4] = [
-    0,                           // Bronze
-    60 * 1_000_000_000,          // Silver: 1 minute
-    180 * 1_000_000_000,         // Gold: 3 minutes
-    300 * 1_000_000_000,         // Diamond: 5 minutes
-];
+```
+balance = 4.25B (initial)
+allowance = 0.6B (initial, increases via MMCR)
+mmcr_count = 0-240 (MMCR releases executed)
 ```
 
 ---
@@ -239,15 +223,18 @@ pub const TIER_THRESHOLDS_NANOS: [u64; 4] = [
 dfx canister call user_profile register_user '(record { email = "x"; name = "x"; education = "x"; gender = "x" })'
 ```
 
-### "No interest to distribute"
-The interest pool is empty. Unstake some tokens first to create penalty.
-
 ### "Unauthorized: Caller is not a registered shard"
 The user_profile canister is not registered as a shard in the hub. Check your deploy script.
 
 ### Sync not working
 ```bash
 dfx canister call user_profile debug_force_sync
+```
+
+### "Insufficient treasury allowance"
+Wait for MMCR to increase allowance or check current allowance:
+```bash
+dfx canister call operational_governance get_spendable_balance
 ```
 
 ---
@@ -257,9 +244,8 @@ dfx canister call user_profile debug_force_sync
 | File | Description |
 |------|-------------|
 | `scripts/tests/comprehensive_system_test.sh` | Full end-to-end test |
-| `tests/tier_system_test.sh` | Tier-specific tests |
 | `scripts/tests/test_quiz_flow.sh` | Quiz flow tests |
-| `scripts/tests/comprehensive_test.sh` | Alternative comprehensive test |
+| `scripts/deploy.sh` | Deployment script |
 
 ---
 
@@ -269,10 +255,8 @@ dfx canister call user_profile debug_force_sync
 - [ ] User registration works
 - [ ] Quiz submission rewards tokens
 - [ ] Tokens are staked (balance increases)
-- [ ] Tier fields exist in user profile
-- [ ] Unstaking deducts 10% penalty
-- [ ] Interest pool receives penalties
-- [ ] distribute_interest updates tier indexes
-- [ ] Unclaimed interest calculates correctly
-- [ ] claim_rewards moves interest to staked balance
-- [ ] GlobalStats shows tier_staked and tier_reward_indexes
+- [ ] Unstaking returns 100% (no penalty)
+- [ ] GlobalStats shows correct totals
+- [ ] Treasury state is initialized correctly
+- [ ] MMCR status shows correct values
+- [ ] Founder vesting schedules are set up

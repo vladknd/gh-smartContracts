@@ -19,16 +19,11 @@ export interface UserDailyStats {
   'day_index' : bigint,
 }
 export interface UserProfile {
-  'initial_stake_time' : bigint,
   'name' : string,
   'education' : string,
-  'unclaimed_interest' : bigint,
   'email' : string,
   'staked_balance' : bigint,
-  'last_reward_index' : bigint,
-  'tier_start_index' : bigint,
   'gender' : string,
-  'current_tier' : number,
   'transaction_count' : bigint,
 }
 export interface UserProfileUpdate {
@@ -38,7 +33,6 @@ export interface UserProfileUpdate {
   'gender' : string,
 }
 export interface _SERVICE {
-  'claim_rewards' : ActorMethod<[], { 'Ok' : bigint } | { 'Err' : string }>,
   'debug_force_sync' : ActorMethod<[], { 'Ok' : null } | { 'Err' : string }>,
   'get_profile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'get_user_count' : ActorMethod<[], bigint>,

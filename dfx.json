@@ -49,6 +49,11 @@
       "type": "rust",
       "candid": "src/user_profile/user_profile.did",
       "package": "user_profile"
+    },
+    "founder_vesting": {
+      "type": "rust",
+      "candid": "src/founder_vesting/founder_vesting.did",
+      "package": "founder_vesting"
     }
   },
   "defaults": {

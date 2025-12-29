@@ -1,21 +1,100 @@
-type InitArgs = record { ledger_id : principal; staking_hub_id : principal };
-type Proposal = record {
-  id : nat64;
-  votes_no : nat64;
-  recipient : principal;
-  description : text;
-  created_at : nat64;
-  proposer : principal;
-  votes_yes : nat64;
-  executed : bool;
-  amount : nat64;
+type Account = record { owner : principal; subaccount : opt SubAccount };
+type Approve = record {
+  fee : opt Tokens;
+  from : Account;
+  memo : opt blob;
+  created_at_time : opt nat64;
+  amount : Tokens;
+  expected_allowance : opt Tokens;
+  expires_at : opt nat64;
+  spender : Account;
+};
+type Block = Value;
+type BlockIndex = nat;
+type Burn = record {
+  fee : opt nat;
+  from : Account;
+  memo : opt blob;
+  created_at_time : opt nat64;
+  amount : Tokens;
+  spender : opt Account;
+};
+type FeeCollectorRanges = record {
+  ranges : vec record { Account; vec record { BlockIndex; BlockIndex } };
+};
+type GetAccountTransactionsArgs = record {
+  max_results : nat;
+  start : opt BlockIndex;
+  account : Account;
+};
+type GetBlocksRequest = record { start : nat; length : nat };
+type GetBlocksResponse = record { blocks : vec Block; chain_length : nat64 };
+type GetTransactions = record {
+  balance : Tokens;
+  transactions : vec TransactionWithId;
+  oldest_tx_id : opt BlockIndex;
+};
+type GetTransactionsErr = record { message : text };
+type GetTransactionsResult = variant {
+  Ok : GetTransactions;
+  Err : GetTransactionsErr;
+};
+type IndexArg = variant { Upgrade : UpgradeArg; Init : InitArg };
+type InitArg = record {
+  ledger_id : principal;
+  retrieve_blocks_from_ledger_interval_seconds : opt nat64;
+};
+type ListSubaccountsArgs = record { owner : principal; start : opt SubAccount };
+type Map = vec record { text; Value };
+type Mint = record {
+  to : Account;
+  fee : opt nat;
+  memo : opt blob;
+  created_at_time : opt nat64;
+  amount : Tokens;
+};
+type Status = record { num_blocks_synced : BlockIndex };
+type SubAccount = blob;
+type Tokens = nat;
+type Transaction = record {
+  burn : opt Burn;
+  kind : text;
+  mint : opt Mint;
+  approve : opt Approve;
+  timestamp : nat64;
+  transfer : opt Transfer;
+};
+type TransactionWithId = record { id : BlockIndex; transaction : Transaction };
+type Transfer = record {
+  to : Account;
+  fee : opt Tokens;
+  from : Account;
+  memo : opt blob;
+  created_at_time : opt nat64;
+  amount : Tokens;
+  spender : opt Account;
+};
+type UpgradeArg = record {
+  ledger_id : opt principal;
+  retrieve_blocks_from_ledger_interval_seconds : opt nat64;
+};
+type Value = variant {
+  Int : int;
+  Map : Map;
+  Nat : nat;
+  Nat64 : nat64;
+  Blob : blob;
+  Text : text;
+  Array : vec Value;
 };
 service : {
-  create_proposal : (principal, nat64, text) -> (
-      variant { Ok : nat64; Err : text },
-    );
-  execute_proposal : (nat64) -> (variant { Ok; Err : text });
-  get_proposal : (nat64) -> (opt Proposal) query;
-  get_total_spent : () -> (nat64) query;
-  vote : (nat64, bool) -> (variant { Ok; Err : text });
+  get_account_transactions : (GetAccountTransactionsArgs) -> (
+      GetTransactionsResult,
+    ) query;
+  get_blocks : (GetBlocksRequest) -> (GetBlocksResponse) query;
+  get_fee_collectors_ranges : () -> (FeeCollectorRanges) query;
+  icrc1_balance_of : (Account) -> (Tokens) query;
+  ledger_id : () -> (principal) query;
+  list_subaccounts : (ListSubaccountsArgs) -> (vec SubAccount) query;
+  status : () -> (Status) query;
 }

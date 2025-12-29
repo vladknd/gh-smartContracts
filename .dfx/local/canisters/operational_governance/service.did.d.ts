@@ -6,6 +6,13 @@ export interface InitArgs {
   'ledger_id' : Principal,
   'staking_hub_id' : Principal,
 }
+export interface MMCRStatus {
+  'last_release_timestamp' : bigint,
+  'releases_completed' : bigint,
+  'seconds_until_next' : bigint,
+  'next_release_amount' : bigint,
+  'releases_remaining' : bigint,
+}
 export interface Proposal {
   'id' : bigint,
   'votes_no' : bigint,
@@ -17,19 +24,32 @@ export interface Proposal {
   'executed' : boolean,
   'amount' : bigint,
 }
+export interface TreasuryState {
+  'balance' : bigint,
+  'total_transferred' : bigint,
+  'genesis_timestamp' : bigint,
+  'mmcr_count' : bigint,
+  'allowance' : bigint,
+  'last_mmcr_timestamp' : bigint,
+}
 export interface _SERVICE {
   'create_proposal' : ActorMethod<
     [Principal, bigint, string],
     { 'Ok' : bigint } |
       { 'Err' : string }
   >,
+  'execute_mmcr' : ActorMethod<[], { 'Ok' : bigint } | { 'Err' : string }>,
   'execute_proposal' : ActorMethod<
     [bigint],
     { 'Ok' : null } |
       { 'Err' : string }
   >,
+  'get_mmcr_status' : ActorMethod<[], MMCRStatus>,
   'get_proposal' : ActorMethod<[bigint], [] | [Proposal]>,
+  'get_spendable_balance' : ActorMethod<[], bigint>,
   'get_total_spent' : ActorMethod<[], bigint>,
+  'get_treasury_balance' : ActorMethod<[], bigint>,
+  'get_treasury_state' : ActorMethod<[], TreasuryState>,
   'vote' : ActorMethod<[bigint, boolean], { 'Ok' : null } | { 'Err' : string }>,
 }
 export declare const idlFactory: IDL.InterfaceFactory;
