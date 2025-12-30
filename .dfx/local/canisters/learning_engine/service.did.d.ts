@@ -2,11 +2,6 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
-export interface DailyStatus {
-  'quizzes_taken' : number,
-  'tokens_earned' : bigint,
-  'daily_limit' : number,
-}
 export interface InitArgs { 'staking_hub_id' : Principal }
 export interface LearningUnit {
   'content' : string,
@@ -57,12 +52,9 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'get_learning_units_metadata' : ActorMethod<[], Array<LearningUnitMetadata>>,
-  'get_user_daily_status' : ActorMethod<[Principal], DailyStatus>,
-  'is_quiz_completed' : ActorMethod<[Principal, string], boolean>,
-  'submit_quiz' : ActorMethod<
+  'verify_quiz' : ActorMethod<
     [string, Uint8Array | number[]],
-    { 'Ok' : bigint } |
-      { 'Err' : string }
+    [boolean, bigint, bigint]
   >,
 }
 export declare const idlFactory: IDL.InterfaceFactory;

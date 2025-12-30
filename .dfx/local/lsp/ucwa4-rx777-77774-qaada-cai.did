@@ -1,100 +1,43 @@
-type Account = record { owner : principal; subaccount : opt SubAccount };
-type Approve = record {
-  fee : opt Tokens;
-  from : Account;
-  memo : opt blob;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  expected_allowance : opt Tokens;
-  expires_at : opt nat64;
-  spender : Account;
+type InitArgs = record { staking_hub_id : principal };
+type LearningUnit = record {
+  content : text;
+  head_unit_title : text;
+  paraphrase : text;
+  quiz : vec QuizQuestion;
+  chapter_title : text;
+  unit_id : text;
+  chapter_id : text;
+  head_unit_id : text;
+  unit_title : text;
 };
-type Block = Value;
-type BlockIndex = nat;
-type Burn = record {
-  fee : opt nat;
-  from : Account;
-  memo : opt blob;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  spender : opt Account;
+type LearningUnitMetadata = record {
+  chapter_title : text;
+  unit_id : text;
+  chapter_id : text;
+  unit_title : text;
 };
-type FeeCollectorRanges = record {
-  ranges : vec record { Account; vec record { BlockIndex; BlockIndex } };
+type PublicLearningUnit = record {
+  content : text;
+  head_unit_title : text;
+  paraphrase : text;
+  quiz : vec PublicQuizQuestion;
+  chapter_title : text;
+  unit_id : text;
+  chapter_id : text;
+  head_unit_id : text;
+  unit_title : text;
 };
-type GetAccountTransactionsArgs = record {
-  max_results : nat;
-  start : opt BlockIndex;
-  account : Account;
-};
-type GetBlocksRequest = record { start : nat; length : nat };
-type GetBlocksResponse = record { blocks : vec Block; chain_length : nat64 };
-type GetTransactions = record {
-  balance : Tokens;
-  transactions : vec TransactionWithId;
-  oldest_tx_id : opt BlockIndex;
-};
-type GetTransactionsErr = record { message : text };
-type GetTransactionsResult = variant {
-  Ok : GetTransactions;
-  Err : GetTransactionsErr;
-};
-type IndexArg = variant { Upgrade : UpgradeArg; Init : InitArg };
-type InitArg = record {
-  ledger_id : principal;
-  retrieve_blocks_from_ledger_interval_seconds : opt nat64;
-};
-type ListSubaccountsArgs = record { owner : principal; start : opt SubAccount };
-type Map = vec record { text; Value };
-type Mint = record {
-  to : Account;
-  fee : opt nat;
-  memo : opt blob;
-  created_at_time : opt nat64;
-  amount : Tokens;
-};
-type Status = record { num_blocks_synced : BlockIndex };
-type SubAccount = blob;
-type Tokens = nat;
-type Transaction = record {
-  burn : opt Burn;
-  kind : text;
-  mint : opt Mint;
-  approve : opt Approve;
-  timestamp : nat64;
-  transfer : opt Transfer;
-};
-type TransactionWithId = record { id : BlockIndex; transaction : Transaction };
-type Transfer = record {
-  to : Account;
-  fee : opt Tokens;
-  from : Account;
-  memo : opt blob;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  spender : opt Account;
-};
-type UpgradeArg = record {
-  ledger_id : opt principal;
-  retrieve_blocks_from_ledger_interval_seconds : opt nat64;
-};
-type Value = variant {
-  Int : int;
-  Map : Map;
-  Nat : nat;
-  Nat64 : nat64;
-  Blob : blob;
-  Text : text;
-  Array : vec Value;
+type PublicQuizQuestion = record { question : text; options : vec text };
+type QuizQuestion = record {
+  question : text;
+  answer : nat8;
+  options : vec text;
 };
 service : {
-  get_account_transactions : (GetAccountTransactionsArgs) -> (
-      GetTransactionsResult,
+  add_learning_unit : (LearningUnit) -> (variant { Ok; Err : text });
+  get_learning_unit : (text) -> (
+      variant { Ok : PublicLearningUnit; Err : text },
     ) query;
-  get_blocks : (GetBlocksRequest) -> (GetBlocksResponse) query;
-  get_fee_collectors_ranges : () -> (FeeCollectorRanges) query;
-  icrc1_balance_of : (Account) -> (Tokens) query;
-  ledger_id : () -> (principal) query;
-  list_subaccounts : (ListSubaccountsArgs) -> (vec SubAccount) query;
-  status : () -> (Status) query;
+  get_learning_units_metadata : () -> (vec LearningUnitMetadata) query;
+  verify_quiz : (text, blob) -> (bool, nat64, nat64) query;
 }

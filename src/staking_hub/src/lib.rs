@@ -614,10 +614,12 @@ fn sync_shard(
         let mut stats = cell.get().clone();
         
         // ─────────────────────────────────────────────────────────────────
-        // Step 1: Update staked amounts
+        // Step 1: Update staked amounts and track actual minting
         // ─────────────────────────────────────────────────────────────────
         if staked_delta > 0 {
             stats.total_staked = stats.total_staked.saturating_add(staked_delta as u64);
+            // Track actual tokens minted (positive delta = new tokens created)
+            stats.total_allocated = stats.total_allocated.saturating_add(staked_delta as u64);
         } else {
             stats.total_staked = stats.total_staked.saturating_sub(staked_delta.abs() as u64);
         }
@@ -628,11 +630,13 @@ fn sync_shard(
         // ─────────────────────────────────────────────────────────────────
         // Step 2: Handle Allowance Request (Hard Cap Enforcement)
         // ─────────────────────────────────────────────────────────────────
+        // Note: Allowance grants are pre-approvals for future minting.
+        // total_allocated is updated in Step 1 when tokens are actually minted.
         let granted_allowance = if requested_allowance > 0 {
-            // Never allocate beyond MAX_SUPPLY (4.75B MUC tokens)
+            // Never grant beyond MAX_SUPPLY (4.75B MUC tokens)
             let remaining = MAX_SUPPLY.saturating_sub(stats.total_allocated);
             let to_grant = remaining.min(requested_allowance);
-            stats.total_allocated += to_grant;
+            // Don't add to total_allocated here - it's tracked when tokens are actually minted
             to_grant
         } else {
             0
@@ -718,6 +722,232 @@ fn get_config() -> (Principal, Principal, bool) {
 #[query]
 fn get_limits() -> (u64, u64) {
     (SHARD_SOFT_LIMIT, SHARD_HARD_LIMIT)
+}
+
+// ============================================================================
+// GOVERNANCE VOTING POWER
+// ============================================================================
+//
+// This section provides voting power lookups for the governance system.
+// - VUC (Volume of Unmined Coins) = founder voting power
+// - User staked_balance = user voting power
+//
+// Founders are registered dynamically after they login to the dapp with II.
+// The user registry maps each user to their shard for O(1) lookup.
+
+// Using MemoryId 9 for USER_SHARD_MAP, 10 for FOUNDERS
+thread_local! {
+    /// Map of user principal -> shard principal
+    /// Updated when users register in shards
+    /// Enables O(1) lookup for voting power queries
+    static USER_SHARD_MAP: RefCell<StableBTreeMap<Principal, Principal, Memory>> = RefCell::new(
+        StableBTreeMap::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(9)))
+        )
+    );
+    
+    /// Set of founder principals: Principal -> true
+    /// Founders are added dynamically by admin after they login with II
+    /// Each founder gets full VUC voting power
+    static FOUNDERS: RefCell<StableBTreeMap<Principal, bool, Memory>> = RefCell::new(
+        StableBTreeMap::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(10)))
+        )
+    );
+}
+
+// ============================================================================
+// FOUNDER MANAGEMENT (Admin Only)
+// ============================================================================
+
+/// Add a founder principal (admin only)
+/// 
+/// Flow:
+/// 1. Founder logs into dapp with Internet Identity
+/// 2. Founder shares their principal (shown in UI)
+/// 3. Admin calls this function to register them as founder
+/// 4. Now they can vote with VUC power!
+#[update]
+fn add_founder(founder: Principal) -> Result<(), String> {
+    // Only controllers can add founders
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can add founders".to_string());
+    }
+    
+    FOUNDERS.with(|f| {
+        f.borrow_mut().insert(founder, true);
+    });
+    
+    Ok(())
+}
+
+/// Remove a founder principal (admin only)
+#[update]
+fn remove_founder(founder: Principal) -> Result<(), String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can remove founders".to_string());
+    }
+    
+    FOUNDERS.with(|f| {
+        f.borrow_mut().remove(&founder);
+    });
+    
+    Ok(())
+}
+
+/// Get all registered founders
+#[query]
+fn get_founders() -> Vec<Principal> {
+    FOUNDERS.with(|f| {
+        f.borrow().iter().map(|(p, _)| p).collect()
+    })
+}
+
+/// Get number of registered founders
+#[query]
+fn get_founder_count() -> u64 {
+    FOUNDERS.with(|f| f.borrow().len())
+}
+
+// ============================================================================
+// USER REGISTRY
+// ============================================================================
+
+/// Register a user's shard location (called by shards during user registration)
+#[update]
+fn register_user_location(user: Principal) -> Result<(), String> {
+    let caller = ic_cdk::caller();
+    
+    // Only registered shards can register user locations
+    let is_registered = REGISTERED_SHARDS.with(|m| m.borrow().contains_key(&caller));
+    if !is_registered {
+        return Err("Unauthorized: Caller is not a registered shard".to_string());
+    }
+    
+    // Store user -> shard mapping
+    USER_SHARD_MAP.with(|m| {
+        m.borrow_mut().insert(user, caller);
+    });
+    
+    Ok(())
+}
+
+/// Get which shard a user is registered in
+#[query]
+fn get_user_shard(user: Principal) -> Option<Principal> {
+    USER_SHARD_MAP.with(|m| m.borrow().get(&user))
+}
+
+/// Manually set a user's shard location (admin only)
+/// Used to backfill existing users who registered before the registry was added
+#[update]
+fn admin_set_user_shard(user: Principal, shard: Principal) -> Result<(), String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can set user shards".to_string());
+    }
+    
+    // Verify the shard is registered
+    let is_registered = REGISTERED_SHARDS.with(|m| m.borrow().contains_key(&shard));
+    if !is_registered {
+        return Err("Invalid shard: Not a registered shard".to_string());
+    }
+    
+    USER_SHARD_MAP.with(|m| {
+        m.borrow_mut().insert(user, shard);
+    });
+    
+    Ok(())
+}
+
+
+// ============================================================================
+// VOTING POWER FUNCTIONS
+// ============================================================================
+
+/// Check if a principal is a registered founder
+fn is_founder_principal(principal: &Principal) -> bool {
+    FOUNDERS.with(|f| f.borrow().contains_key(principal))
+}
+
+/// Check if a principal is a founder
+#[query]
+fn is_founder(principal: Principal) -> bool {
+    is_founder_principal(&principal)
+}
+
+/// Get VUC (Volume of Unmined Coins) - total founder voting power
+/// VUC = MAX_SUPPLY - total_allocated
+#[query]
+fn get_vuc() -> u64 {
+    GLOBAL_STATS.with(|s| {
+        let stats = s.borrow().get().clone();
+        MAX_SUPPLY.saturating_sub(stats.total_allocated)
+    })
+}
+
+/// Get total voting power in the system (VUC + total_staked)
+#[query]
+fn get_total_voting_power() -> u64 {
+    let vuc = get_vuc();
+    let total_staked = GLOBAL_STATS.with(|s| s.borrow().get().total_staked);
+    vuc.saturating_add(total_staked)
+}
+
+/// Fetch voting power for any principal (async - queries shards for users)
+/// 
+/// For founders: returns full VUC (all founders share the same VUC pool)
+/// For users: queries their shard for staked_balance
+#[update]
+async fn fetch_voting_power(user: Principal) -> u64 {
+    // Check if user is a founder - return VUC
+    if is_founder_principal(&user) {
+        return get_vuc();
+    }
+    
+    // Look up user's shard
+    let shard_id = USER_SHARD_MAP.with(|m| m.borrow().get(&user));
+    
+    let shard_id = match shard_id {
+        Some(id) => id,
+        None => return 0, // User not registered
+    };
+    
+    // Query shard for user's profile
+    #[derive(CandidType, Deserialize)]
+    struct UserProfile {
+        email: String,
+        name: String,
+        education: String,
+        gender: String,
+        staked_balance: u64,
+        transaction_count: u64,
+    }
+    
+    let result: Result<(Option<UserProfile>,), _> = ic_cdk::call(
+        shard_id,
+        "get_profile",
+        (user,)
+    ).await;
+    
+    match result {
+        Ok((Some(profile),)) => profile.staked_balance,
+        _ => 0,
+    }
+}
+
+/// Get governance tokenomics summary
+#[query]
+fn get_tokenomics() -> (u64, u64, u64, u64) {
+    let stats = GLOBAL_STATS.with(|s| s.borrow().get().clone());
+    let vuc = MAX_SUPPLY.saturating_sub(stats.total_allocated);
+    let total_voting_power = vuc.saturating_add(stats.total_staked);
+    
+    (
+        MAX_SUPPLY,           // Total Utility Coin Cap (4.75B)
+        stats.total_allocated, // Tokens mined/allocated so far
+        vuc,                  // VUC (founder voting power)
+        total_voting_power    // Total voting power in system
+    )
 }
 
 ic_cdk::export_candid!();

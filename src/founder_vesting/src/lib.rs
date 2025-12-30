@@ -79,8 +79,12 @@ impl VestingSchedule {
         let elapsed_nanos = current_time - self.vesting_start;
         let elapsed_years = elapsed_nanos / YEAR_IN_NANOS;
         
-        // 10% per year, max 100% after 10 years
-        let unlock_bps = (elapsed_years * ANNUAL_UNLOCK_BPS).min(MAX_UNLOCK_BPS);
+        // 10% immediately, then 10% per year.
+        // Year 0 (immediate): 10%
+        // Year 1: 20%
+        // ...
+        // Year 9: 100%
+        let unlock_bps = ((elapsed_years + 1) * ANNUAL_UNLOCK_BPS).min(MAX_UNLOCK_BPS);
         
         // Calculate vested amount: (total * unlock_bps) / 10000
         ((self.total_allocation as u128 * unlock_bps as u128) / 10000) as u64

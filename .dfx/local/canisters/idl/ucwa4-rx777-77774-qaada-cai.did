@@ -1,154 +1,60 @@
-type Tokens = nat;
-
-type InitArg = record {
-  ledger_id : principal;
-  // The interval in seconds in which to retrieve blocks from the ledger. A lower value makes the index more
-  // responsive in showing new blocks, but increases the consumption of cycles of both the index and ledger canisters.
-  // A higher values means that it takes longer for new blocks to show up in the index.
-  retrieve_blocks_from_ledger_interval_seconds : opt nat64
+type InitArgs = record {
+    staking_hub_id : principal;
 };
 
-type UpgradeArg = record {
-  ledger_id : opt principal;
-  // The interval in seconds in which to retrieve blocks from the ledger. A lower value makes the index more
-  // responsive in showing new blocks, but increases the consumption of cycles of both the index and ledger canisters.
-  // A higher values means that it takes longer for new blocks to show up in the index.
-  retrieve_blocks_from_ledger_interval_seconds : opt nat64
+type QuizQuestion = record {
+    question : text;
+    options : vec text;
+    answer : nat8;
 };
 
-type IndexArg = variant {
-  Init : InitArg;
-  Upgrade : UpgradeArg
+type LearningUnit = record {
+    unit_id : text;
+    unit_title : text;
+    chapter_id : text;
+    chapter_title : text;
+    head_unit_id : text;
+    head_unit_title : text;
+    content : text;
+    paraphrase : text;
+    quiz : vec QuizQuestion;
 };
 
-type GetBlocksRequest = record {
-  start : nat;
-  length : nat
+type PublicQuizQuestion = record {
+    question : text;
+    options : vec text;
 };
 
-type Value = variant {
-  Blob : blob;
-  Text : text;
-  Nat : nat;
-  Nat64 : nat64;
-  Int : int;
-  Array : vec Value;
-  Map : Map
+type PublicLearningUnit = record {
+    unit_id : text;
+    unit_title : text;
+    chapter_id : text;
+    chapter_title : text;
+    head_unit_id : text;
+    head_unit_title : text;
+    content : text;
+    paraphrase : text;
+    quiz : vec PublicQuizQuestion;
 };
 
-type Map = vec record { text; Value };
-
-type Block = Value;
-
-type GetBlocksResponse = record {
-  chain_length : nat64;
-  blocks : vec Block
+type LearningUnitMetadata = record {
+    unit_id : text;
+    unit_title : text;
+    chapter_id : text;
+    chapter_title : text;
 };
 
-type BlockIndex = nat;
-
-type SubAccount = blob;
-
-type Account = record { owner : principal; subaccount : opt SubAccount };
-
-type Transaction = record {
-  burn : opt Burn;
-  kind : text;
-  mint : opt Mint;
-  approve : opt Approve;
-  timestamp : nat64;
-  transfer : opt Transfer
-};
-
-type Approve = record {
-  fee : opt Tokens;
-  from : Account;
-  memo : opt vec nat8;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  expected_allowance : opt Tokens;
-  expires_at : opt nat64;
-  spender : Account
-};
-
-type Burn = record {
-  from : Account;
-  memo : opt vec nat8;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  spender : opt Account;
-  fee : opt nat
-};
-
-type Mint = record {
-  to : Account;
-  memo : opt vec nat8;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  fee : opt nat
-};
-
-type Transfer = record {
-  to : Account;
-  fee : opt Tokens;
-  from : Account;
-  memo : opt vec nat8;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  spender : opt Account
-};
-
-type GetAccountTransactionsArgs = record {
-  account : Account;
-  // The txid of the last transaction seen by the client.
-  // If None then the results will start from the most recent
-  // txid. If set then the results will start from the next
-  // most recent txid after start (start won't be included).
-  start : opt BlockIndex;
-  // Maximum number of transactions to fetch.
-  max_results : nat
-};
-
-type TransactionWithId = record {
-  id : BlockIndex;
-  transaction : Transaction
-};
-
-type GetTransactions = record {
-  balance : Tokens;
-  transactions : vec TransactionWithId;
-  // The txid of the oldest transaction the account has
-  oldest_tx_id : opt BlockIndex
-};
-
-type GetTransactionsErr = record {
-  message : text
-};
-
-type GetTransactionsResult = variant {
-  Ok : GetTransactions;
-  Err : GetTransactionsErr
-};
-
-type ListSubaccountsArgs = record {
-  owner : principal;
-  start : opt SubAccount
-};
-
-type Status = record {
-  num_blocks_synced : BlockIndex
-};
-
-type FeeCollectorRanges = record {
-  ranges : vec record { Account; vec record { BlockIndex; BlockIndex } }
-}
-
-service : (index_arg : opt IndexArg) -> {
-  get_account_transactions : (GetAccountTransactionsArgs) -> (GetTransactionsResult) query;
-  get_blocks : (GetBlocksRequest) -> (GetBlocksResponse) query;
-  get_fee_collectors_ranges : () -> (FeeCollectorRanges) query;
-  icrc1_balance_of : (Account) -> (Tokens) query;
-  ledger_id : () -> (principal) query;
-  list_subaccounts : (ListSubaccountsArgs) -> (vec SubAccount) query;
-  status : () -> (Status) query
+service : (InitArgs) -> {
+    // Add a new learning unit (admin function)
+    "add_learning_unit": (LearningUnit) -> (variant { Ok: null; Err: text });
+    
+    // Get a learning unit by ID (returns public version without answers)
+    "get_learning_unit": (text) -> (variant { Ok: PublicLearningUnit; Err: text }) query;
+    
+    // Get metadata for all learning units (for curriculum listing)
+    "get_learning_units_metadata": () -> (vec LearningUnitMetadata) query;
+    
+    // Verify quiz answers (called by user_profile shards)
+    // Returns: (passed: bool, correct_count: u64, total_questions: u64)
+    "verify_quiz": (text, vec nat8) -> (bool, nat64, nat64) query;
 }

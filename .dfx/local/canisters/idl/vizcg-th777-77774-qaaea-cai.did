@@ -1,76 +1,121 @@
+// ============================================================================
+// Staking Hub Candid Interface
+// ============================================================================
+// This canister manages global staking statistics and coordinates 
+// user_profile shard canisters. Simplified version without interest/penalties.
+
+// Arguments for canister initialization
 type InitArgs = record {
     ledger_id : principal;
-    staking_hub_id : principal;
+    learning_content_id : principal;
+    user_profile_wasm : vec nat8;
 };
 
-type Proposal = record {
-    id : nat64;
-    proposer : principal;
-    recipient : principal;
-    amount : nat64;
-    description : text;
-    votes_yes : nat64;
-    votes_no : nat64;
-    executed : bool;
+// Global statistics (simplified - no interest/tier tracking)
+type GlobalStats = record {
+    total_staked : nat64;
+    total_unstaked : nat64;
+    total_allocated : nat64;
+};
+
+// Shard operational status
+type ShardStatus = variant {
+    Active;
+    Full;
+};
+
+// Information about a user_profile shard canister
+type ShardInfo = record {
+    canister_id : principal;
     created_at : nat64;
-};
-
-// Treasury state tracking balance and allowance
-type TreasuryState = record {
-    balance : nat64;           // Total MC held (decreases on transfers)
-    allowance : nat64;         // Spendable amount (increases via MMCR)
-    total_transferred : nat64; // Historical total transferred out
-    mmcr_count : nat64;        // Number of MMCR releases (0-240)
-    last_mmcr_timestamp : nat64;
-    genesis_timestamp : nat64;
-};
-
-// MMCR status for monitoring
-type MMCRStatus = record {
-    releases_completed : nat64;
-    releases_remaining : nat64;
-    last_release_timestamp : nat64;
-    next_release_amount : nat64;
-    seconds_until_next : nat64;
+    user_count : nat64;
+    status : ShardStatus;
 };
 
 service : (InitArgs) -> {
     // =========================================================================
-    // GOVERNANCE FUNCTIONS
+    // Auto-Scaling
     // =========================================================================
-    
-    // Create a spending proposal (requires voting power)
-    "create_proposal": (principal, nat64, text) -> (variant { Ok: nat64; Err: text });
-    
-    // Vote on a proposal (requires voting power)
-    "vote": (nat64, bool) -> (variant { Ok: null; Err: text });
-    
-    // Execute an approved proposal (checks treasury allowance)
-    "execute_proposal": (nat64) -> (variant { Ok: null; Err: text });
-    
-    // Query a specific proposal
-    "get_proposal": (nat64) -> (opt Proposal) query;
-    
-    // Get total amount spent through proposals
-    "get_total_spent": () -> (nat64) query;
+    // Ensures capacity by creating new shards when needed
+    "ensure_capacity": () -> (variant { Ok: opt principal; Err: text });
     
     // =========================================================================
-    // TREASURY FUNCTIONS (NEW)
+    // Shard Discovery Queries
+    // =========================================================================
+    "get_shards": () -> (vec ShardInfo) query;
+    "get_active_shards": () -> (vec ShardInfo) query;
+    "get_shard_for_new_user": () -> (opt principal) query;
+    "is_registered_shard": (principal) -> (bool) query;
+    "get_shard_count": () -> (nat64) query;
+    
+    // =========================================================================
+    // Shard Operations (Called ONLY by registered shards)
     // =========================================================================
     
-    // Get full treasury state (balance, allowance, MMCR progress)
-    "get_treasury_state": () -> (TreasuryState) query;
+    // Update user count for load balancing
+    "update_shard_user_count": (nat64) -> (variant { Ok: null; Err: text });
     
-    // Get spendable balance (current allowance)
-    "get_spendable_balance": () -> (nat64) query;
+    // Sync shard statistics (simplified)
+    // Args: staked_delta (int64), unstaked_delta, requested_allowance
+    // Returns: granted_allowance
+    "sync_shard": (int64, nat64, nat64) -> (variant { Ok: nat64; Err: text });
     
-    // Get total treasury balance
-    "get_treasury_balance": () -> (nat64) query;
+    // Process unstake request (no penalty - returns 100%)
+    "process_unstake": (principal, nat64) -> (variant { Ok: nat64; Err: text });
     
-    // Get MMCR status and timing
-    "get_mmcr_status": () -> (MMCRStatus) query;
+    // =========================================================================
+    // Admin Operations
+    // =========================================================================
+    "add_allowed_minter": (principal) -> ();
     
-    // Execute Monthly Market Coin Release (increases allowance)
-    // Can be called by anyone, time-gated to once per ~28 days
-    "execute_mmcr": () -> (variant { Ok: nat64; Err: text });
+    // =========================================================================
+    // Query Functions
+    // =========================================================================
+    "get_global_stats": () -> (GlobalStats) query;
+    "get_config": () -> (principal, principal, bool) query;
+    "get_limits": () -> (nat64, nat64) query;
+    
+    // =========================================================================
+    // Governance Voting Power
+    // =========================================================================
+    
+    // --- Founder Management (Admin Only) ---
+    
+    // Add a founder principal (controller only)
+    // Flow: Founder logs in with II → shares principal → admin adds them
+    "add_founder": (principal) -> (variant { Ok: null; Err: text });
+    
+    // Remove a founder principal (controller only)
+    "remove_founder": (principal) -> (variant { Ok: null; Err: text });
+    
+    // Get all registered founders
+    "get_founders": () -> (vec principal) query;
+    
+    // Get number of registered founders
+    "get_founder_count": () -> (nat64) query;
+    
+    // --- User Registry ---
+    
+    // Register user's shard location (called by shards on registration)
+    "register_user_location": (principal) -> (variant { Ok: null; Err: text });
+    
+    // Get which shard a user is in
+    "get_user_shard": (principal) -> (opt principal) query;
+    
+    // --- Voting Power Queries ---
+    
+    // Check if principal is a founder
+    "is_founder": (principal) -> (bool) query;
+    
+    // Get VUC (Volume of Unmined Coins) - founder voting power
+    "get_vuc": () -> (nat64) query;
+    
+    // Get total voting power in system (VUC + total_staked)
+    "get_total_voting_power": () -> (nat64) query;
+    
+    // Fetch voting power for any principal (async - queries shards)
+    "fetch_voting_power": (principal) -> (nat64);
+    
+    // Get tokenomics: (max_supply, total_allocated, vuc, total_voting_power)
+    "get_tokenomics": () -> (nat64, nat64, nat64, nat64) query;
 }

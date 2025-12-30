@@ -18,17 +18,25 @@ export const idlFactory = ({ IDL }) => {
   });
   return IDL.Service({
     'add_allowed_minter' : IDL.Func([IDL.Principal], [], []),
+    'add_founder' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
+        [],
+      ),
     'ensure_capacity' : IDL.Func(
         [],
         [IDL.Variant({ 'Ok' : IDL.Opt(IDL.Principal), 'Err' : IDL.Text })],
         [],
       ),
+    'fetch_voting_power' : IDL.Func([IDL.Principal], [IDL.Nat64], []),
     'get_active_shards' : IDL.Func([], [IDL.Vec(ShardInfo)], ['query']),
     'get_config' : IDL.Func(
         [],
         [IDL.Principal, IDL.Principal, IDL.Bool],
         ['query'],
       ),
+    'get_founder_count' : IDL.Func([], [IDL.Nat64], ['query']),
+    'get_founders' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'get_global_stats' : IDL.Func([], [GlobalStats], ['query']),
     'get_limits' : IDL.Func([], [IDL.Nat64, IDL.Nat64], ['query']),
     'get_shard_count' : IDL.Func([], [IDL.Nat64], ['query']),
@@ -38,10 +46,33 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_shards' : IDL.Func([], [IDL.Vec(ShardInfo)], ['query']),
+    'get_tokenomics' : IDL.Func(
+        [],
+        [IDL.Nat64, IDL.Nat64, IDL.Nat64, IDL.Nat64],
+        ['query'],
+      ),
+    'get_total_voting_power' : IDL.Func([], [IDL.Nat64], ['query']),
+    'get_user_shard' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(IDL.Principal)],
+        ['query'],
+      ),
+    'get_vuc' : IDL.Func([], [IDL.Nat64], ['query']),
+    'is_founder' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'is_registered_shard' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'process_unstake' : IDL.Func(
         [IDL.Principal, IDL.Nat64],
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
+        [],
+      ),
+    'register_user_location' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
+        [],
+      ),
+    'remove_founder' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),
     'sync_shard' : IDL.Func(

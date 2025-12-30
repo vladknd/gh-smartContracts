@@ -168,3 +168,61 @@ echo "  - Vesting Schedule: 10%/year over 10 years"
 echo "  - Founders can claim via: dfx canister call founder_vesting claim_vested"
 echo ""
 
+# ============================================================================
+# Update Frontend Configuration
+# ============================================================================
+echo "Updating frontend configuration..."
+
+# Get all canister IDs
+INDEX_ID=$(dfx canister id icrc1_index_canister)
+USER_PROFILE_ID=$(dfx canister id user_profile)
+LEARNING_ID=$(dfx canister id learning_engine)
+STAKING_HUB_ID=$(dfx canister id staking_hub)
+OP_GOV_ID=$(dfx canister id operational_governance)
+LEDGER_ID=$(dfx canister id ghc_ledger)
+CONTENT_GOV_ID=$(dfx canister id content_governance)
+II_ID=$(dfx canister id internet_identity)
+FOUNDER_VESTING_ID=$(dfx canister id founder_vesting)
+
+# Generate ic.config.json
+cat > ic.config.json <<EOF
+{
+    "network": "local",
+    "host": "http://localhost:4943",
+    "canisters": {
+        "icrc1_index": "$INDEX_ID",
+        "user_profile": "$USER_PROFILE_ID",
+        "learning_engine": "$LEARNING_ID",
+        "staking_hub": "$STAKING_HUB_ID",
+        "operational_governance": "$OP_GOV_ID",
+        "ghc_ledger": "$LEDGER_ID",
+        "content_governance": "$CONTENT_GOV_ID",
+        "internet_identity": "$II_ID",
+        "founder_vesting": "$FOUNDER_VESTING_ID"
+    },
+    "founders": [
+        {
+            "name": "founder1",
+            "principal": "$F1",
+            "allocation": "350000000"
+        },
+        {
+            "name": "founder2",
+            "principal": "$F2",
+            "allocation": "150000000"
+        }
+    ]
+}
+EOF
+
+echo "Generated ic.config.json"
+
+# Run update_frontend.sh if it exists
+if [ -f "./scripts/update_frontend.sh" ]; then
+    echo "Running update_frontend.sh..."
+    ./scripts/update_frontend.sh
+else
+    echo "Warning: ./scripts/update_frontend.sh not found. Config not copied to dashboard."
+fi
+
+echo ""

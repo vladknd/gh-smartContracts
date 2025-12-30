@@ -357,7 +357,7 @@ fn get_current_day() -> u64 {
 }
 
 #[update]
-fn register_user(args: UserProfileUpdate) -> Result<(), String> {
+async fn register_user(args: UserProfileUpdate) -> Result<(), String> {
     let user = ic_cdk::caller();
     
     if USER_PROFILES.with(|p| p.borrow().contains_key(&user)) {
@@ -374,6 +374,17 @@ fn register_user(args: UserProfileUpdate) -> Result<(), String> {
     };
 
     USER_PROFILES.with(|p| p.borrow_mut().insert(user, new_profile));
+    
+    // Register user's shard location with staking_hub (for governance voting power lookup)
+    let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
+    let _: Result<(Result<(), String>,), _> = ic_cdk::call(
+        staking_hub_id,
+        "register_user_location",
+        (user,)
+    ).await;
+    // Note: We don't fail registration if this call fails - it's not critical for user operations
+    // The user registry is only needed for governance voting
+    
     Ok(())
 }
 
@@ -533,7 +544,7 @@ async fn submit_quiz(unit_id: String, answers: Vec<u8>) -> Result<u64, String> {
     }
 
     // 3. Check Minting Allowance (Hard Cap Enforcement)
-    let reward_amount = 100_000_000; // 1 Token
+    let reward_amount = 10_000_000_000; // 100 Tokens
     let current_allowance = MINTING_ALLOWANCE.with(|a| *a.borrow().get());
     
     if current_allowance < reward_amount {

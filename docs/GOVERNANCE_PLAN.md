@@ -1,8 +1,34 @@
 # Governance Implementation Plan
 
 > **Last Updated:** December 2024  
-> **Status:** Proposed  
-> **Version:** 1.0
+> **Status:** ✅ **IMPLEMENTED**  
+> **Version:** 2.0
+
+---
+
+## Implementation Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Staking Hub - Voting Power Oracle** | ✅ Implemented | VUC calculation, user registry, fetch_voting_power |
+| **Staking Hub - Founder Management** | ✅ Implemented | Dynamic add_founder/remove_founder |
+| **Operational Governance - Proposals** | ✅ Implemented | Treasury proposals with voting |
+| **Operational Governance - Voting** | ✅ Implemented | Vote with staked tokens or VUC |
+| **Operational Governance - Treasury** | ✅ Implemented | 4.25B MC with MMCR |
+| **User Profile - User Registry** | ✅ Implemented | register_user_location on registration |
+| **Content Governance** | ⏳ Pending | Not yet fully implemented |
+| **Snapshot Voting** | ⏳ Pending | Current implementation uses real-time balances |
+
+### Implemented Parameters
+
+| Parameter | Value | Where |
+|-----------|-------|-------|
+| Min voting power to propose | 150 tokens | operational_governance |
+| Approval threshold | 15,000 YES votes | operational_governance |
+| Voting period | 14 days | operational_governance |
+| Resubmission cooldown | 6 months | operational_governance |
+| MMCR monthly release | 15.2M MC | operational_governance |
+| Treasury initial allowance | 0.6B MC | operational_governance |
 
 ---
 
@@ -282,78 +308,111 @@ fn get_founder_voting_power(founder: Principal) -> u64 {
    └───────────────┘           └───────────────┘           └───────────────┘
 ```
 
-
 ---
 
-## 4. Operational Governance
+## 4. Operational Governance (✅ IMPLEMENTED)
 
 ### Purpose
 
 Manages the **4.25B Market Coin Treasury** with democratic oversight from founders (VUC) and stakers (users).
 
-### Proposal Types
+### Implemented Types
 
 ```rust
-enum OperationalProposal {
-    // Treasury Spending
-    TreasurySpend {
-        recipient: Principal,
-        amount: u64,
-        category: SpendingCategory,
-        description: String,
-    },
-    
-    // DEX Operations
-    AddDexLiquidity {
-        dex_canister: Principal,
-        ghc_amount: u64,
-        paired_token: Principal,
-        paired_amount: u64,
-    },
-    
-    RemoveDexLiquidity {
-        dex_canister: Principal,
-        lp_token_amount: u64,
-    },
-    
-    // Partnership/Grants
-    PartnershipGrant {
-        recipient: Principal,
-        amount: u64,
-        vesting_months: u8,
-        description: String,
-    },
-    
-    // Emergency Actions
-    EmergencyPause {
-        target_canister: Principal,
-        reason: String,
-    },
+// Proposal Status
+enum ProposalStatus {
+    Active,      // Voting in progress
+    Approved,    // ≥15,000 YES votes, auto-executes
+    Rejected,    // <15,000 YES votes after voting period
+    Executed,    // Successfully transferred funds
 }
 
-enum SpendingCategory {
+// Token types for treasury spending
+enum TokenType {
+    GHC,   // Native token (implemented)
+    USDC,  // Future support
+    ICP,   // Future support
+}
+
+// Proposal categories
+enum ProposalCategory {
     Marketing,
     Development,
     Partnership,
-    LiquidityProvision,
+    Liquidity,
     CommunityGrant,
     Operations,
+    Custom(String),  // User-defined
+}
+
+// Treasury spending proposal
+struct Proposal {
+    id: u64,
+    proposer: Principal,
+    created_at: u64,
+    voting_ends_at: u64,  // created_at + 14 days
+    
+    // Proposal details
+    title: String,
+    description: String,
+    recipient: Principal,
+    amount: u64,
+    token_type: TokenType,
+    category: ProposalCategory,
+    external_link: Option<String>,
+    
+    // Voting state
+    votes_yes: u64,       // Total voting power for YES
+    votes_no: u64,        // Total voting power for NO
+    voter_count: u64,     // Number of unique voters
+    
+    status: ProposalStatus,
+}
+
+// Vote record for transparency
+struct VoteRecord {
+    voter: Principal,
+    proposal_id: u64,
+    vote: bool,           // true = YES, false = NO
+    voting_power: u64,    // Power used at time of vote
+    timestamp: u64,
 }
 ```
 
-### Parameters
+### Implemented Parameters
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| **Voting Period** | 7 days | Time to review financial decisions |
-| **Execution Delay** | 2 days | Time to exit if disagreement |
-| **Emergency Delay** | 4 hours | Fast response to critical issues |
-| **Quorum** | 5% of total staked | Ensure sufficient participation |
-| **Pass Threshold** | 60% | Supermajority for financial decisions |
-| **Proposal Cost** | 1,000 GHC | Prevent spam proposals |
-| **Monthly Limit** | 16M GHC | Cap treasury outflow |
+| **Min Voting Power to Propose** | 150 tokens | Prevent spam, require skin in game |
+| **Approval Threshold** | 15,000 tokens YES | Ensure meaningful support |
+| **Voting Period** | 14 days | Time to review + vote |
+| **Auto-Approval** | If votes_yes ≥ 15,000 | Early approval if threshold met |
+| **Auto-Execute** | On approval | Immediate fund transfer |
+| **Resubmission Cooldown** | 6 months | Prevent proposal spam after rejection |
+
+### Key Functions
+
+```rust
+// Create a proposal (requires 150+ tokens voting power)
+async fn create_proposal(input: CreateProposalInput) -> Result<u64, String>
+
+// Vote on a proposal (voting power from staking_hub)
+async fn vote(proposal_id: u64, approve: bool) -> Result<(), String>
+
+// Finalize proposal after voting ends (automatic via timer)
+async fn finalize_proposal(proposal_id: u64) -> Result<ProposalStatus, String>
+
+// Query functions
+fn get_proposal(id: u64) -> Option<Proposal>
+fn get_active_proposals() -> Vec<Proposal>
+fn get_all_proposals() -> Vec<Proposal>
+fn get_proposal_votes(proposal_id: u64) -> Vec<VoteRecord>
+fn has_voted(proposal_id: u64, voter: Principal) -> bool
+fn get_governance_config() -> (u64, u64, u64, u64) // (min_power, threshold, days, cooldown)
+```
 
 ---
+
 
 ## 5. Content Governance
 

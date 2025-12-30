@@ -1,41 +1,43 @@
-type InitArgs = record { ledger_id : principal; staking_hub_id : principal };
-type MMCRStatus = record {
-  last_release_timestamp : nat64;
-  releases_completed : nat64;
-  seconds_until_next : nat64;
-  next_release_amount : nat64;
-  releases_remaining : nat64;
+type GlobalStats = record {
+  total_staked : nat64;
+  total_allocated : nat64;
+  total_unstaked : nat64;
 };
-type Proposal = record {
-  id : nat64;
-  votes_no : nat64;
-  recipient : principal;
-  description : text;
+type InitArgs = record {
+  learning_content_id : principal;
+  ledger_id : principal;
+  user_profile_wasm : blob;
+};
+type ShardInfo = record {
+  user_count : nat64;
+  status : ShardStatus;
+  canister_id : principal;
   created_at : nat64;
-  proposer : principal;
-  votes_yes : nat64;
-  executed : bool;
-  amount : nat64;
 };
-type TreasuryState = record {
-  balance : nat64;
-  total_transferred : nat64;
-  genesis_timestamp : nat64;
-  mmcr_count : nat64;
-  allowance : nat64;
-  last_mmcr_timestamp : nat64;
-};
+type ShardStatus = variant { Full; Active };
 service : {
-  create_proposal : (principal, nat64, text) -> (
-      variant { Ok : nat64; Err : text },
-    );
-  execute_mmcr : () -> (variant { Ok : nat64; Err : text });
-  execute_proposal : (nat64) -> (variant { Ok; Err : text });
-  get_mmcr_status : () -> (MMCRStatus) query;
-  get_proposal : (nat64) -> (opt Proposal) query;
-  get_spendable_balance : () -> (nat64) query;
-  get_total_spent : () -> (nat64) query;
-  get_treasury_balance : () -> (nat64) query;
-  get_treasury_state : () -> (TreasuryState) query;
-  vote : (nat64, bool) -> (variant { Ok; Err : text });
+  add_allowed_minter : (principal) -> ();
+  add_founder : (principal) -> (variant { Ok; Err : text });
+  ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
+  fetch_voting_power : (principal) -> (nat64);
+  get_active_shards : () -> (vec ShardInfo) query;
+  get_config : () -> (principal, principal, bool) query;
+  get_founder_count : () -> (nat64) query;
+  get_founders : () -> (vec principal) query;
+  get_global_stats : () -> (GlobalStats) query;
+  get_limits : () -> (nat64, nat64) query;
+  get_shard_count : () -> (nat64) query;
+  get_shard_for_new_user : () -> (opt principal) query;
+  get_shards : () -> (vec ShardInfo) query;
+  get_tokenomics : () -> (nat64, nat64, nat64, nat64) query;
+  get_total_voting_power : () -> (nat64) query;
+  get_user_shard : (principal) -> (opt principal) query;
+  get_vuc : () -> (nat64) query;
+  is_founder : (principal) -> (bool) query;
+  is_registered_shard : (principal) -> (bool) query;
+  process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
+  register_user_location : (principal) -> (variant { Ok; Err : text });
+  remove_founder : (principal) -> (variant { Ok; Err : text });
+  sync_shard : (int64, nat64, nat64) -> (variant { Ok : nat64; Err : text });
+  update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
 }

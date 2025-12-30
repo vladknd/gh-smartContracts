@@ -17,16 +17,27 @@ type ShardInfo = record {
 type ShardStatus = variant { Full; Active };
 service : {
   add_allowed_minter : (principal) -> ();
+  add_founder : (principal) -> (variant { Ok; Err : text });
   ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
+  fetch_voting_power : (principal) -> (nat64);
   get_active_shards : () -> (vec ShardInfo) query;
   get_config : () -> (principal, principal, bool) query;
+  get_founder_count : () -> (nat64) query;
+  get_founders : () -> (vec principal) query;
   get_global_stats : () -> (GlobalStats) query;
   get_limits : () -> (nat64, nat64) query;
   get_shard_count : () -> (nat64) query;
   get_shard_for_new_user : () -> (opt principal) query;
   get_shards : () -> (vec ShardInfo) query;
+  get_tokenomics : () -> (nat64, nat64, nat64, nat64) query;
+  get_total_voting_power : () -> (nat64) query;
+  get_user_shard : (principal) -> (opt principal) query;
+  get_vuc : () -> (nat64) query;
+  is_founder : (principal) -> (bool) query;
   is_registered_shard : (principal) -> (bool) query;
   process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
+  register_user_location : (principal) -> (variant { Ok; Err : text });
+  remove_founder : (principal) -> (variant { Ok; Err : text });
   sync_shard : (int64, nat64, nat64) -> (variant { Ok : nat64; Err : text });
   update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
 }

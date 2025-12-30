@@ -1,77 +1,89 @@
 // ============================================================================
-// Staking Hub Candid Interface
+// User Profile Candid Interface
 // ============================================================================
-// This canister manages global staking statistics and coordinates 
-// user_profile shard canisters. Simplified version without interest/penalties.
+// This canister manages user profiles, quiz submissions, and staking state.
+// It operates as a "shard" that syncs with the central staking_hub.
+// Simplified version without interest/tier tracking.
 
-// Arguments for canister initialization
+// User profile (simplified - no interest/tier fields)
+type UserProfile = record {
+    // Personal Information
+    email : text;
+    name : text;
+    education : text;
+    gender : text;
+    
+    // Economy State
+    staked_balance : nat64;
+    transaction_count : nat64;
+};
+
+type UserDailyStats = record {
+    day_index : nat64;
+    quizzes_taken : nat8;
+    tokens_earned : nat64;
+};
+
 type InitArgs = record {
-    ledger_id : principal;
+    staking_hub_id : principal;
     learning_content_id : principal;
-    user_profile_wasm : vec nat8;
 };
 
-// Global statistics (simplified - no interest/tier tracking)
-type GlobalStats = record {
-    total_staked : nat64;
-    total_unstaked : nat64;
-    total_allocated : nat64;
+type UserProfileUpdate = record {
+    email : text;
+    name : text;
+    education : text;
+    gender : text;
 };
 
-// Shard operational status
-type ShardStatus = variant {
-    Active;
-    Full;
+type TransactionType = variant {
+    QuizReward;
+    Unstake;
 };
 
-// Information about a user_profile shard canister
-type ShardInfo = record {
-    canister_id : principal;
-    created_at : nat64;
-    user_count : nat64;
-    status : ShardStatus;
+type TransactionRecord = record {
+    timestamp : nat64;
+    tx_type : TransactionType;
+    amount : nat64;
 };
 
 service : (InitArgs) -> {
     // =========================================================================
-    // Auto-Scaling
+    // User Registration & Profile
     // =========================================================================
-    // Ensures capacity by creating new shards when needed
-    "ensure_capacity": () -> (variant { Ok: opt principal; Err: text });
+    register_user : (UserProfileUpdate) -> (variant { Ok : null; Err : text });
+    update_profile : (UserProfileUpdate) -> (variant { Ok : null; Err : text });
+    get_profile : (principal) -> (opt UserProfile) query;
     
     // =========================================================================
-    // Shard Discovery Queries
+    // Quiz & Learning
     // =========================================================================
-    "get_shards": () -> (vec ShardInfo) query;
-    "get_active_shards": () -> (vec ShardInfo) query;
-    "get_shard_for_new_user": () -> (opt principal) query;
-    "is_registered_shard": (principal) -> (bool) query;
-    "get_shard_count": () -> (nat64) query;
+    submit_quiz : (text, vec nat8) -> (variant { Ok : nat64; Err : text });
+    is_quiz_completed : (principal, text) -> (bool) query;
     
     // =========================================================================
-    // Shard Operations (Called ONLY by registered shards)
+    // Daily Stats
     // =========================================================================
-    
-    // Update user count for load balancing
-    "update_shard_user_count": (nat64) -> (variant { Ok: null; Err: text });
-    
-    // Sync shard statistics (simplified)
-    // Args: staked_delta (int64), unstaked_delta, requested_allowance
-    // Returns: granted_allowance
-    "sync_shard": (int64, nat64, nat64) -> (variant { Ok: nat64; Err: text });
-    
-    // Process unstake request (no penalty - returns 100%)
-    "process_unstake": (principal, nat64) -> (variant { Ok: nat64; Err: text });
+    get_user_daily_status : (principal) -> (UserDailyStats) query;
     
     // =========================================================================
-    // Admin Operations
+    // Economy Functions
     // =========================================================================
-    "add_allowed_minter": (principal) -> ();
+    // Unstake returns 100% (no penalty)
+    unstake : (nat64) -> (variant { Ok : nat64; Err : text });
     
     // =========================================================================
-    // Query Functions
+    // Transaction History
     // =========================================================================
-    "get_global_stats": () -> (GlobalStats) query;
-    "get_config": () -> (principal, principal, bool) query;
-    "get_limits": () -> (nat64, nat64) query;
+    get_user_transactions : (principal) -> (vec TransactionRecord) query;
+    
+    // =========================================================================
+    // Shard Metrics
+    // =========================================================================
+    get_user_count : () -> (nat64) query;
+    
+    // =========================================================================
+    // Debug / Testing
+    // =========================================================================
+    debug_force_sync : () -> (variant { Ok : null; Err : text });
 }

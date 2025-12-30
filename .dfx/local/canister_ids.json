@@ -1,32 +1,32 @@
 {
   "__Candid_UI": {
-    "local": "u6s2n-gx777-77774-qaaba-cai"
+    "local": "vg3po-ix777-77774-qaafa-cai"
   },
   "content_governance": {
-    "local": "uzt4z-lp777-77774-qaabq-cai"
-  },
-  "founder_vesting": {
-    "local": "umunu-kh777-77774-qaaca-cai"
-  },
-  "ghc_ledger": {
-    "local": "ulvla-h7777-77774-qaacq-cai"
-  },
-  "icrc1_index_canister": {
-    "local": "ucwa4-rx777-77774-qaada-cai"
-  },
-  "internet_identity": {
     "local": "uxrrr-q7777-77774-qaaaq-cai"
   },
+  "founder_vesting": {
+    "local": "u6s2n-gx777-77774-qaaba-cai"
+  },
+  "ghc_ledger": {
+    "local": "uzt4z-lp777-77774-qaabq-cai"
+  },
+  "icrc1_index_canister": {
+    "local": "umunu-kh777-77774-qaaca-cai"
+  },
+  "internet_identity": {
+    "local": "ulvla-h7777-77774-qaacq-cai"
+  },
   "learning_engine": {
-    "local": "ufxgi-4p777-77774-qaadq-cai"
+    "local": "ucwa4-rx777-77774-qaada-cai"
   },
   "operational_governance": {
-    "local": "vizcg-th777-77774-qaaea-cai"
+    "local": "ufxgi-4p777-77774-qaadq-cai"
   },
   "staking_hub": {
-    "local": "vpyes-67777-77774-qaaeq-cai"
+    "local": "vizcg-th777-77774-qaaea-cai"
   },
   "user_profile": {
-    "local": "vg3po-ix777-77774-qaafa-cai"
+    "local": "vpyes-67777-77774-qaaeq-cai"
   }
 }

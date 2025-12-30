@@ -74,4 +74,48 @@ service : (InitArgs) -> {
     "get_global_stats": () -> (GlobalStats) query;
     "get_config": () -> (principal, principal, bool) query;
     "get_limits": () -> (nat64, nat64) query;
+    
+    // =========================================================================
+    // Governance Voting Power
+    // =========================================================================
+    
+    // --- Founder Management (Admin Only) ---
+    
+    // Add a founder principal (controller only)
+    // Flow: Founder logs in with II → shares principal → admin adds them
+    "add_founder": (principal) -> (variant { Ok: null; Err: text });
+    
+    // Remove a founder principal (controller only)
+    "remove_founder": (principal) -> (variant { Ok: null; Err: text });
+    
+    // Get all registered founders
+    "get_founders": () -> (vec principal) query;
+    
+    // Get number of registered founders
+    "get_founder_count": () -> (nat64) query;
+    
+    // --- User Registry ---
+    
+    // Register user's shard location (called by shards on registration)
+    "register_user_location": (principal) -> (variant { Ok: null; Err: text });
+    
+    // Get which shard a user is in
+    "get_user_shard": (principal) -> (opt principal) query;
+    
+    // --- Voting Power Queries ---
+    
+    // Check if principal is a founder
+    "is_founder": (principal) -> (bool) query;
+    
+    // Get VUC (Volume of Unmined Coins) - founder voting power
+    "get_vuc": () -> (nat64) query;
+    
+    // Get total voting power in system (VUC + total_staked)
+    "get_total_voting_power": () -> (nat64) query;
+    
+    // Fetch voting power for any principal (async - queries shards)
+    "fetch_voting_power": (principal) -> (nat64);
+    
+    // Get tokenomics: (max_supply, total_allocated, vuc, total_voting_power)
+    "get_tokenomics": () -> (nat64, nat64, nat64, nat64) query;
 }

@@ -1,50 +1,77 @@
-type DailyStatus = record {
-  quizzes_taken : nat8;
-  tokens_earned : nat64;
-  daily_limit : nat8;
+type CreateProposalInput = record {
+  external_link : opt text;
+  title : text;
+  recipient : principal;
+  description : text;
+  category : ProposalCategory;
+  amount : nat64;
+  token_type : TokenType;
 };
-type InitArgs = record { staking_hub_id : principal };
-type LearningUnit = record {
-  content : text;
-  head_unit_title : text;
-  paraphrase : text;
-  quiz : vec QuizQuestion;
-  chapter_title : text;
-  unit_id : text;
-  chapter_id : text;
-  head_unit_id : text;
-  unit_title : text;
+type InitArgs = record { ledger_id : principal; staking_hub_id : principal };
+type MMCRStatus = record {
+  last_release_timestamp : nat64;
+  releases_completed : nat64;
+  seconds_until_next : nat64;
+  next_release_amount : nat64;
+  releases_remaining : nat64;
 };
-type LearningUnitMetadata = record {
-  chapter_title : text;
-  unit_id : text;
-  chapter_id : text;
-  unit_title : text;
+type Proposal = record {
+  id : nat64;
+  status : ProposalStatus;
+  external_link : opt text;
+  title : text;
+  votes_no : nat64;
+  recipient : principal;
+  description : text;
+  created_at : nat64;
+  voting_ends_at : nat64;
+  category : ProposalCategory;
+  proposer : principal;
+  voter_count : nat64;
+  votes_yes : nat64;
+  amount : nat64;
+  token_type : TokenType;
 };
-type PublicLearningUnit = record {
-  content : text;
-  head_unit_title : text;
-  paraphrase : text;
-  quiz : vec PublicQuizQuestion;
-  chapter_title : text;
-  unit_id : text;
-  chapter_id : text;
-  head_unit_id : text;
-  unit_title : text;
+type ProposalCategory = variant {
+  Partnership;
+  CommunityGrant;
+  Custom : text;
+  Operations;
+  Development;
+  Marketing;
+  Liquidity;
 };
-type PublicQuizQuestion = record { question : text; options : vec text };
-type QuizQuestion = record {
-  question : text;
-  answer : nat8;
-  options : vec text;
+type ProposalStatus = variant { Active; Approved; Rejected; Executed };
+type TokenType = variant { GHC; ICP; USDC };
+type TreasuryState = record {
+  balance : nat64;
+  total_transferred : nat64;
+  genesis_timestamp : nat64;
+  mmcr_count : nat64;
+  allowance : nat64;
+  last_mmcr_timestamp : nat64;
+};
+type VoteRecord = record {
+  voter : principal;
+  vote : bool;
+  proposal_id : nat64;
+  timestamp : nat64;
+  voting_power : nat64;
 };
 service : {
-  add_learning_unit : (LearningUnit) -> (variant { Ok; Err : text });
-  get_learning_unit : (text) -> (
-      variant { Ok : PublicLearningUnit; Err : text },
-    ) query;
-  get_learning_units_metadata : () -> (vec LearningUnitMetadata) query;
-  get_user_daily_status : (principal) -> (DailyStatus) query;
-  is_quiz_completed : (principal, text) -> (bool) query;
-  submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
+  create_proposal : (CreateProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  execute_mmcr : () -> (variant { Ok : nat64; Err : text });
+  finalize_proposal : (nat64) -> (variant { Ok : ProposalStatus; Err : text });
+  get_active_proposals : () -> (vec Proposal) query;
+  get_all_proposals : () -> (vec Proposal) query;
+  get_governance_config : () -> (nat64, nat64, nat64, nat64) query;
+  get_mmcr_status : () -> (MMCRStatus) query;
+  get_proposal : (nat64) -> (opt Proposal) query;
+  get_proposal_votes : (nat64) -> (vec VoteRecord) query;
+  get_spendable_balance : () -> (nat64) query;
+  get_treasury_state : () -> (TreasuryState) query;
+  has_voted : (nat64, principal) -> (bool) query;
+  vote : (nat64, bool) -> (variant { Ok; Err : text });
 }

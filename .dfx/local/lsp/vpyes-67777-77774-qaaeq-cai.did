@@ -1,32 +1,41 @@
-type GlobalStats = record {
-  total_staked : nat64;
-  total_allocated : nat64;
-  total_unstaked : nat64;
-};
 type InitArgs = record {
   learning_content_id : principal;
-  ledger_id : principal;
-  user_profile_wasm : blob;
+  staking_hub_id : principal;
 };
-type ShardInfo = record {
-  user_count : nat64;
-  status : ShardStatus;
-  canister_id : principal;
-  created_at : nat64;
+type TransactionRecord = record {
+  timestamp : nat64;
+  tx_type : TransactionType;
+  amount : nat64;
 };
-type ShardStatus = variant { Full; Active };
+type TransactionType = variant { Unstake; QuizReward };
+type UserDailyStats = record {
+  quizzes_taken : nat8;
+  tokens_earned : nat64;
+  day_index : nat64;
+};
+type UserProfile = record {
+  name : text;
+  education : text;
+  email : text;
+  staked_balance : nat64;
+  gender : text;
+  transaction_count : nat64;
+};
+type UserProfileUpdate = record {
+  name : text;
+  education : text;
+  email : text;
+  gender : text;
+};
 service : {
-  add_allowed_minter : (principal) -> ();
-  ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
-  get_active_shards : () -> (vec ShardInfo) query;
-  get_config : () -> (principal, principal, bool) query;
-  get_global_stats : () -> (GlobalStats) query;
-  get_limits : () -> (nat64, nat64) query;
-  get_shard_count : () -> (nat64) query;
-  get_shard_for_new_user : () -> (opt principal) query;
-  get_shards : () -> (vec ShardInfo) query;
-  is_registered_shard : (principal) -> (bool) query;
-  process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
-  sync_shard : (int64, nat64, nat64) -> (variant { Ok : nat64; Err : text });
-  update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
+  debug_force_sync : () -> (variant { Ok; Err : text });
+  get_profile : (principal) -> (opt UserProfile) query;
+  get_user_count : () -> (nat64) query;
+  get_user_daily_status : (principal) -> (UserDailyStats) query;
+  get_user_transactions : (principal) -> (vec TransactionRecord) query;
+  is_quiz_completed : (principal, text) -> (bool) query;
+  register_user : (UserProfileUpdate) -> (variant { Ok; Err : text });
+  submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
+  unstake : (nat64) -> (variant { Ok : nat64; Err : text });
+  update_profile : (UserProfileUpdate) -> (variant { Ok; Err : text });
 }

@@ -22,22 +22,45 @@ export type ShardStatus = { 'Full' : null } |
   { 'Active' : null };
 export interface _SERVICE {
   'add_allowed_minter' : ActorMethod<[Principal], undefined>,
+  'add_founder' : ActorMethod<
+    [Principal],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
   'ensure_capacity' : ActorMethod<
     [],
     { 'Ok' : [] | [Principal] } |
       { 'Err' : string }
   >,
+  'fetch_voting_power' : ActorMethod<[Principal], bigint>,
   'get_active_shards' : ActorMethod<[], Array<ShardInfo>>,
   'get_config' : ActorMethod<[], [Principal, Principal, boolean]>,
+  'get_founder_count' : ActorMethod<[], bigint>,
+  'get_founders' : ActorMethod<[], Array<Principal>>,
   'get_global_stats' : ActorMethod<[], GlobalStats>,
   'get_limits' : ActorMethod<[], [bigint, bigint]>,
   'get_shard_count' : ActorMethod<[], bigint>,
   'get_shard_for_new_user' : ActorMethod<[], [] | [Principal]>,
   'get_shards' : ActorMethod<[], Array<ShardInfo>>,
+  'get_tokenomics' : ActorMethod<[], [bigint, bigint, bigint, bigint]>,
+  'get_total_voting_power' : ActorMethod<[], bigint>,
+  'get_user_shard' : ActorMethod<[Principal], [] | [Principal]>,
+  'get_vuc' : ActorMethod<[], bigint>,
+  'is_founder' : ActorMethod<[Principal], boolean>,
   'is_registered_shard' : ActorMethod<[Principal], boolean>,
   'process_unstake' : ActorMethod<
     [Principal, bigint],
     { 'Ok' : bigint } |
+      { 'Err' : string }
+  >,
+  'register_user_location' : ActorMethod<
+    [Principal],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
+  'remove_founder' : ActorMethod<
+    [Principal],
+    { 'Ok' : null } |
       { 'Err' : string }
   >,
   'sync_shard' : ActorMethod<
