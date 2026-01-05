@@ -72,6 +72,8 @@ service : {
   get_proposal_votes : (nat64) -> (vec VoteRecord) query;
   get_spendable_balance : () -> (nat64) query;
   get_treasury_state : () -> (TreasuryState) query;
+  get_usdc_ledger_id : () -> (principal) query;
   has_voted : (nat64, principal) -> (bool) query;
+  set_usdc_ledger_id : (principal) -> (variant { Ok; Err : text });
   vote : (nat64, bool) -> (variant { Ok; Err : text });
 }

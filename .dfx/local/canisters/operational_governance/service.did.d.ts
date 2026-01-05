@@ -88,7 +88,13 @@ export interface _SERVICE {
   'get_proposal_votes' : ActorMethod<[bigint], Array<VoteRecord>>,
   'get_spendable_balance' : ActorMethod<[], bigint>,
   'get_treasury_state' : ActorMethod<[], TreasuryState>,
+  'get_usdc_ledger_id' : ActorMethod<[], Principal>,
   'has_voted' : ActorMethod<[bigint, Principal], boolean>,
+  'set_usdc_ledger_id' : ActorMethod<
+    [Principal],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
   'vote' : ActorMethod<[bigint, boolean], { 'Ok' : null } | { 'Err' : string }>,
 }
 export declare const idlFactory: IDL.InterfaceFactory;
