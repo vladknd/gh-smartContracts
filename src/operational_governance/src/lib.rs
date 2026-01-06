@@ -39,7 +39,7 @@ const INITIAL_TREASURY_ALLOWANCE: u64 = 60_000_000_000_000_000; // 0.6B * 10^8
 const MMCR_AMOUNT: u64 = 1_520_000_000_000_000; // 15.2M * 10^8
 const FINAL_MMCR_AMOUNT: u64 = 1_720_000_000_000_000; // 17.2M * 10^8
 const TOTAL_MMCR_RELEASES: u64 = 240;
-const MMCR_MIN_INTERVAL_NANOS: u64 = 28 * 24 * 60 * 60 * 1_000_000_000;
+const MMCR_MIN_INTERVAL_NANOS: u64 = 30 * 24 * 60 * 60 * 1_000_000_000;
 
 // ============================================================================
 // DATA STRUCTURES
@@ -680,7 +680,10 @@ fn get_mmcr_status() -> MMCRStatus {
         let seconds_until_next = if state.mmcr_count >= TOTAL_MMCR_RELEASES {
             0
         } else if state.last_mmcr_timestamp == 0 {
-            0
+            // No MMCR has ever occurred - calculate time from genesis
+            // Initial allowance is available immediately, first MMCR unlocks 30 days after genesis
+            let first_mmcr_available = state.genesis_timestamp + MMCR_MIN_INTERVAL_NANOS;
+            if current_time >= first_mmcr_available { 0 } else { (first_mmcr_available - current_time) / 1_000_000_000 }
         } else {
             let next_available = state.last_mmcr_timestamp + MMCR_MIN_INTERVAL_NANOS;
             if current_time >= next_available { 0 } else { (next_available - current_time) / 1_000_000_000 }

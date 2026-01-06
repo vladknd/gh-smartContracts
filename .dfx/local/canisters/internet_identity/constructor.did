@@ -568,7 +568,7 @@ service : (opt InternetIdentityInit) -> {
   lookup_by_registration_mode_id : (RegistrationId) -> (
       opt IdentityNumber,
     ) query;
-  lookup_caller_identity_by_recovery_phrase : () -> (opt IdentityNumber) query;
+  lookup_caller_identity_by_recovery_phrase : () -> (opt IdentityNumber);
   lookup_device_key : (blob) -> (opt DeviceKeyWithAnchor) query;
   openid_credential_add : (IdentityNumber, JWT, Salt) -> (
       variant { Ok; Err : OpenIdCredentialAddError },

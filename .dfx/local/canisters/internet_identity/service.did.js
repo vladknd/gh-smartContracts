@@ -740,7 +740,7 @@ export const idlFactory = ({ IDL }) => {
     'lookup_caller_identity_by_recovery_phrase' : IDL.Func(
         [],
         [IDL.Opt(IdentityNumber)],
-        ['query'],
+        [],
       ),
     'lookup_device_key' : IDL.Func(
         [IDL.Vec(IDL.Nat8)],

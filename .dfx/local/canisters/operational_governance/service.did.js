@@ -103,13 +103,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'get_spendable_balance' : IDL.Func([], [IDL.Nat64], ['query']),
     'get_treasury_state' : IDL.Func([], [TreasuryState], ['query']),
-    'get_usdc_ledger_id' : IDL.Func([], [IDL.Principal], ['query']),
     'has_voted' : IDL.Func([IDL.Nat64, IDL.Principal], [IDL.Bool], ['query']),
-    'set_usdc_ledger_id' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
-        [],
-      ),
     'vote' : IDL.Func(
         [IDL.Nat64, IDL.Bool],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
