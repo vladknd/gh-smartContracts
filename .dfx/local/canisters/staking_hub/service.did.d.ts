@@ -2,6 +2,10 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
+export interface BoardMemberShare {
+  'member' : Principal,
+  'percentage' : number,
+}
 export interface GlobalStats {
   'total_staked' : bigint,
   'total_allocated' : bigint,
@@ -22,11 +26,12 @@ export type ShardStatus = { 'Full' : null } |
   { 'Active' : null };
 export interface _SERVICE {
   'add_allowed_minter' : ActorMethod<[Principal], undefined>,
-  'add_founder' : ActorMethod<
-    [Principal],
+  'admin_set_user_shard' : ActorMethod<
+    [Principal, Principal],
     { 'Ok' : null } |
       { 'Err' : string }
   >,
+  'are_board_shares_locked' : ActorMethod<[], boolean>,
   'ensure_capacity' : ActorMethod<
     [],
     { 'Ok' : [] | [Principal] } |
@@ -34,9 +39,10 @@ export interface _SERVICE {
   >,
   'fetch_voting_power' : ActorMethod<[Principal], bigint>,
   'get_active_shards' : ActorMethod<[], Array<ShardInfo>>,
+  'get_board_member_count' : ActorMethod<[], bigint>,
+  'get_board_member_share' : ActorMethod<[Principal], [] | [number]>,
+  'get_board_member_shares' : ActorMethod<[], Array<BoardMemberShare>>,
   'get_config' : ActorMethod<[], [Principal, Principal, boolean]>,
-  'get_founder_count' : ActorMethod<[], bigint>,
-  'get_founders' : ActorMethod<[], Array<Principal>>,
   'get_global_stats' : ActorMethod<[], GlobalStats>,
   'get_limits' : ActorMethod<[], [bigint, bigint]>,
   'get_shard_count' : ActorMethod<[], bigint>,
@@ -46,8 +52,13 @@ export interface _SERVICE {
   'get_total_voting_power' : ActorMethod<[], bigint>,
   'get_user_shard' : ActorMethod<[Principal], [] | [Principal]>,
   'get_vuc' : ActorMethod<[], bigint>,
-  'is_founder' : ActorMethod<[Principal], boolean>,
+  'is_board_member' : ActorMethod<[Principal], boolean>,
   'is_registered_shard' : ActorMethod<[Principal], boolean>,
+  'lock_board_member_shares' : ActorMethod<
+    [],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
   'process_unstake' : ActorMethod<
     [Principal, bigint],
     { 'Ok' : bigint } |
@@ -58,8 +69,8 @@ export interface _SERVICE {
     { 'Ok' : null } |
       { 'Err' : string }
   >,
-  'remove_founder' : ActorMethod<
-    [Principal],
+  'set_board_member_shares' : ActorMethod<
+    [Array<BoardMemberShare>],
     { 'Ok' : null } |
       { 'Err' : string }
   >,

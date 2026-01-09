@@ -1,3 +1,4 @@
+type BoardMemberShare = record { member : principal; percentage : nat8 };
 type GlobalStats = record {
   total_staked : nat64;
   total_allocated : nat64;
@@ -17,13 +18,15 @@ type ShardInfo = record {
 type ShardStatus = variant { Full; Active };
 service : {
   add_allowed_minter : (principal) -> ();
-  add_founder : (principal) -> (variant { Ok; Err : text });
+  admin_set_user_shard : (principal, principal) -> (variant { Ok; Err : text });
+  are_board_shares_locked : () -> (bool) query;
   ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
   fetch_voting_power : (principal) -> (nat64);
   get_active_shards : () -> (vec ShardInfo) query;
+  get_board_member_count : () -> (nat64) query;
+  get_board_member_share : (principal) -> (opt nat8) query;
+  get_board_member_shares : () -> (vec BoardMemberShare) query;
   get_config : () -> (principal, principal, bool) query;
-  get_founder_count : () -> (nat64) query;
-  get_founders : () -> (vec principal) query;
   get_global_stats : () -> (GlobalStats) query;
   get_limits : () -> (nat64, nat64) query;
   get_shard_count : () -> (nat64) query;
@@ -33,11 +36,14 @@ service : {
   get_total_voting_power : () -> (nat64) query;
   get_user_shard : (principal) -> (opt principal) query;
   get_vuc : () -> (nat64) query;
-  is_founder : (principal) -> (bool) query;
+  is_board_member : (principal) -> (bool) query;
   is_registered_shard : (principal) -> (bool) query;
+  lock_board_member_shares : () -> (variant { Ok; Err : text });
   process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
   register_user_location : (principal) -> (variant { Ok; Err : text });
-  remove_founder : (principal) -> (variant { Ok; Err : text });
+  set_board_member_shares : (vec BoardMemberShare) -> (
+      variant { Ok; Err : text },
+    );
   sync_shard : (int64, nat64, nat64) -> (variant { Ok : nat64; Err : text });
   update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
 }

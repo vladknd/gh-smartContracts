@@ -11,6 +11,10 @@ export const idlFactory = ({ IDL }) => {
     'canister_id' : IDL.Principal,
     'created_at' : IDL.Nat64,
   });
+  const BoardMemberShare = IDL.Record({
+    'member' : IDL.Principal,
+    'percentage' : IDL.Nat8,
+  });
   const GlobalStats = IDL.Record({
     'total_staked' : IDL.Nat64,
     'total_allocated' : IDL.Nat64,
@@ -18,11 +22,12 @@ export const idlFactory = ({ IDL }) => {
   });
   return IDL.Service({
     'add_allowed_minter' : IDL.Func([IDL.Principal], [], []),
-    'add_founder' : IDL.Func(
-        [IDL.Principal],
+    'admin_set_user_shard' : IDL.Func(
+        [IDL.Principal, IDL.Principal],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),
+    'are_board_shares_locked' : IDL.Func([], [IDL.Bool], ['query']),
     'ensure_capacity' : IDL.Func(
         [],
         [IDL.Variant({ 'Ok' : IDL.Opt(IDL.Principal), 'Err' : IDL.Text })],
@@ -30,13 +35,22 @@ export const idlFactory = ({ IDL }) => {
       ),
     'fetch_voting_power' : IDL.Func([IDL.Principal], [IDL.Nat64], []),
     'get_active_shards' : IDL.Func([], [IDL.Vec(ShardInfo)], ['query']),
+    'get_board_member_count' : IDL.Func([], [IDL.Nat64], ['query']),
+    'get_board_member_share' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(IDL.Nat8)],
+        ['query'],
+      ),
+    'get_board_member_shares' : IDL.Func(
+        [],
+        [IDL.Vec(BoardMemberShare)],
+        ['query'],
+      ),
     'get_config' : IDL.Func(
         [],
         [IDL.Principal, IDL.Principal, IDL.Bool],
         ['query'],
       ),
-    'get_founder_count' : IDL.Func([], [IDL.Nat64], ['query']),
-    'get_founders' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'get_global_stats' : IDL.Func([], [GlobalStats], ['query']),
     'get_limits' : IDL.Func([], [IDL.Nat64, IDL.Nat64], ['query']),
     'get_shard_count' : IDL.Func([], [IDL.Nat64], ['query']),
@@ -58,8 +72,13 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_vuc' : IDL.Func([], [IDL.Nat64], ['query']),
-    'is_founder' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
+    'is_board_member' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'is_registered_shard' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
+    'lock_board_member_shares' : IDL.Func(
+        [],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
+        [],
+      ),
     'process_unstake' : IDL.Func(
         [IDL.Principal, IDL.Nat64],
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
@@ -70,8 +89,8 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),
-    'remove_founder' : IDL.Func(
-        [IDL.Principal],
+    'set_board_member_shares' : IDL.Func(
+        [IDL.Vec(BoardMemberShare)],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),

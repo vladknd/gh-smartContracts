@@ -729,13 +729,14 @@ fn get_limits() -> (u64, u64) {
 // ============================================================================
 //
 // This section provides voting power lookups for the governance system.
-// - VUC (Volume of Unmined Coins) = founder voting power
+// - VUC (Volume of Unmined Coins) = board member voting power (weighted by shares)
 // - User staked_balance = user voting power
 //
-// Founders are registered dynamically after they login to the dapp with II.
+// Board members are registered with percentage shares of VUC voting power.
+// Total shares must equal 100%. Can be locked for immutability.
 // The user registry maps each user to their shard for O(1) lookup.
 
-// Using MemoryId 9 for USER_SHARD_MAP, 10 for FOUNDERS
+// Using MemoryId 9 for USER_SHARD_MAP, 10 for BOARD_MEMBER_SHARES, 11 for BOARD_SHARES_LOCKED
 thread_local! {
     /// Map of user principal -> shard principal
     /// Updated when users register in shards
@@ -746,67 +747,173 @@ thread_local! {
         )
     );
     
-    /// Set of founder principals: Principal -> true
-    /// Founders are added dynamically by admin after they login with II
-    /// Each founder gets full VUC voting power
-    static FOUNDERS: RefCell<StableBTreeMap<Principal, bool, Memory>> = RefCell::new(
+    /// Board member voting power shares: Principal -> percentage (1-100)
+    /// Each board member gets (percentage / 100) * VUC voting power
+    /// Total of all percentages must equal exactly 100
+    static BOARD_MEMBER_SHARES: RefCell<StableBTreeMap<Principal, u8, Memory>> = RefCell::new(
         StableBTreeMap::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(10)))
         )
     );
+    
+    /// Lock flag for board member shares
+    /// Once locked, shares cannot be changed (immutable)
+    /// Can be unlocked later via governance proposal (future feature)
+    static BOARD_SHARES_LOCKED: RefCell<StableCell<bool, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(11))),
+            false
+        ).unwrap()
+    );
 }
 
 // ============================================================================
-// FOUNDER MANAGEMENT (Admin Only)
+// BOARD MEMBER MANAGEMENT (Admin Only, Lockable)
 // ============================================================================
+//
+// Board members exercise VUC voting power with weighted shares.
+// This system can be locked for immutability, or later controlled by governance.
 
-/// Add a founder principal (admin only)
+/// Board member share entry for input
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct BoardMemberShare {
+    pub member: Principal,
+    pub percentage: u8,
+}
+
+/// Set all board member shares atomically (admin only)
 /// 
-/// Flow:
-/// 1. Founder logs into dapp with Internet Identity
-/// 2. Founder shares their principal (shown in UI)
-/// 3. Admin calls this function to register them as founder
-/// 4. Now they can vote with VUC power!
+/// This replaces ALL existing board members with the new list.
+/// Total percentages must equal exactly 100.
+/// Cannot be called if shares are locked.
+/// 
+/// # Example
+/// ```
+/// set_board_member_shares(vec![
+///     BoardMemberShare { member: board1, percentage: 60 },
+///     BoardMemberShare { member: board2, percentage: 30 },
+///     BoardMemberShare { member: board3, percentage: 10 },
+/// ])
+/// ```
 #[update]
-fn add_founder(founder: Principal) -> Result<(), String> {
-    // Only controllers can add founders
+fn set_board_member_shares(shares: Vec<BoardMemberShare>) -> Result<(), String> {
+    // Only controllers can set shares (future: or governance)
     if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
-        return Err("Unauthorized: Only controllers can add founders".to_string());
+        return Err("Unauthorized: Only controllers can set board member shares".to_string());
     }
     
-    FOUNDERS.with(|f| {
-        f.borrow_mut().insert(founder, true);
+    // Check if locked
+    let is_locked = BOARD_SHARES_LOCKED.with(|l| *l.borrow().get());
+    if is_locked {
+        return Err("Board member shares are permanently locked. Use governance to propose changes.".to_string());
+    }
+    
+    // Validate: no empty list
+    if shares.is_empty() {
+        return Err("Must have at least one board member".to_string());
+    }
+    
+    // Validate: no duplicates
+    let mut seen = std::collections::HashSet::new();
+    for share in &shares {
+        if !seen.insert(share.member) {
+            return Err(format!("Duplicate member: {}", share.member));
+        }
+    }
+    
+    // Validate: each percentage is 1-100
+    for share in &shares {
+        if share.percentage == 0 || share.percentage > 100 {
+            return Err(format!(
+                "Invalid percentage {} for {}. Must be 1-100.",
+                share.percentage, share.member
+            ));
+        }
+    }
+    
+    // Validate: total equals 100
+    let total: u16 = shares.iter().map(|s| s.percentage as u16).sum();
+    if total != 100 {
+        return Err(format!(
+            "Total percentages must equal 100. Got: {}",
+            total
+        ));
+    }
+    
+    // Clear existing and insert new
+    BOARD_MEMBER_SHARES.with(|b| {
+        let mut map = b.borrow_mut();
+        
+        // Clear all existing entries
+        let existing_keys: Vec<Principal> = map.iter().map(|(k, _)| k).collect();
+        for key in existing_keys {
+            map.remove(&key);
+        }
+        
+        // Insert new shares
+        for share in shares {
+            map.insert(share.member, share.percentage);
+        }
     });
     
     Ok(())
 }
 
-/// Remove a founder principal (admin only)
+/// Lock board member shares permanently (admin only)
+/// 
+/// WARNING: This is IRREVERSIBLE through admin functions!
+/// Once locked, shares can only be changed via governance proposal (future feature).
 #[update]
-fn remove_founder(founder: Principal) -> Result<(), String> {
+fn lock_board_member_shares() -> Result<(), String> {
     if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
-        return Err("Unauthorized: Only controllers can remove founders".to_string());
+        return Err("Unauthorized: Only controllers can lock board member shares".to_string());
     }
     
-    FOUNDERS.with(|f| {
-        f.borrow_mut().remove(&founder);
+    // Verify shares are set before locking
+    let total: u16 = BOARD_MEMBER_SHARES.with(|b| {
+        b.borrow().iter().map(|(_, pct)| pct as u16).sum()
+    });
+    
+    if total != 100 {
+        return Err(format!(
+            "Cannot lock: Board member shares must total 100%. Current total: {}",
+            total
+        ));
+    }
+    
+    BOARD_SHARES_LOCKED.with(|l| {
+        l.borrow_mut().set(true).expect("Failed to lock board member shares")
     });
     
     Ok(())
 }
 
-/// Get all registered founders
+/// Check if board member shares are locked
 #[query]
-fn get_founders() -> Vec<Principal> {
-    FOUNDERS.with(|f| {
-        f.borrow().iter().map(|(p, _)| p).collect()
+fn are_board_shares_locked() -> bool {
+    BOARD_SHARES_LOCKED.with(|l| *l.borrow().get())
+}
+
+/// Get all board members with their voting power percentages
+#[query]
+fn get_board_member_shares() -> Vec<BoardMemberShare> {
+    BOARD_MEMBER_SHARES.with(|b| {
+        b.borrow().iter().map(|(member, percentage)| {
+            BoardMemberShare { member, percentage }
+        }).collect()
     })
 }
 
-/// Get number of registered founders
+/// Get a specific board member's percentage
 #[query]
-fn get_founder_count() -> u64 {
-    FOUNDERS.with(|f| f.borrow().len())
+fn get_board_member_share(principal: Principal) -> Option<u8> {
+    BOARD_MEMBER_SHARES.with(|b| b.borrow().get(&principal))
+}
+
+/// Get number of board members
+#[query]
+fn get_board_member_count() -> u64 {
+    BOARD_MEMBER_SHARES.with(|b| b.borrow().len())
 }
 
 // ============================================================================
@@ -864,18 +971,23 @@ fn admin_set_user_shard(user: Principal, shard: Principal) -> Result<(), String>
 // VOTING POWER FUNCTIONS
 // ============================================================================
 
-/// Check if a principal is a registered founder
-fn is_founder_principal(principal: &Principal) -> bool {
-    FOUNDERS.with(|f| f.borrow().contains_key(principal))
+/// Check if a principal is a registered board member
+fn is_board_member_principal(principal: &Principal) -> bool {
+    BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(principal))
 }
 
-/// Check if a principal is a founder
+/// Get a board member's percentage share (internal)
+fn get_board_member_percentage(principal: &Principal) -> Option<u8> {
+    BOARD_MEMBER_SHARES.with(|b| b.borrow().get(principal))
+}
+
+/// Check if a principal is a board member
 #[query]
-fn is_founder(principal: Principal) -> bool {
-    is_founder_principal(&principal)
+fn is_board_member(principal: Principal) -> bool {
+    is_board_member_principal(&principal)
 }
 
-/// Get VUC (Volume of Unmined Coins) - total founder voting power
+/// Get VUC (Volume of Unmined Coins) - total board member voting power pool
 /// VUC = MAX_SUPPLY - total_allocated
 #[query]
 fn get_vuc() -> u64 {
@@ -895,13 +1007,16 @@ fn get_total_voting_power() -> u64 {
 
 /// Fetch voting power for any principal (async - queries shards for users)
 /// 
-/// For founders: returns full VUC (all founders share the same VUC pool)
+/// For board members: returns weighted VUC = VUC * (percentage / 100)
 /// For users: queries their shard for staked_balance
 #[update]
 async fn fetch_voting_power(user: Principal) -> u64 {
-    // Check if user is a founder - return VUC
-    if is_founder_principal(&user) {
-        return get_vuc();
+    // Check if user is a board member - return weighted VUC
+    if let Some(percentage) = get_board_member_percentage(&user) {
+        let vuc = get_vuc();
+        // Calculate weighted voting power: VUC * percentage / 100
+        // Using u128 to avoid overflow during multiplication
+        return ((vuc as u128 * percentage as u128) / 100) as u64;
     }
     
     // Look up user's shard
@@ -945,9 +1060,10 @@ fn get_tokenomics() -> (u64, u64, u64, u64) {
     (
         MAX_SUPPLY,           // Total Utility Coin Cap (4.75B)
         stats.total_allocated, // Tokens mined/allocated so far
-        vuc,                  // VUC (founder voting power)
+        vuc,                  // VUC (total board member voting power pool)
         total_voting_power    // Total voting power in system
     )
 }
 
 ic_cdk::export_candid!();
+

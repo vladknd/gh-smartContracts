@@ -32,6 +32,12 @@ type ShardInfo = record {
     status : ShardStatus;
 };
 
+// Board member share entry
+type BoardMemberShare = record {
+    member : principal;
+    percentage : nat8;
+};
+
 service : (InitArgs) -> {
     // =========================================================================
     // Auto-Scaling
@@ -76,25 +82,36 @@ service : (InitArgs) -> {
     "get_limits": () -> (nat64, nat64) query;
     
     // =========================================================================
-    // Governance Voting Power
+    // Board Member Management (Weighted VUC Voting Power)
     // =========================================================================
     
-    // --- Founder Management (Admin Only) ---
+    // Set all board member shares atomically (controller only)
+    // Total percentages must equal exactly 100
+    // Cannot be called if shares are locked
+    "set_board_member_shares": (vec BoardMemberShare) -> (variant { Ok: null; Err: text });
     
-    // Add a founder principal (controller only)
-    // Flow: Founder logs in with II → shares principal → admin adds them
-    "add_founder": (principal) -> (variant { Ok: null; Err: text });
+    // Lock board member shares permanently (controller only)
+    // WARNING: Irreversible via admin! Future: governance can modify
+    "lock_board_member_shares": () -> (variant { Ok: null; Err: text });
     
-    // Remove a founder principal (controller only)
-    "remove_founder": (principal) -> (variant { Ok: null; Err: text });
+    // Check if board member shares are locked
+    "are_board_shares_locked": () -> (bool) query;
     
-    // Get all registered founders
-    "get_founders": () -> (vec principal) query;
+    // Get all board members with their voting power percentages
+    "get_board_member_shares": () -> (vec BoardMemberShare) query;
     
-    // Get number of registered founders
-    "get_founder_count": () -> (nat64) query;
+    // Get a specific board member's percentage
+    "get_board_member_share": (principal) -> (opt nat8) query;
     
-    // --- User Registry ---
+    // Get number of board members
+    "get_board_member_count": () -> (nat64) query;
+    
+    // Check if principal is a board member
+    "is_board_member": (principal) -> (bool) query;
+    
+    // =========================================================================
+    // User Registry
+    // =========================================================================
     
     // Register user's shard location (called by shards on registration)
     "register_user_location": (principal) -> (variant { Ok: null; Err: text });
@@ -102,18 +119,22 @@ service : (InitArgs) -> {
     // Get which shard a user is in
     "get_user_shard": (principal) -> (opt principal) query;
     
-    // --- Voting Power Queries ---
+    // Admin: manually set user's shard location
+    "admin_set_user_shard": (principal, principal) -> (variant { Ok: null; Err: text });
     
-    // Check if principal is a founder
-    "is_founder": (principal) -> (bool) query;
+    // =========================================================================
+    // Voting Power Queries
+    // =========================================================================
     
-    // Get VUC (Volume of Unmined Coins) - founder voting power
+    // Get VUC (Volume of Unmined Coins) - total board member voting power pool
     "get_vuc": () -> (nat64) query;
     
     // Get total voting power in system (VUC + total_staked)
     "get_total_voting_power": () -> (nat64) query;
     
     // Fetch voting power for any principal (async - queries shards)
+    // For board members: returns VUC * (percentage / 100)
+    // For users: returns staked_balance
     "fetch_voting_power": (principal) -> (nat64);
     
     // Get tokenomics: (max_supply, total_allocated, vuc, total_voting_power)
