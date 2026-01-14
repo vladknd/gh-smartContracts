@@ -28,4 +28,15 @@ echo "Copying IC configuration..."
 cp ic.config.json "$CONFIG_FILE"
 
 echo "IC configuration copied to $CONFIG_FILE"
+
+echo "Copying integration documentation..."
+
+# Create docs directory if it doesn't exist
+DOCS_DIR="$DASHBOARD_ROOT/docs"
+mkdir -p "$DOCS_DIR"
+
+# Copy Frontend Integration guide
+cp docs/FRONTEND_INTEGRATION.md "$DOCS_DIR/"
+
+echo "Integration documentation copied to $DOCS_DIR"
 echo "Done!"

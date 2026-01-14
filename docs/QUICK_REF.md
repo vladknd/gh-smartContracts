@@ -50,17 +50,36 @@ dfx canister call user_profile unstake '(100000000)'
 # Get tokenomics (max_supply, allocated, vuc, total_power)
 dfx canister call staking_hub get_tokenomics '()'
 
-# Check if user is founder
-dfx canister call staking_hub is_founder "(principal \"$(dfx identity get-principal)\")"
+# Get VUC (board member voting power pool)
+dfx canister call staking_hub get_vuc '()'
 
-# Get voting power
-dfx canister call staking_hub fetch_voting_power "(principal \"$(dfx identity get-principal)\")"
+# Get user voting power (from their staked balance)
+dfx canister call staking_hub fetch_user_voting_power "(principal \"$(dfx identity get-principal)\")"
+```
 
-# List founders
-dfx canister call staking_hub get_founders '()'
+### Board Members (in operational_governance)
+```bash
+# Get all board members with their shares
+dfx canister call operational_governance get_board_member_shares '()'
 
-# Add founder (admin only)
-dfx canister call staking_hub add_founder '(principal "xxx-xxx-xxx")'
+# Check if user is a board member
+dfx canister call operational_governance is_board_member "(principal \"$(dfx identity get-principal)\")"
+
+# Get board member count
+dfx canister call operational_governance get_board_member_count '()'
+
+# Check if shares are locked
+dfx canister call operational_governance are_board_shares_locked '()'
+
+# Set board member shares (admin only, before lock)
+dfx canister call operational_governance set_board_member_shares '(vec { 
+  record { member = principal "xxx-xxx-xxx"; percentage = 60 : nat8 };
+  record { member = principal "yyy-yyy-yyy"; percentage = 30 : nat8 };
+  record { member = principal "zzz-zzz-zzz"; percentage = 10 : nat8 };
+})'
+
+# Lock board member shares (use governance proposals after this)
+dfx canister call operational_governance lock_board_member_shares '()'
 ```
 
 ### Proposals
@@ -68,8 +87,8 @@ dfx canister call staking_hub add_founder '(principal "xxx-xxx-xxx")'
 # Get governance config
 dfx canister call operational_governance get_governance_config '()'
 
-# Create proposal
-dfx canister call operational_governance create_proposal '(record {
+# Create a treasury proposal (spending from treasury)
+dfx canister call operational_governance create_treasury_proposal '(record {
   title = "Marketing Q1";
   description = "Fund marketing initiatives";
   recipient = principal "xxx-xxx-xxx";
@@ -79,8 +98,20 @@ dfx canister call operational_governance create_proposal '(record {
   external_link = null
 })'
 
+# Create a board member proposal (add new board member)
+dfx canister call operational_governance create_board_member_proposal '(record {
+  title = "Add New Board Member";
+  description = "Proposing to add Alice as a board member with 15% share";
+  new_member = principal "xxx-xxx-xxx";
+  percentage = 15 : nat8;
+  external_link = null
+})'
+
 # Vote on proposal (YES)
 dfx canister call operational_governance vote '(0 : nat64, true)'
+
+# Support a proposal (for non-board members in Proposed state)
+dfx canister call operational_governance support_proposal '(0 : nat64)'
 
 # Get proposal
 dfx canister call operational_governance get_proposal '(0)'
@@ -88,8 +119,14 @@ dfx canister call operational_governance get_proposal '(0)'
 # Get all active proposals
 dfx canister call operational_governance get_active_proposals '()'
 
+# Get all proposals
+dfx canister call operational_governance get_all_proposals '()'
+
 # See who voted
 dfx canister call operational_governance get_proposal_votes '(0)'
+
+# Execute approved proposal
+dfx canister call operational_governance execute_proposal '(0 : nat64)'
 ```
 
 ### Treasury
@@ -118,6 +155,9 @@ dfx canister call founder_vesting claim_vested '()'
 # Check Global Stats
 dfx canister call staking_hub get_global_stats '()'
 
-# Get VUC (founder voting power)
+# Get VUC (board member voting power pool)
 dfx canister call staking_hub get_vuc '()'
+
+# Get total voting power in system
+dfx canister call staking_hub get_total_voting_power '()'
 ```

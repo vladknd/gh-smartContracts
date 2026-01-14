@@ -1,7 +1,8 @@
 // ============================================================================
 // Operational Governance Candid Interface
 // ============================================================================
-// Treasury spending proposals with voting power based on staked tokens + VUC
+// Treasury spending proposals and board member management
+// Updated: January 2026
 
 type TokenType = variant {
     GHC;
@@ -20,10 +21,21 @@ type ProposalCategory = variant {
 };
 
 type ProposalStatus = variant {
+    Proposed;
     Active;
     Approved;
     Rejected;
     Executed;
+};
+
+type ProposalType = variant {
+    Treasury;
+    AddBoardMember;
+};
+
+type AddBoardMemberPayload = record {
+    new_member : principal;
+    percentage : nat8;
 };
 
 type Proposal = record {
@@ -33,15 +45,19 @@ type Proposal = record {
     voting_ends_at : nat64;
     title : text;
     description : text;
-    recipient : principal;
-    amount : nat64;
-    token_type : TokenType;
-    category : ProposalCategory;
+    recipient : opt principal;
+    amount : opt nat64;
+    token_type : opt TokenType;
+    category : opt ProposalCategory;
     external_link : opt text;
     votes_yes : nat64;
     votes_no : nat64;
     voter_count : nat64;
+    support_amount : nat64;
+    supporter_count : nat64;
     status : ProposalStatus;
+    proposal_type : ProposalType;
+    board_member_payload : opt AddBoardMemberPayload;
 };
 
 type VoteRecord = record {
@@ -52,7 +68,14 @@ type VoteRecord = record {
     timestamp : nat64;
 };
 
-type CreateProposalInput = record {
+type SupportRecord = record {
+    supporter : principal;
+    proposal_id : nat64;
+    support_amount : nat64;
+    timestamp : nat64;
+};
+
+type CreateTreasuryProposalInput = record {
     title : text;
     description : text;
     recipient : principal;
@@ -60,6 +83,19 @@ type CreateProposalInput = record {
     token_type : TokenType;
     category : ProposalCategory;
     external_link : opt text;
+};
+
+type CreateBoardMemberProposalInput = record {
+    title : text;
+    description : text;
+    new_member : principal;
+    percentage : nat8;
+    external_link : opt text;
+};
+
+type BoardMemberShare = record {
+    member : principal;
+    percentage : nat8;
 };
 
 type TreasuryState = record {
@@ -90,15 +126,21 @@ service : (InitArgs) -> {
     // =========================================================================
     
     // Create a new treasury spending proposal
-    // Requires voting power >= 150 tokens
-    "create_proposal": (CreateProposalInput) -> (variant { Ok: nat64; Err: text });
+    "create_treasury_proposal": (CreateTreasuryProposalInput) -> (variant { Ok: nat64; Err: text });
+    
+    // Create a board member proposal (add new member)
+    "create_board_member_proposal": (CreateBoardMemberProposalInput) -> (variant { Ok: nat64; Err: text });
     
     // Vote on a proposal (true = YES, false = NO)
-    // Voting power = staked tokens (users) or VUC (founders)
     "vote": (nat64, bool) -> (variant { Ok: null; Err: text });
+
+    // Support a proposal in the Proposed state
+    "support_proposal": (nat64) -> (variant { Ok: null; Err: text });
+    
+    // Execute an Approved proposal
+    "execute_proposal": (nat64) -> (variant { Ok: null; Err: text });
     
     // Finalize a proposal after voting period ends
-    // Called automatically by timer, but can be triggered manually
     "finalize_proposal": (nat64) -> (variant { Ok: ProposalStatus; Err: text });
     
     // =========================================================================
@@ -109,14 +151,50 @@ service : (InitArgs) -> {
     "get_active_proposals": () -> (vec Proposal) query;
     "get_all_proposals": () -> (vec Proposal) query;
     
-    // Get all votes on a proposal (for transparency)
+    // Get all votes on a proposal
     "get_proposal_votes": (nat64) -> (vec VoteRecord) query;
+    "get_proposal_supporters": (nat64) -> (vec SupportRecord) query;
     
     // Check if a user has voted on a proposal
     "has_voted": (nat64, principal) -> (bool) query;
     
     // Get governance config: (min_power_to_propose, approval_threshold, voting_days, cooldown_days)
     "get_governance_config": () -> (nat64, nat64, nat64, nat64) query;
+    
+    // =========================================================================
+    // Voting Power
+    // =========================================================================
+    
+    // Get effective voting power for a user (Board Member weighted VUC or Regular User staked balance)
+    "get_user_voting_power": (principal) -> (variant { Ok: nat64; Err: text });
+    
+    // Get effective voting power for the caller
+    "get_my_voting_power": () -> (variant { Ok: nat64; Err: text });
+    
+    // =========================================================================
+    // Board Member Management
+    // =========================================================================
+    
+    // Set all board member shares (admin only, before lock)
+    "set_board_member_shares": (vec BoardMemberShare) -> (variant { Ok: null; Err: text });
+    
+    // Lock board member shares (admin only - use proposals after this)
+    "lock_board_member_shares": () -> (variant { Ok: null; Err: text });
+    
+    // Check if board shares are locked
+    "are_board_shares_locked": () -> (bool) query;
+    
+    // Get all board members with their percentages
+    "get_board_member_shares": () -> (vec BoardMemberShare) query;
+    
+    // Get a specific board member's percentage
+    "get_board_member_share": (principal) -> (opt nat8) query;
+    
+    // Get number of board members
+    "get_board_member_count": () -> (nat64) query;
+    
+    // Check if a principal is a board member
+    "is_board_member": (principal) -> (bool) query;
     
     // =========================================================================
     // Treasury Functions
@@ -126,4 +204,10 @@ service : (InitArgs) -> {
     "get_spendable_balance": () -> (nat64) query;
     "execute_mmcr": () -> (variant { Ok: nat64; Err: text });
     "get_mmcr_status": () -> (MMCRStatus) query;
+    
+    // =========================================================================
+    // Admin Debug (For Testing)
+    // =========================================================================
+    "admin_expire_proposal": (nat64) -> (variant { Ok: null; Err: text });
+    "admin_set_proposal_status": (nat64, ProposalStatus) -> (variant { Ok: null; Err: text });
 }

@@ -2,7 +2,7 @@
 
 Complete API reference for integrating React/TypeScript frontends with the GreenHero canister ecosystem.
 
-**Last Updated**: December 2024
+**Last Updated**: January 2026
 
 ---
 
@@ -66,7 +66,7 @@ This creates declaration files in `src/declarations/` for each canister with Typ
 │               │         │                 │         │                 │
 │ • Registration│         │ • Get content   │         │ • Wallet balance│
 │ • Submit quiz │         │ • Quiz data     │         │ • Transfers     │
-│ • Staked bal  │         │                 │         │                 │
+│ • Staked bal  │         │ • verify_quiz   │         │                 │
 │ • Unstake     │         │                 │         │                 │
 └───────┬───────┘         └────────┬────────┘         └─────────────────┘
         │                          │
@@ -75,10 +75,10 @@ This creates declaration files in `src/declarations/` for each canister with Typ
         ┌─────────────────┐          ┌─────────────────────────┐
         │  staking_hub    │◀────────▶│ operational_governance  │
         │                 │          │                         │
-        │ • Global stats  │          │ • Treasury state        │
-        │ • VUC voting    │          │ • Create proposals      │
-        │ • Founder mgmt  │          │ • Vote on proposals     │
-        │ • Voting power  │          │ • MMCR releases         │
+        │ • Global stats  │          │ • Board member mgmt     │
+        │ • get_vuc()     │          │ • Treasury state        │
+        │ • Staked balance│          │ • Voting Power (All)    │
+        │                 │          │ • Proposals & Voting    │
         └─────────────────┘          └─────────────────────────┘
 ```
 
@@ -244,7 +244,9 @@ if ('Ok' in result) {
 ## 6. Staking Hub Canister
 
 **Canister**: `staking_hub`  
-**Purpose**: Global statistics, voting power oracle, and founder management.
+**Purpose**: Global statistics, VUC provider, and user voting power oracle.
+
+> **Note**: Board member management has been moved to `operational_governance` (January 2026).
 
 ### Types
 
@@ -261,21 +263,16 @@ type GlobalStats = {
 | Method | Arguments | Returns | Description |
 |--------|-----------|---------|-------------|
 | `get_global_stats` | - | `GlobalStats` | Platform-wide statistics |
-| `get_vuc` | - | `nat64` | VUC (founder voting power) |
+| `get_vuc` | - | `nat64` | VUC (board member voting power pool) |
 | `get_total_voting_power` | - | `nat64` | VUC + total_staked |
 | `get_tokenomics` | - | `(nat64, nat64, nat64, nat64)` | (max_supply, allocated, vuc, total_power) |
-| `is_founder` | `principal` | `bool` | Check if principal is founder |
-| `get_founders` | - | `Vec<Principal>` | List all founders |
-| `get_founder_count` | - | `nat64` | Number of founders |
 | `get_user_shard` | `principal` | `Option<Principal>` | Get user's shard canister |
 
 ### Update Methods
 
 | Method | Arguments | Returns | Description |
 |--------|-----------|---------|-------------|
-| `fetch_voting_power` | `principal` | `nat64` | Get voting power (async) |
-| `add_founder` | `principal` | `Result<(), String>` | Add founder (admin only) |
-| `remove_founder` | `principal` | `Result<(), String>` | Remove founder (admin only) |
+| `fetch_user_voting_power` | `principal` | `nat64` | Get user's staked balance (async) |
 
 ### Code Examples
 
@@ -290,14 +287,11 @@ const miningProgress = (totalAllocated / maxSupply * 100).toFixed(2);
 // Get tokenomics for governance
 const [max, allocated, vuc, totalPower] = await stakingHubActor.get_tokenomics();
 
-// Check if user is a founder
-const isFounder = await stakingHubActor.is_founder(userPrincipal);
+// Get VUC (board member voting power pool)
+const vuc = await stakingHubActor.get_vuc();
 
-// Get voting power for governance
-const votingPower = await stakingHubActor.fetch_voting_power(userPrincipal);
-
-// List all founders (admin dashboard)
-const founders = await stakingHubActor.get_founders();
+// Get user's staked balance (regular users)
+const stakedBalance = await stakingHubActor.fetch_user_voting_power(userPrincipal);
 ```
 
 ---
@@ -365,7 +359,7 @@ type VoteRecord = {
   timestamp: bigint;
 };
 
-type CreateProposalInput = {
+type TreasuryProposalInput = {
   title: string;
   description: string;
   recipient: Principal;
@@ -373,6 +367,19 @@ type CreateProposalInput = {
   token_type: TokenType;
   category: ProposalCategory;
   external_link: [] | [string];
+};
+
+type BoardMemberProposalInput = {
+  title: string;
+  description: string;
+  new_member: Principal;
+  percentage: number; // 1-99
+  external_link: [] | [string];
+};
+
+type BoardMemberShare = {
+  member: Principal;
+  percentage: number;
 };
 
 type TreasuryState = {
@@ -412,14 +419,31 @@ type MMCRStatus = {
 | `get_spendable_balance` | - | `nat64` | Current allowance |
 | `get_mmcr_status` | - | `MMCRStatus` | MMCR progress |
 
+### Query Methods - Board Members
+
+| Method | Arguments | Returns | Description |
+|--------|-----------|---------|-------------|
+| `get_board_member_shares` | - | `Vec<BoardMemberShare>` | All board members |
+| `get_board_member_share` | `principal` | `Option<nat8>` | Member's percentage |
+| `get_board_member_count` | - | `nat64` | Number of board members |
+| `is_board_member` | `principal` | `bool` | Check if principal is board member |
+| `are_board_shares_locked` | - | `bool` | Check if shares are locked |
+
 ### Update Methods
 
 | Method | Arguments | Returns | Description |
 |--------|-----------|---------|-------------|
-| `create_proposal` | `CreateProposalInput` | `Result<nat64, String>` | Create proposal |
+| `create_treasury_proposal` | `TreasuryProposalInput` | `Result<nat64, String>` | Create treasury proposal |
+| `create_board_member_proposal` | `BoardMemberProposalInput` | `Result<nat64, String>` | Create board member proposal |
+| `support_proposal` | `id: nat64` | `Result<(), String>` | Support proposal (non-board members) |
 | `vote` | `id: nat64, approve: bool` | `Result<(), String>` | Vote on proposal |
+| `execute_proposal` | `id: nat64` | `Result<(), String>` | Execute approved proposal |
 | `finalize_proposal` | `id: nat64` | `Result<ProposalStatus, String>` | Force finalization |
 | `execute_mmcr` | - | `Result<nat64, String>` | Trigger monthly release |
+| `set_board_member_shares` | `Vec<BoardMemberShare>` | `Result<(), String>` | Set board members (admin) |
+| `lock_board_member_shares` | - | `Result<(), String>` | Lock shares (admin) |
+| `get_user_voting_power` | `principal` | `Result<nat64, String>` | Get effective voting power (User/Board) |
+| `get_my_voting_power` | - | `Result<nat64, String>` | Get caller's effective voting power |
 
 ### Code Examples - Proposals
 
@@ -428,14 +452,19 @@ type MMCRStatus = {
 const [minPower, threshold, votingDays, cooldown] = 
   await govActor.get_governance_config();
 
-// Check user's voting power before proposing
-const votingPower = await stakingHubActor.fetch_voting_power(userPrincipal);
-const canPropose = votingPower >= BigInt(minPower * 100_000_000n);
+// Check if user is a board member
+const isBoardMember = await govActor.is_board_member(userPrincipal);
 
-// Create a proposal
-const result = await govActor.create_proposal({
+// Get board members with their shares
+const boardMembers = await govActor.get_board_member_shares();
+boardMembers.forEach(m => {
+  console.log(`${m.member}: ${m.percentage}%`);
+});
+
+// Create a treasury proposal
+const result = await govActor.create_treasury_proposal({
   title: "Marketing Campaign Q1",
-  description: "Fund marketing initiatives for Q1 2025",
+  description: "Fund marketing initiatives for Q1 2026",
   recipient: recipientPrincipal,
   amount: BigInt(10_000 * 100_000_000), // 10,000 GHC
   token_type: { GHC: null },
@@ -443,18 +472,27 @@ const result = await govActor.create_proposal({
   external_link: ["https://forum.example.com/proposal/123"]
 });
 
+// Create a board member proposal
+const boardResult = await govActor.create_board_member_proposal({
+  title: "Add Alice to Board",
+  description: "Proposing to add Alice as board member with 15% share",
+  new_member: alicePrincipal,
+  percentage: 15,
+  external_link: []
+});
+
 if ('Ok' in result) {
   console.log(`Proposal created with ID: ${result.Ok}`);
 }
 
-// Get all active proposals
-const activeProposals = await govActor.get_active_proposals();
+// Support a proposal (non-board members in Proposed state)
+await govActor.support_proposal(BigInt(0));
 
 // Vote on a proposal
 await govActor.vote(BigInt(0), true); // Vote YES on proposal #0
 
-// Check if already voted
-const hasVoted = await govActor.has_voted(BigInt(0), userPrincipal);
+// Execute an approved proposal
+await govActor.execute_proposal(BigInt(0));
 
 // See who voted on a proposal
 const votes = await govActor.get_proposal_votes(BigInt(0));
@@ -722,17 +760,37 @@ class GHCClient {
   
   // === GOVERNANCE ===
   
-  async getVotingPower() {
-    const power = await this.stakingHub.fetch_voting_power(this.getPrincipal());
-    return Number(power) / 1e8;
+  async isBoardMember() {
+    return this.governance.is_board_member(this.getPrincipal());
   }
   
-  async createProposal(input: any) {
-    return this.governance.create_proposal(input);
+  async getUserVotingPower() {
+    // Get effective voting power (handles both Regular Users and Board Members)
+    const result = await this.governance.get_my_voting_power();
+    if ('Ok' in result) {
+        return Number(result.Ok) / 1e8;
+    }
+    return 0;
+  }
+  
+  async getBoardMemberShares() {
+    return this.governance.get_board_member_shares();
+  }
+  
+  async createTreasuryProposal(input: any) {
+    return this.governance.create_treasury_proposal(input);
+  }
+  
+  async createBoardMemberProposal(input: any) {
+    return this.governance.create_board_member_proposal(input);
   }
   
   async vote(proposalId: bigint, approve: boolean) {
     return this.governance.vote(proposalId, approve);
+  }
+  
+  async executeProposal(proposalId: bigint) {
+    return this.governance.execute_proposal(proposalId);
   }
 }
 
@@ -802,7 +860,7 @@ async function safeCall<T>(fn: () => Promise<T>): Promise<{ ok: T } | { err: str
 |------|-----------|-------------|
 | **Global Stats** | staking_hub | `get_global_stats`, `get_tokenomics` |
 | **Founder Vesting** | founder_vesting | `get_vesting_status`, `claim_vested` |
-| **Founder Management** | staking_hub | `add_founder`, `remove_founder` |
+| **Board Member Management** | operational_governance | `get_board_member_shares`, `set_board_member_shares` |
 
 ---
 

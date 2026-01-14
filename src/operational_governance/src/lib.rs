@@ -69,6 +69,7 @@ impl Storable for TreasuryState {
 /// Proposal status
 #[derive(CandidType, Deserialize, Clone, Debug, PartialEq)]
 pub enum ProposalStatus {
+    Proposed,    // Initial state for regular users, gathering support
     Active,      // Voting in progress
     Approved,    // Voting passed, pending execution
     Rejected,    // Voting failed
@@ -83,7 +84,7 @@ pub enum TokenType {
     ICP,
 }
 
-/// Proposal categories
+/// Proposal categories (for treasury proposals)
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub enum ProposalCategory {
     Marketing,
@@ -95,6 +96,25 @@ pub enum ProposalCategory {
     Custom(String),
 }
 
+/// Type of proposal - determines what action is taken on execution
+#[derive(CandidType, Deserialize, Clone, Debug, PartialEq)]
+pub enum ProposalType {
+    /// Treasury spending proposal - transfers tokens to recipient
+    Treasury,
+    /// Add a new board member with specified percentage share
+    AddBoardMember,
+}
+
+/// Payload for AddBoardMember proposals
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct AddBoardMemberPayload {
+    /// Wallet address of the new board member
+    pub new_member: Principal,
+    /// Percentage share to allocate to the new member (1-99)
+    /// This percentage is taken equally from all existing members
+    pub percentage: u8,
+}
+
 /// Treasury spending proposal
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct Proposal {
@@ -103,19 +123,31 @@ pub struct Proposal {
     pub created_at: u64,
     pub voting_ends_at: u64,
     
-    // Proposal details
+    // Type of proposal
+    pub proposal_type: ProposalType,
+    
+    // Common proposal details
     pub title: String,
     pub description: String,
-    pub recipient: Principal,
-    pub amount: u64,
-    pub token_type: TokenType,
-    pub category: ProposalCategory,
     pub external_link: Option<String>,
+    
+    // Treasury-specific fields (only for Treasury proposals)
+    pub recipient: Option<Principal>,
+    pub amount: Option<u64>,
+    pub token_type: Option<TokenType>,
+    pub category: Option<ProposalCategory>,
+    
+    // Board member-specific fields (only for AddBoardMember proposals)
+    pub board_member_payload: Option<AddBoardMemberPayload>,
     
     // Voting state
     pub votes_yes: u64,
     pub votes_no: u64,
     pub voter_count: u64,
+    
+    // Support state (for Proposed phase)
+    pub support_amount: u64,
+    pub supporter_count: u64,
     
     pub status: ProposalStatus,
 }
@@ -150,6 +182,25 @@ impl Storable for VoteRecord {
     const BOUND: Bound = Bound::Bounded { max_size: 200, is_fixed_size: false };
 }
 
+/// Support record to track who supported a proposal
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct SupportRecord {
+    pub supporter: Principal,
+    pub proposal_id: u64,
+    pub support_amount: u64,
+    pub timestamp: u64,
+}
+
+impl Storable for SupportRecord {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(Encode!(self).unwrap())
+    }
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        Decode!(bytes.as_ref(), Self).unwrap()
+    }
+    const BOUND: Bound = Bound::Bounded { max_size: 200, is_fixed_size: false };
+}
+
 /// Composite key for vote storage: (proposal_id, voter)
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct VoteKey {
@@ -171,9 +222,9 @@ impl Storable for VoteKey {
     const BOUND: Bound = Bound::Bounded { max_size: 100, is_fixed_size: false };
 }
 
-/// Input for creating a proposal
+/// Input for creating a treasury spending proposal
 #[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateProposalInput {
+pub struct CreateTreasuryProposalInput {
     pub title: String,
     pub description: String,
     pub recipient: Principal,
@@ -181,6 +232,26 @@ pub struct CreateProposalInput {
     pub token_type: TokenType,
     pub category: ProposalCategory,
     pub external_link: Option<String>,
+}
+
+/// Input for creating a board member proposal
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct CreateBoardMemberProposalInput {
+    pub title: String,
+    pub description: String,
+    /// Wallet address of the new board member to add
+    pub new_member: Principal,
+    /// Percentage share to allocate to the new member (1-99)
+    /// This percentage is taken equally from all existing members
+    pub percentage: u8,
+    pub external_link: Option<String>,
+}
+
+/// Board member share entry for query results and admin input
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct BoardMemberShare {
+    pub member: Principal,
+    pub percentage: u8,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -216,9 +287,14 @@ thread_local! {
         StableCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(3))), 0).unwrap()
     );
     
-    // Vote records (for transparency - see who voted)
+    // Vote records
     static VOTE_RECORDS: RefCell<StableBTreeMap<VoteKey, VoteRecord, Memory>> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(4))))
+    );
+
+    // Support records
+    static SUPPORT_RECORDS: RefCell<StableBTreeMap<VoteKey, SupportRecord, Memory>> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(5))))
     );
     
     // Treasury
@@ -233,6 +309,26 @@ thread_local! {
                 last_mmcr_timestamp: 0,
                 genesis_timestamp: 0,
             }
+        ).unwrap()
+    );
+    
+    // Board Member Management
+    // Board members exercise VUC (Volume of Unmined Coins) voting power
+    // Each member has a percentage share of the total VUC
+    
+    /// Board member voting power shares: Principal -> percentage (1-100)
+    /// Each board member gets (percentage / 100) * VUC voting power
+    /// Total of all percentages must equal exactly 100
+    static BOARD_MEMBER_SHARES: RefCell<StableBTreeMap<Principal, u8, Memory>> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(7))))
+    );
+    
+    /// Lock flag for board member shares
+    /// Once locked, shares can only be changed via governance proposal
+    static BOARD_SHARES_LOCKED: RefCell<StableCell<bool, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(8))),
+            false
         ).unwrap()
     );
 }
@@ -279,11 +375,71 @@ fn start_timers() {
 }
 
 // ============================================================================
+// BOARD MEMBER HELPERS
+// ============================================================================
+
+/// Check if a principal is a board member (local check)
+fn is_board_member_local(principal: &Principal) -> bool {
+    BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(principal))
+}
+
+/// Get a board member's percentage share (internal)
+fn get_board_member_percentage_local(principal: &Principal) -> Option<u8> {
+    BOARD_MEMBER_SHARES.with(|b| b.borrow().get(principal))
+}
+
+/// Fetch voting power for a user
+/// - Board members: returns VUC * percentage / 100 (queries staking hub for VUC)
+/// - Regular users: returns staked balance (queries staking hub)
+async fn fetch_voting_power(user: Principal) -> Result<u64, String> {
+    let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
+    
+    // Check if user is a board member - return weighted VUC
+    if let Some(percentage) = get_board_member_percentage_local(&user) {
+        // Get VUC from staking hub
+        let (vuc,): (u64,) = ic_cdk::call(
+            staking_hub_id,
+            "get_vuc",
+            ()
+        ).await.map_err(|e| format!("Failed to get VUC: {:?}", e))?;
+        
+        // Calculate weighted voting power: VUC * percentage / 100
+        // Using u128 to avoid overflow during multiplication
+        return Ok(((vuc as u128 * percentage as u128) / 100) as u64);
+    }
+    
+    // For regular users, query their staked balance from staking hub
+    let (voting_power,): (u64,) = ic_cdk::call(
+        staking_hub_id,
+        "fetch_user_voting_power",
+        (user,)
+    ).await.map_err(|e| format!("Failed to get voting power: {:?}", e))?;
+    
+    Ok(voting_power)
+}
+
+/// Get the voting power of a specific user
+/// 
+/// This is an update method because it may need to make inter-canister calls
+/// to the staking hub to fetch VUC or staked balances.
+#[update]
+async fn get_user_voting_power(user: Principal) -> Result<u64, String> {
+    fetch_voting_power(user).await
+}
+
+/// Get the voting power of the caller
+#[update]
+async fn get_my_voting_power() -> Result<u64, String> {
+    fetch_voting_power(ic_cdk::caller()).await
+}
+
+// ============================================================================
 // PROPOSAL CREATION
 // ============================================================================
 
+/// Create a treasury spending proposal
 #[update]
-async fn create_proposal(input: CreateProposalInput) -> Result<u64, String> {
+async fn create_treasury_proposal(input: CreateTreasuryProposalInput) -> Result<u64, String> {
     let proposer = ic_cdk::caller();
     let now = ic_cdk::api::time();
     
@@ -298,17 +454,15 @@ async fn create_proposal(input: CreateProposalInput) -> Result<u64, String> {
         return Err("Amount must be greater than 0".to_string());
     }
     
-    // Check proposer has enough voting power
-    let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
-    let (voting_power,): (u64,) = ic_cdk::call(
-        staking_hub_id,
-        "fetch_voting_power",
-        (proposer,)
-    ).await.map_err(|e| format!("Failed to get voting power: {:?}", e))?;
+    // Check if proposer is a board member (local check)
+    let proposer_is_board_member = is_board_member_local(&proposer);
+
+    // Check voting power (anti-spam)
+    let voting_power = fetch_voting_power(proposer).await?;
     
     if voting_power < MIN_VOTING_POWER_TO_PROPOSE {
         return Err(format!(
-            "Insufficient voting power. Required: {}, You have: {}",
+            "Insufficient voting power to propose. Required: {}, You have: {}",
             MIN_VOTING_POWER_TO_PROPOSE / 100_000_000,
             voting_power / 100_000_000
         ));
@@ -333,27 +487,189 @@ async fn create_proposal(input: CreateProposalInput) -> Result<u64, String> {
         current
     });
     
+    // Determine initial status and voting period
+    let (status, voting_ends_at) = if proposer_is_board_member {
+        // Board members skip Proposed state, go directly to Active
+        (ProposalStatus::Active, now + VOTING_PERIOD_NANOS)
+    } else {
+        // Regular users go to Proposed state
+        (ProposalStatus::Proposed, 0) // No voting end date yet
+    };
+    
     let proposal = Proposal {
         id,
         proposer,
         created_at: now,
-        voting_ends_at: now + VOTING_PERIOD_NANOS,
+        voting_ends_at,
+        proposal_type: ProposalType::Treasury,
         title: input.title,
         description: input.description,
-        recipient: input.recipient,
-        amount: input.amount,
-        token_type: input.token_type,
-        category: input.category,
         external_link: input.external_link,
+        recipient: Some(input.recipient),
+        amount: Some(input.amount),
+        token_type: Some(input.token_type),
+        category: Some(input.category),
+        board_member_payload: None,
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
-        status: ProposalStatus::Active,
+        support_amount: 0,
+        supporter_count: 0,
+        status,
     };
     
     PROPOSALS.with(|p| p.borrow_mut().insert(id, proposal));
     
     Ok(id)
+}
+
+/// Create a board member addition proposal (legacy alias for backward compatibility)
+#[update]
+async fn create_proposal(input: CreateTreasuryProposalInput) -> Result<u64, String> {
+    create_treasury_proposal(input).await
+}
+
+/// Create a proposal to add a new board member
+/// 
+/// This creates a proposal that, if approved, will:
+/// 1. Add the specified wallet as a new board member
+/// 2. Allocate the specified percentage to them
+/// 3. Diminish existing board members' shares equally to accommodate the new percentage
+#[update]
+async fn create_board_member_proposal(input: CreateBoardMemberProposalInput) -> Result<u64, String> {
+    let proposer = ic_cdk::caller();
+    let now = ic_cdk::api::time();
+    
+    // Validate input
+    if input.title.is_empty() || input.title.len() > 200 {
+        return Err("Title must be 1-200 characters".to_string());
+    }
+    if input.description.is_empty() || input.description.len() > 5000 {
+        return Err("Description must be 1-5000 characters".to_string());
+    }
+    if input.percentage == 0 || input.percentage > 99 {
+        return Err("Percentage must be between 1 and 99".to_string());
+    }
+    
+    // Check if the new member is already a board member (local check)
+    if is_board_member_local(&input.new_member) {
+        return Err("The specified address is already a board member".to_string());
+    }
+    
+    // Check if proposer is a board member (local check)
+    let proposer_is_board_member = is_board_member_local(&proposer);
+
+    // Check voting power (anti-spam)
+    let voting_power = fetch_voting_power(proposer).await?;
+    
+    if voting_power < MIN_VOTING_POWER_TO_PROPOSE {
+        return Err(format!(
+            "Insufficient voting power to propose. Required: {}, You have: {}",
+            MIN_VOTING_POWER_TO_PROPOSE / 100_000_000,
+            voting_power / 100_000_000
+        ));
+    }
+    
+    // Create proposal
+    let id = PROPOSAL_COUNT.with(|c| {
+        let mut cell = c.borrow_mut();
+        let current = *cell.get();
+        cell.set(current + 1).expect("Failed to increment proposal count");
+        current
+    });
+    
+    // Determine initial status and voting period
+    let (status, voting_ends_at) = if proposer_is_board_member {
+        // Board members skip Proposed state, go directly to Active
+        (ProposalStatus::Active, now + VOTING_PERIOD_NANOS)
+    } else {
+        // Regular users go to Proposed state
+        (ProposalStatus::Proposed, 0) // No voting end date yet
+    };
+    
+    let proposal = Proposal {
+        id,
+        proposer,
+        created_at: now,
+        voting_ends_at,
+        proposal_type: ProposalType::AddBoardMember,
+        title: input.title,
+        description: input.description,
+        external_link: input.external_link,
+        recipient: None,
+        amount: None,
+        token_type: None,
+        category: None,
+        board_member_payload: Some(AddBoardMemberPayload {
+            new_member: input.new_member,
+            percentage: input.percentage,
+        }),
+        votes_yes: 0,
+        votes_no: 0,
+        voter_count: 0,
+        support_amount: 0,
+        supporter_count: 0,
+        status,
+    };
+    
+    PROPOSALS.with(|p| p.borrow_mut().insert(id, proposal));
+    
+
+    Ok(id)
+}
+
+#[update]
+async fn support_proposal(proposal_id: u64) -> Result<(), String> {
+    let supporter = ic_cdk::caller();
+    let now = ic_cdk::api::time();
+    
+    // Get proposal
+    let mut proposal = PROPOSALS.with(|p| p.borrow().get(&proposal_id))
+        .ok_or("Proposal not found")?;
+        
+    // Check status
+    if proposal.status != ProposalStatus::Proposed {
+        return Err("Proposal is not in Proposed state".to_string());
+    }
+    
+    // Check if already supported
+    let vote_key = VoteKey { proposal_id, voter: supporter };
+    if SUPPORT_RECORDS.with(|r| r.borrow().contains_key(&vote_key)) {
+        return Err("Already supported this proposal".to_string());
+    }
+    
+    // Get voting power
+    let voting_power = fetch_voting_power(supporter).await?;
+    
+    if voting_power == 0 {
+        return Err("No voting power".to_string());
+    }
+    
+    // Record support
+    let record = SupportRecord {
+        supporter,
+        proposal_id,
+        support_amount: voting_power,
+        timestamp: now,
+    };
+    SUPPORT_RECORDS.with(|r| r.borrow_mut().insert(vote_key, record));
+    
+    // Update proposal
+    proposal.support_amount += voting_power;
+    proposal.supporter_count += 1;
+    
+    // Check threshold (15,000 VP and 2 users)
+    // 15,000 tokens * 10^8
+    let support_threshold = 15_000 * 100_000_000;
+    
+    if proposal.support_amount >= support_threshold && proposal.supporter_count >= 2 {
+        proposal.status = ProposalStatus::Active;
+        proposal.voting_ends_at = now + VOTING_PERIOD_NANOS;
+    }
+    
+    PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal));
+    
+    Ok(())
 }
 
 // ============================================================================
@@ -386,12 +702,7 @@ async fn vote(proposal_id: u64, approve: bool) -> Result<(), String> {
     }
     
     // Get voting power
-    let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
-    let (voting_power,): (u64,) = ic_cdk::call(
-        staking_hub_id,
-        "fetch_voting_power",
-        (voter,)
-    ).await.map_err(|e| format!("Failed to get voting power: {:?}", e))?;
+    let voting_power = fetch_voting_power(voter).await?;
     
     if voting_power == 0 {
         return Err("No voting power".to_string());
@@ -440,72 +751,86 @@ async fn finalize_expired_proposals() {
     });
     
     for id in proposals_to_finalize {
-        let _ = finalize_proposal(id).await;
+        let _ = finalize_proposal(id); // No await needed as it was changed to sync or we keep it async but logic changed
     }
 }
 
+// Changed to synchronous status update as no inter-canister calls needed for status flip
+// Execution is now separate
 #[update]
-async fn finalize_proposal(proposal_id: u64) -> Result<ProposalStatus, String> {
+fn finalize_proposal(proposal_id: u64) -> Result<ProposalStatus, String> {
     let now = ic_cdk::api::time();
     
     let mut proposal = PROPOSALS.with(|p| p.borrow().get(&proposal_id))
         .ok_or("Proposal not found")?;
     
-    // Check if already finalized (Executed or Rejected)
-    if proposal.status == ProposalStatus::Executed || proposal.status == ProposalStatus::Rejected {
-        return Err(format!("Proposal is already finalized with status: {:?}", proposal.status));
+    // Check if already finalized
+    if proposal.status == ProposalStatus::Executed || proposal.status == ProposalStatus::Rejected || proposal.status == ProposalStatus::Approved {
+        return Ok(proposal.status);
     }
     
-    // If Active, handle voting outcome logic
     if proposal.status == ProposalStatus::Active {
-        // Check voting period ended (or threshold already reached)
+        // Check voting period ended
+        // We allow early finalization if the approval threshold is met, enabling "Fast Track" execution.
         if now <= proposal.voting_ends_at && proposal.votes_yes < APPROVAL_THRESHOLD {
-            return Err("Voting period not ended yet".to_string());
+             return Err(format!(
+                 "Voting period not ended yet. Current Yes votes: {}, Required: {}",
+                 proposal.votes_yes / 100_000_000, 
+                 APPROVAL_THRESHOLD / 100_000_000
+             ));
         }
         
         // Determine outcome
         if proposal.votes_yes >= APPROVAL_THRESHOLD {
             proposal.status = ProposalStatus::Approved;
-            
-            // Save state as Approved before execution attempt
-            PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal.clone()));
         } else {
             proposal.status = ProposalStatus::Rejected;
-            PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal.clone()));
-            return Ok(ProposalStatus::Rejected);
         }
-    }
-    
-    // If Approved (either just now or previously), try to Execute
-    if proposal.status == ProposalStatus::Approved {
-        // Execute the proposal
-        let exec_result = execute_proposal_internal(&proposal).await;
-        
-        match exec_result {
-            Ok(_) => {
-                proposal.status = ProposalStatus::Executed;
-                PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal.clone()));
-                return Ok(ProposalStatus::Executed);
-            },
-            Err(e) => {
-                // Return error but keep status as Approved so it can be retried
-                return Err(format!("Execution failed: {}", e));
-            }
-        }
+        PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal.clone()));
     }
     
     Ok(proposal.status)
 }
 
-async fn execute_proposal_internal(proposal: &Proposal) -> Result<(), String> {
+#[update]
+async fn execute_proposal(proposal_id: u64) -> Result<(), String> {
+    let proposal = PROPOSALS.with(|p| p.borrow().get(&proposal_id))
+        .ok_or("Proposal not found")?;
+        
+    if proposal.status != ProposalStatus::Approved {
+        return Err("Proposal is not Approved".to_string());
+    }
+    
+    // Execute based on proposal type
+    match proposal.proposal_type {
+        ProposalType::Treasury => execute_treasury_proposal_internal(&proposal).await?,
+        ProposalType::AddBoardMember => execute_board_member_proposal_internal(&proposal)?,
+    }
+    
+    let mut proposal = proposal; // Get a mutable copy
+    proposal.status = ProposalStatus::Executed;
+    PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal));
+    
+    Ok(())
+}
+
+/// Execute a treasury spending proposal
+async fn execute_treasury_proposal_internal(proposal: &Proposal) -> Result<(), String> {
+    let token_type = proposal.token_type.as_ref()
+        .ok_or("Treasury proposal missing token_type")?;
+    let amount = proposal.amount
+        .ok_or("Treasury proposal missing amount")?;
+    let recipient = proposal.recipient
+        .ok_or("Treasury proposal missing recipient")?;
+    
     // Only execute GHC for now (USDC/ICP requires additional ledger setup)
-    if proposal.token_type != TokenType::GHC {
+    if *token_type != TokenType::GHC {
         return Err("Only GHC transfers are supported currently".to_string());
     }
     
     // Check treasury allowance
     let current_allowance = TREASURY_STATE.with(|s| s.borrow().get().allowance);
-    if proposal.amount > current_allowance {
+    if amount > current_allowance {
         return Err("Insufficient treasury allowance".to_string());
     }
     
@@ -514,8 +839,8 @@ async fn execute_proposal_internal(proposal: &Proposal) -> Result<(), String> {
     
     let args = TransferArg {
         from_subaccount: None,
-        to: Account { owner: proposal.recipient, subaccount: None },
-        amount: Nat::from(proposal.amount),
+        to: Account { owner: recipient, subaccount: None },
+        amount: Nat::from(amount),
         fee: None,
         memo: None,
         created_at_time: None,
@@ -533,9 +858,9 @@ async fn execute_proposal_internal(proposal: &Proposal) -> Result<(), String> {
             TREASURY_STATE.with(|s| {
                 let mut cell = s.borrow_mut();
                 let mut state = cell.get().clone();
-                state.balance = state.balance.saturating_sub(proposal.amount);
-                state.allowance = state.allowance.saturating_sub(proposal.amount);
-                state.total_transferred += proposal.amount;
+                state.balance = state.balance.saturating_sub(amount);
+                state.allowance = state.allowance.saturating_sub(amount);
+                state.total_transferred += amount;
                 cell.set(state).expect("Failed to update treasury state");
             });
             Ok(())
@@ -543,6 +868,117 @@ async fn execute_proposal_internal(proposal: &Proposal) -> Result<(), String> {
         Err(e) => Err(format!("Ledger transfer error: {:?}", e)),
     }
 }
+
+/// Execute a board member addition proposal
+/// 
+/// This function:
+/// 1. Gets the current board member shares
+/// 2. Calculates proportional reduction for each existing member
+/// 3. Adds the new member with their allocated percentage
+fn execute_board_member_proposal_internal(proposal: &Proposal) -> Result<(), String> {
+    let payload = proposal.board_member_payload.as_ref()
+        .ok_or("Board member proposal missing payload")?;
+    
+    // Validate percentage
+    if payload.percentage == 0 || payload.percentage > 99 {
+        return Err("Percentage must be between 1 and 99".to_string());
+    }
+    
+    // Check if already a board member
+    if BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(&payload.new_member)) {
+        return Err("Address is already a board member".to_string());
+    }
+    
+    // Get current board members and their shares
+    let current_shares: Vec<(Principal, u8)> = BOARD_MEMBER_SHARES.with(|b| {
+        b.borrow().iter().collect()
+    });
+    
+    if current_shares.is_empty() {
+        return Err("No existing board members to redistribute from".to_string());
+    }
+    
+    // Calculate new shares for existing members
+    // We need to reduce total existing shares from 100% to (100 - new_percentage)%
+    // Each member's new share = old_share * (100 - new_percentage) / 100
+    // Calculate new shares for existing members using the Largest Remainder Method
+    // This ensures fair distribution of rounding errors instead of dumping them on the last member
+    let remaining_percentage = 100 - payload.percentage;
+    let mut new_shares: Vec<(Principal, u8)> = Vec::new();
+    
+    // 1. Calculate the exact portion for each member (floor + remainder)
+    let mut distribution: Vec<(Principal, u8, u16)> = Vec::new();
+    let mut distributed_total: u16 = 0;
+    
+    for (member, old_share) in current_shares.iter() {
+        let raw_value = (*old_share as u16) * (remaining_percentage as u16);
+        let floor = (raw_value / 100) as u8;
+        let remainder = raw_value % 100;
+        
+        distribution.push((*member, floor, remainder));
+        distributed_total += floor as u16;
+    }
+    
+    // 2. Distribute the remaining points to those with the largest remainders
+    let points_needed = (remaining_percentage as u16).saturating_sub(distributed_total);
+    
+    // Sort by remainder descending, then by Principal for determinism
+    distribution.sort_by(|a, b| {
+        b.2.cmp(&a.2).then_with(|| a.0.cmp(&b.0))
+    });
+    
+    // 3. Assign final shares
+    for (i, (member, floor, _)) in distribution.iter().enumerate() {
+        let extra = if i < points_needed as usize { 1 } else { 0 };
+        new_shares.push((*member, floor + extra));
+    }
+    
+    // Add the new member
+    new_shares.push((payload.new_member, payload.percentage));
+    
+    // Verify total is exactly 100
+    let total: u16 = new_shares.iter().map(|(_, p)| *p as u16).sum();
+    if total != 100 {
+        // Adjust the largest share to make total exactly 100
+        let diff = total as i16 - 100;
+        if diff > 0 {
+            // Need to reduce by diff
+            let max_idx = new_shares.iter()
+                .enumerate()
+                .max_by_key(|(_, (_, p))| *p)
+                .map(|(i, _)| i)
+                .unwrap_or(0);
+            new_shares[max_idx].1 = new_shares[max_idx].1.saturating_sub(diff as u8);
+        } else {
+            // Need to increase by -diff
+            let max_idx = new_shares.iter()
+                .enumerate()
+                .max_by_key(|(_, (_, p))| *p)
+                .map(|(i, _)| i)
+                .unwrap_or(0);
+            new_shares[max_idx].1 = new_shares[max_idx].1.saturating_add((-diff) as u8);
+        }
+    }
+    
+    // Update the shares atomically
+    BOARD_MEMBER_SHARES.with(|b| {
+        let mut map = b.borrow_mut();
+        
+        // Clear all existing entries
+        let existing_keys: Vec<Principal> = map.iter().map(|(k, _)| k).collect();
+        for key in existing_keys {
+            map.remove(&key);
+        }
+        
+        // Insert new shares
+        for (member, share) in new_shares {
+            map.insert(member, share);
+        }
+    });
+    
+    Ok(())
+}
+
 
 // ============================================================================
 // QUERY FUNCTIONS
@@ -568,6 +1004,17 @@ fn get_active_proposals() -> Vec<Proposal> {
 fn get_all_proposals() -> Vec<Proposal> {
     PROPOSALS.with(|p| {
         p.borrow().iter().map(|(_, prop)| prop).collect()
+    })
+}
+
+#[query]
+fn get_proposal_supporters(proposal_id: u64) -> Vec<SupportRecord> {
+    SUPPORT_RECORDS.with(|r| {
+        r.borrow()
+            .iter()
+            .filter(|(key, _)| key.proposal_id == proposal_id)
+            .map(|(_, record)| record)
+            .collect()
     })
 }
 
@@ -697,6 +1144,180 @@ fn get_mmcr_status() -> MMCRStatus {
             seconds_until_next,
         }
     })
+}
+// ============================================================================
+// BOARD MEMBER MANAGEMENT
+// ============================================================================
+
+/// Set all board member shares atomically (admin only)
+/// 
+/// This replaces ALL existing board members with the new list.
+/// Total percentages must equal exactly 100.
+/// Cannot be called if shares are locked.
+#[update]
+fn set_board_member_shares(shares: Vec<BoardMemberShare>) -> Result<(), String> {
+    // Only controllers can set shares
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can set board member shares".to_string());
+    }
+    
+    // Check if locked
+    let is_locked = BOARD_SHARES_LOCKED.with(|l| *l.borrow().get());
+    if is_locked {
+        return Err("Board member shares are locked. Use governance proposals to add new members.".to_string());
+    }
+    
+    // Validate: no empty list
+    if shares.is_empty() {
+        return Err("Must have at least one board member".to_string());
+    }
+    
+    // Validate: no duplicates
+    let mut seen = std::collections::HashSet::new();
+    for share in &shares {
+        if !seen.insert(share.member) {
+            return Err(format!("Duplicate member: {}", share.member));
+        }
+    }
+    
+    // Validate: each percentage is 1-100
+    for share in &shares {
+        if share.percentage == 0 || share.percentage > 100 {
+            return Err(format!(
+                "Invalid percentage {} for {}. Must be 1-100.",
+                share.percentage, share.member
+            ));
+        }
+    }
+    
+    // Validate: total equals 100
+    let total: u16 = shares.iter().map(|s| s.percentage as u16).sum();
+    if total != 100 {
+        return Err(format!(
+            "Total percentages must equal 100. Got: {}",
+            total
+        ));
+    }
+    
+    // Clear existing and insert new
+    BOARD_MEMBER_SHARES.with(|b| {
+        let mut map = b.borrow_mut();
+        
+        // Clear all existing entries
+        let existing_keys: Vec<Principal> = map.iter().map(|(k, _)| k).collect();
+        for key in existing_keys {
+            map.remove(&key);
+        }
+        
+        // Insert new shares
+        for share in shares {
+            map.insert(share.member, share.percentage);
+        }
+    });
+    
+    Ok(())
+}
+
+/// Lock board member shares (admin only)
+/// 
+/// Once locked, shares can only be modified via governance proposals (AddBoardMember).
+#[update]
+fn lock_board_member_shares() -> Result<(), String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can lock board member shares".to_string());
+    }
+    
+    // Verify shares are set before locking
+    let total: u16 = BOARD_MEMBER_SHARES.with(|b| {
+        b.borrow().iter().map(|(_, pct)| pct as u16).sum()
+    });
+    
+    if total != 100 {
+        return Err(format!(
+            "Cannot lock: Board member shares must total 100%. Current total: {}",
+            total
+        ));
+    }
+    
+    BOARD_SHARES_LOCKED.with(|l| {
+        l.borrow_mut().set(true).expect("Failed to lock board member shares")
+    });
+    
+    Ok(())
+}
+
+/// Check if board member shares are locked
+#[query]
+fn are_board_shares_locked() -> bool {
+    BOARD_SHARES_LOCKED.with(|l| *l.borrow().get())
+}
+
+/// Get all board members with their voting power percentages
+#[query]
+fn get_board_member_shares() -> Vec<BoardMemberShare> {
+    BOARD_MEMBER_SHARES.with(|b| {
+        b.borrow().iter().map(|(member, percentage)| {
+            BoardMemberShare { member, percentage }
+        }).collect()
+    })
+}
+
+/// Get a specific board member's percentage
+#[query]
+fn get_board_member_share(principal: Principal) -> Option<u8> {
+    BOARD_MEMBER_SHARES.with(|b| b.borrow().get(&principal))
+}
+
+/// Get number of board members
+#[query]
+fn get_board_member_count() -> u64 {
+    BOARD_MEMBER_SHARES.with(|b| b.borrow().len())
+}
+
+/// Check if a principal is a board member
+#[query]
+fn is_board_member(principal: Principal) -> bool {
+    is_board_member_local(&principal)
+}
+
+// ============================================================================
+// ADMIN DEBUG FUNCTIONS (For Testing Only)
+// ============================================================================
+
+/// Force expire a proposal (set voting end time to past)
+/// This allows "fast-forwarding" time for a single proposal.
+#[update]
+fn admin_expire_proposal(proposal_id: u64) -> Result<(), String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized".to_string());
+    }
+    
+    let now = ic_cdk::api::time();
+    let mut proposal = PROPOSALS.with(|p| p.borrow().get(&proposal_id))
+        .ok_or("Proposal not found")?;
+    
+    // Set End Time to 1 nanosecond ago    
+    proposal.voting_ends_at = now.saturating_sub(1);
+    
+    PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal));
+    Ok(())
+}
+
+/// Force set a proposal's status
+/// Useful for testing execution without gathering votes
+#[update]
+fn admin_set_proposal_status(proposal_id: u64, status: ProposalStatus) -> Result<(), String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized".to_string());
+    }
+    
+    let mut proposal = PROPOSALS.with(|p| p.borrow().get(&proposal_id))
+        .ok_or("Proposal not found")?;
+        
+    proposal.status = status;
+    
+    PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal));
+    Ok(())
 }
 
 ic_cdk::export_candid!();

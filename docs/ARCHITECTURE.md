@@ -115,19 +115,27 @@ The GreenHero Coin (GHC) dapp is a blockchain-based educational platform built o
   - **Allowance Manager**: Grants minting allowances to User Profile shards
   - **Settlement**: Handles real ledger transfers during unstaking
   - **Hard Cap Enforcement**: Never allocates beyond MAX_SUPPLY (4.75B)
+  - **VUC Provider**: Exposes `get_vuc()` for governance voting power calculations
+  - **User Voting Power**: Exposes `fetch_user_voting_power()` for staked balance queries
 
 ### 3. Operational Governance (`operational_governance`)
 
-- **Role**: Treasury Management & Spending Governance
+- **Role**: Treasury Management, Governance & Board Member Management
 - **Token Balance**: 4.25B MC
 - **Treasury Features**:
   - **Balance**: 4.25B MC (decreases only on transfers)
   - **Allowance**: 0.6B MC initial (increases via MMCR)
   - **MMCR**: Monthly Market Coin Release (15.2M/month for 240 months)
 - **Governance Features**:
-  - Spending proposals
+  - **Treasury Proposals**: Spending from treasury
+  - **Board Member Proposals**: Adding new board members
   - Voting (requires staking power)
-  - Proposal execution (checks allowance)
+  - Proposal execution (treasury transfers or board member additions)
+- **Board Member Management** (Updated January 2026):
+  - Stores board member shares (`BOARD_MEMBER_SHARES`)
+  - Board members exercise weighted VUC voting power
+  - New members added via governance proposals after lock
+  - Calculates voting power locally (queries staking_hub for VUC)
 
 #### MMCR (Monthly Market Coin Release)
 

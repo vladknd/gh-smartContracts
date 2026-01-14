@@ -747,174 +747,18 @@ thread_local! {
         )
     );
     
-    /// Board member voting power shares: Principal -> percentage (1-100)
-    /// Each board member gets (percentage / 100) * VUC voting power
-    /// Total of all percentages must equal exactly 100
-    static BOARD_MEMBER_SHARES: RefCell<StableBTreeMap<Principal, u8, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(10)))
-        )
-    );
-    
-    /// Lock flag for board member shares
-    /// Once locked, shares cannot be changed (immutable)
-    /// Can be unlocked later via governance proposal (future feature)
-    static BOARD_SHARES_LOCKED: RefCell<StableCell<bool, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(11))),
-            false
-        ).unwrap()
-    );
+    // Note: MemoryIds 10, 11, 12 were previously used for board member storage
+    // Board member management has been moved to operational_governance canister
+    // These memory slots are kept reserved to avoid conflicts
 }
 
 // ============================================================================
-// BOARD MEMBER MANAGEMENT (Admin Only, Lockable)
+// BOARD MEMBER MANAGEMENT - DEPRECATED
 // ============================================================================
-//
-// Board members exercise VUC voting power with weighted shares.
-// This system can be locked for immutability, or later controlled by governance.
+// Board member management has been moved to the operational_governance canister.
+// See operational_governance for: set_board_member_shares, lock_board_member_shares,
+// get_board_member_shares, is_board_member, etc.
 
-/// Board member share entry for input
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct BoardMemberShare {
-    pub member: Principal,
-    pub percentage: u8,
-}
-
-/// Set all board member shares atomically (admin only)
-/// 
-/// This replaces ALL existing board members with the new list.
-/// Total percentages must equal exactly 100.
-/// Cannot be called if shares are locked.
-/// 
-/// # Example
-/// ```
-/// set_board_member_shares(vec![
-///     BoardMemberShare { member: board1, percentage: 60 },
-///     BoardMemberShare { member: board2, percentage: 30 },
-///     BoardMemberShare { member: board3, percentage: 10 },
-/// ])
-/// ```
-#[update]
-fn set_board_member_shares(shares: Vec<BoardMemberShare>) -> Result<(), String> {
-    // Only controllers can set shares (future: or governance)
-    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
-        return Err("Unauthorized: Only controllers can set board member shares".to_string());
-    }
-    
-    // Check if locked
-    let is_locked = BOARD_SHARES_LOCKED.with(|l| *l.borrow().get());
-    if is_locked {
-        return Err("Board member shares are permanently locked. Use governance to propose changes.".to_string());
-    }
-    
-    // Validate: no empty list
-    if shares.is_empty() {
-        return Err("Must have at least one board member".to_string());
-    }
-    
-    // Validate: no duplicates
-    let mut seen = std::collections::HashSet::new();
-    for share in &shares {
-        if !seen.insert(share.member) {
-            return Err(format!("Duplicate member: {}", share.member));
-        }
-    }
-    
-    // Validate: each percentage is 1-100
-    for share in &shares {
-        if share.percentage == 0 || share.percentage > 100 {
-            return Err(format!(
-                "Invalid percentage {} for {}. Must be 1-100.",
-                share.percentage, share.member
-            ));
-        }
-    }
-    
-    // Validate: total equals 100
-    let total: u16 = shares.iter().map(|s| s.percentage as u16).sum();
-    if total != 100 {
-        return Err(format!(
-            "Total percentages must equal 100. Got: {}",
-            total
-        ));
-    }
-    
-    // Clear existing and insert new
-    BOARD_MEMBER_SHARES.with(|b| {
-        let mut map = b.borrow_mut();
-        
-        // Clear all existing entries
-        let existing_keys: Vec<Principal> = map.iter().map(|(k, _)| k).collect();
-        for key in existing_keys {
-            map.remove(&key);
-        }
-        
-        // Insert new shares
-        for share in shares {
-            map.insert(share.member, share.percentage);
-        }
-    });
-    
-    Ok(())
-}
-
-/// Lock board member shares permanently (admin only)
-/// 
-/// WARNING: This is IRREVERSIBLE through admin functions!
-/// Once locked, shares can only be changed via governance proposal (future feature).
-#[update]
-fn lock_board_member_shares() -> Result<(), String> {
-    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
-        return Err("Unauthorized: Only controllers can lock board member shares".to_string());
-    }
-    
-    // Verify shares are set before locking
-    let total: u16 = BOARD_MEMBER_SHARES.with(|b| {
-        b.borrow().iter().map(|(_, pct)| pct as u16).sum()
-    });
-    
-    if total != 100 {
-        return Err(format!(
-            "Cannot lock: Board member shares must total 100%. Current total: {}",
-            total
-        ));
-    }
-    
-    BOARD_SHARES_LOCKED.with(|l| {
-        l.borrow_mut().set(true).expect("Failed to lock board member shares")
-    });
-    
-    Ok(())
-}
-
-/// Check if board member shares are locked
-#[query]
-fn are_board_shares_locked() -> bool {
-    BOARD_SHARES_LOCKED.with(|l| *l.borrow().get())
-}
-
-/// Get all board members with their voting power percentages
-#[query]
-fn get_board_member_shares() -> Vec<BoardMemberShare> {
-    BOARD_MEMBER_SHARES.with(|b| {
-        b.borrow().iter().map(|(member, percentage)| {
-            BoardMemberShare { member, percentage }
-        }).collect()
-    })
-}
-
-/// Get a specific board member's percentage
-#[query]
-fn get_board_member_share(principal: Principal) -> Option<u8> {
-    BOARD_MEMBER_SHARES.with(|b| b.borrow().get(&principal))
-}
-
-/// Get number of board members
-#[query]
-fn get_board_member_count() -> u64 {
-    BOARD_MEMBER_SHARES.with(|b| b.borrow().len())
-}
 
 // ============================================================================
 // USER REGISTRY
@@ -970,25 +814,13 @@ fn admin_set_user_shard(user: Principal, shard: Principal) -> Result<(), String>
 // ============================================================================
 // VOTING POWER FUNCTIONS
 // ============================================================================
-
-/// Check if a principal is a registered board member
-fn is_board_member_principal(principal: &Principal) -> bool {
-    BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(principal))
-}
-
-/// Get a board member's percentage share (internal)
-fn get_board_member_percentage(principal: &Principal) -> Option<u8> {
-    BOARD_MEMBER_SHARES.with(|b| b.borrow().get(principal))
-}
-
-/// Check if a principal is a board member
-#[query]
-fn is_board_member(principal: Principal) -> bool {
-    is_board_member_principal(&principal)
-}
+// Note: Board member voting power is now handled by operational_governance.
+// This canister provides get_vuc() for governance to calculate board member power,
+// and fetch_user_voting_power() for regular user staked balance lookups.
 
 /// Get VUC (Volume of Unmined Coins) - total board member voting power pool
 /// VUC = MAX_SUPPLY - total_allocated
+/// This is used by operational_governance to calculate board member voting power
 #[query]
 fn get_vuc() -> u64 {
     GLOBAL_STATS.with(|s| {
@@ -1005,20 +837,12 @@ fn get_total_voting_power() -> u64 {
     vuc.saturating_add(total_staked)
 }
 
-/// Fetch voting power for any principal (async - queries shards for users)
+/// Fetch voting power for a regular user (async - queries shards)
 /// 
-/// For board members: returns weighted VUC = VUC * (percentage / 100)
-/// For users: queries their shard for staked_balance
+/// This returns the user's staked balance from their shard.
+/// For board members, operational_governance calculates their weighted VUC locally.
 #[update]
-async fn fetch_voting_power(user: Principal) -> u64 {
-    // Check if user is a board member - return weighted VUC
-    if let Some(percentage) = get_board_member_percentage(&user) {
-        let vuc = get_vuc();
-        // Calculate weighted voting power: VUC * percentage / 100
-        // Using u128 to avoid overflow during multiplication
-        return ((vuc as u128 * percentage as u128) / 100) as u64;
-    }
-    
+async fn fetch_user_voting_power(user: Principal) -> u64 {
     // Look up user's shard
     let shard_id = USER_SHARD_MAP.with(|m| m.borrow().get(&user));
     

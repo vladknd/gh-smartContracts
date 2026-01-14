@@ -8,7 +8,7 @@ This guide details administrative actions available to controllers for managing 
 
 Board members exercise VUC (Volume of Unmined Coins) voting power for governance decisions. Each board member has a percentage share of the total VUC.
 
-> **Note**: Board members are separate from founders. Founders receive token vesting through `founder_vesting`. Board members exercise voting power through `staking_hub`.
+> **Note**: Board members are separate from founders. Founders receive token vesting through `founder_vesting`. Board members exercise voting power and are managed through `operational_governance`.
 
 ### Set Board Member Shares
 
@@ -16,10 +16,10 @@ Sets all board members atomically. Percentages must sum to exactly 100%.
 
 ```bash
 # Set board members with their voting power percentages
-dfx canister call staking_hub set_board_member_shares '(vec { 
-  record { member = principal "BOARD_MEMBER_1_PRINCIPAL"; percentage = 60 : nat8 };
-  record { member = principal "BOARD_MEMBER_2_PRINCIPAL"; percentage = 30 : nat8 };
-  record { member = principal "BOARD_MEMBER_3_PRINCIPAL"; percentage = 10 : nat8 };
+dfx canister call operational_governance set_board_member_shares '(vec { 
+  record { member = principal "pdcqz-u4c3h-jlofu-rxotl-7xgen-kdp3g-j6m5n-hyinh-zvo4o-7jjz3-3qe"; percentage = 60 : nat8 };
+  record { member = principal "5v4qo-2wfpo-y6hvq-xfdxk-aykqw-oe2mt-mmxa5-ogodx-ht3m6-wbrpl-eqe"; percentage = 30 : nat8 };
+  record { member = principal "h6th6-bpgzd-lal2p-xgghh-k6qnp-wfeix-tv2rk-tobow-7qelw-s42ca-dqe"; percentage = 10 : nat8 };
 })'
 ```
 
@@ -27,30 +27,43 @@ dfx canister call staking_hub set_board_member_shares '(vec {
 
 ```bash
 # Get all board members with their percentages
-dfx canister call staking_hub get_board_member_shares
+dfx canister call operational_governance get_board_member_shares
 
 # Check if someone is a board member
-dfx canister call staking_hub is_board_member '(principal "PRINCIPAL_ID")'
+dfx canister call operational_governance is_board_member '(principal "PRINCIPAL_ID")'
 
 # Get specific member's percentage
-dfx canister call staking_hub get_board_member_share '(principal "PRINCIPAL_ID")'
+dfx canister call operational_governance get_board_member_share '(principal "PRINCIPAL_ID")'
 
 # Get count of board members
-dfx canister call staking_hub get_board_member_count
+dfx canister call operational_governance get_board_member_count
 ```
 
 ### Lock Board Member Shares
 
-⚠️ **WARNING**: This is **IRREVERSIBLE** through admin functions!
+⚠️ **WARNING**: After locking, use governance proposals to add new board members!
 
-Once locked, shares can only be changed via governance proposals (future feature).
+Once locked, shares can only be changed via `AddBoardMember` governance proposals.
 
 ```bash
 # Check if already locked
-dfx canister call staking_hub are_board_shares_locked
+dfx canister call operational_governance are_board_shares_locked
 
-# Lock permanently (cannot be undone via admin!)
-dfx canister call staking_hub lock_board_member_shares
+# Lock shares (use governance proposals after this)
+dfx canister call operational_governance lock_board_member_shares
+```
+
+### Add Board Member via Governance (After Lock)
+
+```bash
+# Create a proposal to add a new board member
+dfx canister call operational_governance create_board_member_proposal '(record {
+  title = "Add New Board Member";
+  description = "Proposing to add Alice with 15% share";
+  new_member = principal "NEW_MEMBER_PRINCIPAL";
+  percentage = 15 : nat8;
+  external_link = null
+})'
 ```
 
 ---
@@ -142,8 +155,8 @@ dfx canister call staking_hub get_tokenomics
 # Get VUC (total board member voting power pool)
 dfx canister call staking_hub get_vuc
 
-# Get specific user's voting power
-dfx canister call staking_hub fetch_voting_power '(principal "PRINCIPAL_ID")'
+# Get user's staked balance (regular users)
+dfx canister call staking_hub fetch_user_voting_power '(principal "PRINCIPAL_ID")'
 
 # Get total voting power in system
 dfx canister call staking_hub get_total_voting_power
@@ -153,14 +166,16 @@ dfx canister call staking_hub get_total_voting_power
 
 ## 📋 Quick Reference
 
-| Action | Command |
-|--------|---------|
-| Set board members | `set_board_member_shares` |
-| Query board members | `get_board_member_shares` |
-| Lock shares (irreversible) | `lock_board_member_shares` |
-| Check if locked | `are_board_shares_locked` |
-| Check voting power | `fetch_voting_power` |
-| Founder vesting status | `get_all_vesting_schedules` |
-| Finalize proposal early | `finalize_proposal` |
-| Manual MMCR | `execute_mmcr` |
-| Treasury status | `get_treasury_state` |
+| Action | Canister | Command |
+|--------|----------|---------|
+| Set board members | `operational_governance` | `set_board_member_shares` |
+| Query board members | `operational_governance` | `get_board_member_shares` |
+| Lock shares | `operational_governance` | `lock_board_member_shares` |
+| Check if locked | `operational_governance` | `are_board_shares_locked` |
+| Add board member (after lock) | `operational_governance` | `create_board_member_proposal` |
+| Get VUC | `staking_hub` | `get_vuc` |
+| Get user voting power | `staking_hub` | `fetch_user_voting_power` |
+| Founder vesting status | `founder_vesting` | `get_all_vesting_schedules` |
+| Finalize proposal early | `operational_governance` | `finalize_proposal` |
+| Manual MMCR | `operational_governance` | `execute_mmcr` |
+| Treasury status | `operational_governance` | `get_treasury_state` |

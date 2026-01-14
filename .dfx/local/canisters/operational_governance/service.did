@@ -1,4 +1,16 @@
-type CreateProposalInput = record {
+type AddBoardMemberPayload = record {
+  new_member : principal;
+  percentage : nat8;
+};
+type BoardMemberShare = record { member : principal; percentage : nat8 };
+type CreateBoardMemberProposalInput = record {
+  external_link : opt text;
+  title : text;
+  description : text;
+  new_member : principal;
+  percentage : nat8;
+};
+type CreateTreasuryProposalInput = record {
   external_link : opt text;
   title : text;
   recipient : principal;
@@ -21,16 +33,20 @@ type Proposal = record {
   external_link : opt text;
   title : text;
   votes_no : nat64;
-  recipient : principal;
+  recipient : opt principal;
   description : text;
   created_at : nat64;
+  board_member_payload : opt AddBoardMemberPayload;
   voting_ends_at : nat64;
-  category : ProposalCategory;
+  supporter_count : nat64;
+  category : opt ProposalCategory;
   proposer : principal;
   voter_count : nat64;
   votes_yes : nat64;
-  amount : nat64;
-  token_type : TokenType;
+  amount : opt nat64;
+  token_type : opt TokenType;
+  proposal_type : ProposalType;
+  support_amount : nat64;
 };
 type ProposalCategory = variant {
   Partnership;
@@ -41,7 +57,20 @@ type ProposalCategory = variant {
   Marketing;
   Liquidity;
 };
-type ProposalStatus = variant { Active; Approved; Rejected; Executed };
+type ProposalStatus = variant {
+  Active;
+  Approved;
+  Rejected;
+  Proposed;
+  Executed;
+};
+type ProposalType = variant { Treasury; AddBoardMember };
+type SupportRecord = record {
+  supporter : principal;
+  proposal_id : nat64;
+  timestamp : nat64;
+  support_amount : nat64;
+};
 type TokenType = variant { GHC; ICP; USDC };
 type TreasuryState = record {
   balance : nat64;
@@ -59,19 +88,40 @@ type VoteRecord = record {
   voting_power : nat64;
 };
 service : {
-  create_proposal : (CreateProposalInput) -> (
+  admin_expire_proposal : (nat64) -> (variant { Ok; Err : text });
+  admin_set_proposal_status : (nat64, ProposalStatus) -> (
+      variant { Ok; Err : text },
+    );
+  are_board_shares_locked : () -> (bool) query;
+  create_board_member_proposal : (CreateBoardMemberProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_treasury_proposal : (CreateTreasuryProposalInput) -> (
       variant { Ok : nat64; Err : text },
     );
   execute_mmcr : () -> (variant { Ok : nat64; Err : text });
+  execute_proposal : (nat64) -> (variant { Ok; Err : text });
   finalize_proposal : (nat64) -> (variant { Ok : ProposalStatus; Err : text });
   get_active_proposals : () -> (vec Proposal) query;
   get_all_proposals : () -> (vec Proposal) query;
+  get_board_member_count : () -> (nat64) query;
+  get_board_member_share : (principal) -> (opt nat8) query;
+  get_board_member_shares : () -> (vec BoardMemberShare) query;
   get_governance_config : () -> (nat64, nat64, nat64, nat64) query;
   get_mmcr_status : () -> (MMCRStatus) query;
+  get_my_voting_power : () -> (variant { Ok : nat64; Err : text });
   get_proposal : (nat64) -> (opt Proposal) query;
+  get_proposal_supporters : (nat64) -> (vec SupportRecord) query;
   get_proposal_votes : (nat64) -> (vec VoteRecord) query;
   get_spendable_balance : () -> (nat64) query;
   get_treasury_state : () -> (TreasuryState) query;
+  get_user_voting_power : (principal) -> (variant { Ok : nat64; Err : text });
   has_voted : (nat64, principal) -> (bool) query;
+  is_board_member : (principal) -> (bool) query;
+  lock_board_member_shares : () -> (variant { Ok; Err : text });
+  set_board_member_shares : (vec BoardMemberShare) -> (
+      variant { Ok; Err : text },
+    );
+  support_proposal : (nat64) -> (variant { Ok; Err : text });
   vote : (nat64, bool) -> (variant { Ok; Err : text });
 }
