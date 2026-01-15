@@ -7,7 +7,7 @@ We have provided a script `test_flow.sh` that automates the core user flows:
 1.  **Mining**: Submitting a quiz and earning rewards.
 2.  **Staking**: Claiming rewards and verifying they are staked.
 3.  **Governance**: Checking voting power.
-4.  **Unstaking**: Unstaking tokens and verifying the 10% penalty deduction.
+4.  **Unstaking**: Unstaking tokens (100% return, no penalty).
 
 ### Running the Test Script
 ```bash
@@ -46,16 +46,16 @@ If you prefer to run steps manually, follow this guide.
 ### Scenario B: Unstaking
 1.  **Unstake 1 GHC** (100,000,000 e8s):
     ```bash
-    dfx canister call staking_hub unstake '(100000000)'
+    dfx canister call user_profile unstake '(100000000)'
     ```
-    *Expected Output*: `(Ok (90000000 : nat64))`
-    *Note*: You receive 0.9 GHC (90,000,000 e8s). 0.1 GHC is the 10% penalty.
+    *Expected Output*: `(Ok (100000000 : nat64))`
+    *Note*: You receive 1 GHC (100,000,000 e8s). No penalty - 100% returned.
 
 2.  **Verify Wallet Balance**:
     ```bash
     dfx canister call ghc_ledger icrc1_balance_of "(record { owner = principal \"$(dfx identity get-principal)\"; subaccount = null })"
     ```
-    *Expected Output*: `(90000000 : nat)`
+    *Expected Output*: `(100000000 : nat)`
 
 ## 3. Code Verification
 - **Compilation**: Run `cargo build --target wasm32-unknown-unknown --release` to verify the Rust code builds without errors.

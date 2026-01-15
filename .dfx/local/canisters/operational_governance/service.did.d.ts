@@ -134,7 +134,10 @@ export interface _SERVICE {
   'get_board_member_count' : ActorMethod<[], bigint>,
   'get_board_member_share' : ActorMethod<[Principal], [] | [number]>,
   'get_board_member_shares' : ActorMethod<[], Array<BoardMemberShare>>,
-  'get_governance_config' : ActorMethod<[], [bigint, bigint, bigint, bigint]>,
+  'get_governance_config' : ActorMethod<
+    [],
+    [bigint, bigint, bigint, bigint, bigint]
+  >,
   'get_mmcr_status' : ActorMethod<[], MMCRStatus>,
   'get_my_voting_power' : ActorMethod<
     [],

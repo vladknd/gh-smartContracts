@@ -107,7 +107,7 @@ service : (InitArgs) -> {
   get_board_member_count : () -> (nat64) query;
   get_board_member_share : (principal) -> (opt nat8) query;
   get_board_member_shares : () -> (vec BoardMemberShare) query;
-  get_governance_config : () -> (nat64, nat64, nat64, nat64) query;
+  get_governance_config : () -> (nat64, nat64, nat64, nat64, nat64) query;
   get_mmcr_status : () -> (MMCRStatus) query;
   get_my_voting_power : () -> (variant { Ok : nat64; Err : text });
   get_proposal : (nat64) -> (opt Proposal) query;

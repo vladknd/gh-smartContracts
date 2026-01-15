@@ -153,7 +153,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'get_governance_config' : IDL.Func(
         [],
-        [IDL.Nat64, IDL.Nat64, IDL.Nat64, IDL.Nat64],
+        [IDL.Nat64, IDL.Nat64, IDL.Nat64, IDL.Nat64, IDL.Nat64],
         ['query'],
       ),
     'get_mmcr_status' : IDL.Func([], [MMCRStatus], ['query']),

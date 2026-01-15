@@ -39,15 +39,22 @@ This document provides a comprehensive visual representation of how all canister
 │ • create_board_member_    │    │ • submit_quiz()                      │    │                                   │
 │   proposal()              │    │ • unstake()                          │    └─────────────┬─────────────────────┘
 │ • vote()                  │    │                                      │                  │
-│ • set_board_member_       │    └───────┬────────────────┬─────────────┘                  │
-│   shares()                │            │                │                                │
-└───────────┬───────────────┘            │                │                                │
-            │                            │                │                                │
-            │ get_vuc()                  │ verify_quiz()  │                                │ claim_vested()
-            │ fetch_user_voting_power()  │                │                                │ transfer tokens
-            │     -----------------------│----------------│ sync_shard()                   │
-            |     | process_unstake()    |                |                                |
-            ▼     ▼                      ▼                ▼                                ▼
+│ • set_board_member_       │    └───────┬───────────────────────────┬──┘                  │
+│   shares()                │            │      │                    │                     │
+└───────────┬───────────────┘            │      │                    │                     │claim_vested()
+            │                            │      │ verify_quiz()      │                     │
+            │ get_vuc()                  │      │                    │                     │
+            │ fetch_user_voting_power()  │      │                    │                     │
+            │                            │      │                    │                     │
+            │                            │      │                    │ transfer tokens()   │
+            │                            │      │                    │                     │
+            │     ┌──────────────────────┘      │                    │                     │
+            |     |                             │                    │                     │
+            |     │ sync_shard()                │                    │                     │
+            |     │ process_unstake()           │                    │                     │
+            |     │                             │                    │                     │
+            |     │                             │                    │                     │
+            ▼     ▼                             ▼                    ▼                     ▼
 ┌───────────────────────┐    ┌────────────────────┐    ┌─────────────────────────────────────────────────────────┐
 │     STAKING_HUB       │    │  LEARNING_ENGINE   │    │                       GHC_LEDGER                        │
 │   (Central Bank)      │    │ (Stateless Content)│    │                      (ICRC-1/2)                         │
@@ -81,19 +88,6 @@ This document provides a comprehensive visual representation of how all canister
                         │ • Content voting               │
                         │ • Moderation                   │
                         └────────────────────────────────┘
-```
-
-                        │        (Content Management)             │
-                        ├─────────────────────────────────────────┤
-                        │ [STORES]                                │
-                        │  • Book proposals                       │
-                        │  • Book count                           │
-                        │                                         │
-                        │ [FUTURE]                                │
-                        │  • Content voting                       │
-                        │  • Content moderation                   │
-                        └─────────────────────────────────────────┘
-```
 
 ---
 

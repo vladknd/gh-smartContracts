@@ -158,8 +158,8 @@ service : (InitArgs) -> {
     // Check if a user has voted on a proposal
     "has_voted": (nat64, principal) -> (bool) query;
     
-    // Get governance config: (min_power_to_propose, approval_threshold, voting_days, cooldown_days)
-    "get_governance_config": () -> (nat64, nat64, nat64, nat64) query;
+    // Get governance config: (min_power_to_propose, approval_threshold, support_days, voting_days, cooldown_days)
+    "get_governance_config": () -> (nat64, nat64, nat64, nat64, nat64) query;
     
     // =========================================================================
     // Voting Power

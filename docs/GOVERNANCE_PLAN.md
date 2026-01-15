@@ -649,10 +649,14 @@ Mitigation: SNAPSHOT VOTING
 ```
 Scenario: Attacker borrows/stakes large amount, votes, unstakes immediately
 
-Mitigation: SNAPSHOT VOTING + UNSTAKING PENALTY
+Mitigation: SNAPSHOT VOTING (+ PROPOSED UNSTAKING PENALTY)
   └── Must have balance BEFORE proposal creation
-  └── 10% penalty discourages short-term staking games
-  └── ✅ FULLY MITIGATED
+  └── Snapshot voting prevents flash staking attacks
+  └── (Optional future: 10% penalty for additional deterrence)
+  └── ✅ MITIGATED via snapshot voting
+  
+Note: Currently no unstaking penalty. The 10% penalty is a proposed
+future enhancement that would further discourage short-term staking.
 ```
 
 #### Attack: Quorum Manipulation

@@ -17,9 +17,9 @@ Sets all board members atomically. Percentages must sum to exactly 100%.
 ```bash
 # Set board members with their voting power percentages
 dfx canister call operational_governance set_board_member_shares '(vec { 
-  record { member = principal "pdcqz-u4c3h-jlofu-rxotl-7xgen-kdp3g-j6m5n-hyinh-zvo4o-7jjz3-3qe"; percentage = 60 : nat8 };
-  record { member = principal "5v4qo-2wfpo-y6hvq-xfdxk-aykqw-oe2mt-mmxa5-ogodx-ht3m6-wbrpl-eqe"; percentage = 30 : nat8 };
-  record { member = principal "h6th6-bpgzd-lal2p-xgghh-k6qnp-wfeix-tv2rk-tobow-7qelw-s42ca-dqe"; percentage = 10 : nat8 };
+  record { member = principal "brcis-myp3t-sgc2i-7fzce-onoy6-4cknk-o7zrq-rp2yj-r3adh-wwjm5-2ae"; percentage = 60 : nat8 };
+  record { member = principal "cjd7b-pozyi-lvcpt-i2dnz-7ubh5-v5xgm-imvzz-46ecb-2ytr4-ypfor-yqe"; percentage = 30 : nat8 };
+  record { member = principal "bqnyh-6ivts-3zmpt-ykoof-ggqza-2jgjp-wri4l-nxhn6-iv4ni-owd53-iae"; percentage = 10 : nat8 };
 })'
 ```
 

@@ -24,6 +24,9 @@ const MIN_VOTING_POWER_TO_PROPOSE: u64 = 150 * 100_000_000; // 150 tokens in e8s
 /// Minimum YES votes required for proposal approval
 const APPROVAL_THRESHOLD: u64 = 15_000 * 100_000_000; // 15,000 tokens in e8s
 
+/// Support period for proposals in Proposed state: 1 week in nanoseconds
+const SUPPORT_PERIOD_NANOS: u64 = 7 * 24 * 60 * 60 * 1_000_000_000;
+
 /// Voting period duration: 2 weeks in nanoseconds
 const VOTING_PERIOD_NANOS: u64 = 14 * 24 * 60 * 60 * 1_000_000_000;
 
@@ -492,8 +495,8 @@ async fn create_treasury_proposal(input: CreateTreasuryProposalInput) -> Result<
         // Board members skip Proposed state, go directly to Active
         (ProposalStatus::Active, now + VOTING_PERIOD_NANOS)
     } else {
-        // Regular users go to Proposed state
-        (ProposalStatus::Proposed, 0) // No voting end date yet
+        // Regular users go to Proposed state with a support period deadline
+        (ProposalStatus::Proposed, now + SUPPORT_PERIOD_NANOS)
     };
     
     let proposal = Proposal {
@@ -583,8 +586,8 @@ async fn create_board_member_proposal(input: CreateBoardMemberProposalInput) -> 
         // Board members skip Proposed state, go directly to Active
         (ProposalStatus::Active, now + VOTING_PERIOD_NANOS)
     } else {
-        // Regular users go to Proposed state
-        (ProposalStatus::Proposed, 0) // No voting end date yet
+        // Regular users go to Proposed state with a support period deadline
+        (ProposalStatus::Proposed, now + SUPPORT_PERIOD_NANOS)
     };
     
     let proposal = Proposal {
@@ -738,20 +741,25 @@ async fn vote(proposal_id: u64, approve: bool) -> Result<(), String> {
 // PROPOSAL FINALIZATION
 // ============================================================================
 
-/// Finalize proposals whose voting period has ended
+/// Finalize proposals whose voting or support period has ended
 async fn finalize_expired_proposals() {
     let now = ic_cdk::api::time();
     
     let proposals_to_finalize: Vec<u64> = PROPOSALS.with(|p| {
         p.borrow()
             .iter()
-            .filter(|(_, prop)| prop.status == ProposalStatus::Active && now > prop.voting_ends_at)
+            .filter(|(_, prop)| {
+                // Active proposals that have ended voting period
+                (prop.status == ProposalStatus::Active && now > prop.voting_ends_at) ||
+                // Proposed proposals that have ended support period
+                (prop.status == ProposalStatus::Proposed && now > prop.voting_ends_at)
+            })
             .map(|(id, _)| id)
             .collect()
     });
     
     for id in proposals_to_finalize {
-        let _ = finalize_proposal(id); // No await needed as it was changed to sync or we keep it async but logic changed
+        let _ = finalize_proposal(id);
     }
 }
 
@@ -769,6 +777,17 @@ fn finalize_proposal(proposal_id: u64) -> Result<ProposalStatus, String> {
         return Ok(proposal.status);
     }
     
+    // Handle Proposed state - reject if support period expired
+    if proposal.status == ProposalStatus::Proposed {
+        if now > proposal.voting_ends_at {
+            proposal.status = ProposalStatus::Rejected;
+            PROPOSALS.with(|p| p.borrow_mut().insert(proposal_id, proposal.clone()));
+        } else {
+            return Err("Support period not ended yet".to_string());
+        }
+    }
+    
+    // Handle Active state - approve or reject based on votes
     if proposal.status == ProposalStatus::Active {
         // Check voting period ended
         // We allow early finalization if the approval threshold is met, enabling "Fast Track" execution.
@@ -1036,10 +1055,11 @@ fn has_voted(proposal_id: u64, voter: Principal) -> bool {
 }
 
 #[query]
-fn get_governance_config() -> (u64, u64, u64, u64) {
+fn get_governance_config() -> (u64, u64, u64, u64, u64) {
     (
         MIN_VOTING_POWER_TO_PROPOSE / 100_000_000, // In tokens
         APPROVAL_THRESHOLD / 100_000_000,          // In tokens
+        SUPPORT_PERIOD_NANOS / (24 * 60 * 60 * 1_000_000_000), // In days
         VOTING_PERIOD_NANOS / (24 * 60 * 60 * 1_000_000_000), // In days
         RESUBMISSION_COOLDOWN_NANOS / (24 * 60 * 60 * 1_000_000_000), // In days
     )

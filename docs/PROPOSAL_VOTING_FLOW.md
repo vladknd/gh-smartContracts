@@ -42,6 +42,7 @@ The governance system allows users to propose changes to the GHC system. The pro
 │                                                                             │
 │   Regular User ────► PROPOSED ────► ACTIVE ────► APPROVED ────► EXECUTED    │
 │                      (support)      (voting)                                │
+│                      1 week         2 weeks                                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -98,10 +99,10 @@ Board member proposals add a new member to the governance board. The new member 
 
 | State       | Description                                                                 |
 |-------------|-----------------------------------------------------------------------------|
-| `Proposed`  | Initial state for regular user proposals. Gathering community support.      |
+| `Proposed`  | Initial state for regular user proposals. Gathering community support (1 week). |
 | `Active`    | Voting is open. Users can cast YES/NO votes for 2 weeks.                    |
 | `Approved`  | Voting passed threshold. Awaiting manual execution.                         |
-| `Rejected`  | Voting failed to meet threshold. Terminal state.                            |
+| `Rejected`  | Voting failed to meet threshold OR support period expired. Terminal state.  |
 | `Executed`  | Proposal was approved and action completed (funds transferred or board member added). Terminal state. |
 
 ---
@@ -134,6 +135,7 @@ Board member proposals add a new member to the governance board. The new member 
                               │                               │ Gather Support: │
                               │                               │ - 15,000+ VP    │
                               │                               │ - 2+ supporters │
+                              │                               │ - 1 week period │
                               │                               └─────────────────┘
                               │                                         │
                               │                                         │ support_proposal()
@@ -206,7 +208,7 @@ Board member proposals add a new member to the governance board. The new member 
 │   │                                                                     │   │
 │   │  ELSE (Regular User):                                               │   │
 │   │    → Status = PROPOSED                                              │   │
-│   │    → voting_ends_at = 0 (not set yet)                               │   │
+│   │    → voting_ends_at = now + 7 days (support period)                 │   │
 │   │                                                                     │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
@@ -264,6 +266,9 @@ Board member proposals add a new member to the governance board. The new member 
 │                                                                             │
 │   NOTE: Supporters do NOT automatically become YES voters.                  │
 │         They must vote separately during the ACTIVE phase.                  │
+│                                                                             │
+│   EXPIRATION: If the support threshold is not met within 1 week (7 days),  │
+│               the proposal is automatically REJECTED.                       │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -426,6 +431,7 @@ Board member proposals add a new member to the governance board. The new member 
 | Constant                     | Value           | Description                                      |
 |------------------------------|-----------------|--------------------------------------------------|
 | `MIN_VOTING_POWER_TO_PROPOSE`| 150 tokens      | Minimum VP required to create a proposal         |
+| `SUPPORT_PERIOD_NANOS`       | 7 days          | Duration of support phase for regular users      |
 | `SUPPORT_THRESHOLD`          | 15,000 tokens   | VP required to move from Proposed → Active       |
 | `MIN_SUPPORTERS`             | 2 users         | Minimum unique supporters required               |
 | `APPROVAL_THRESHOLD`         | 15,000 tokens   | YES votes required for approval                  |
@@ -486,7 +492,8 @@ get_all_proposals() → Vec<Proposal>
 get_proposal_votes(proposal_id: nat64) → Vec<VoteRecord>
 get_proposal_supporters(proposal_id: nat64) → Vec<SupportRecord>
 has_voted(proposal_id: nat64, voter: Principal) → bool
-get_governance_config() → (nat64, nat64, nat64, nat64)
+get_governance_config() → (nat64, nat64, nat64, nat64, nat64)
+// Returns: (min_vp_to_propose, approval_threshold, support_period_days, voting_period_days, resubmission_cooldown_days)
 ```
 
 ---
@@ -518,6 +525,7 @@ get_governance_config() → (nat64, nat64, nat64, nat64)
                           │                    │  support_proposal()    │
                           │                    │  - 15,000 VP needed    │
                           │                    │  - 2+ supporters       │
+                          │                    │  - 7 day period        │
                           │                    └────────────┬───────────┘
                           │                                 │
                           │                        Threshold Met?

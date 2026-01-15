@@ -1,6 +1,6 @@
 # 🧪 Complete System Testing Guide
 
-> **Last Updated:** December 2024
+> **Last Updated:** January 2026
 
 This guide explains how to test the GHC staking system (simplified model without interest/penalties).
 
