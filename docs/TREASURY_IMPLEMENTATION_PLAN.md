@@ -2,9 +2,20 @@
 
 ## Executive Summary
 
-This document outlines the implementation plan for the new GHC tokenomics with Treasury functionality integrated into the **`operational_governance`** canister. The Treasury manages Market Coins (MCs) with a sophisticated **Balance vs. Allowance** mechanism.
+This document outlines the implementation plan for the new GHC tokenomics with Treasury functionality. The Treasury manages Market Coins (MCs) with a sophisticated **Balance vs. Allowance** mechanism.
 
-**Key Decision**: We will use the existing `operational_governance` canister as the Treasury rather than creating a separate canister. This is more efficient since it already holds tokens and manages proposals.
+> **⚠️ ARCHITECTURE UPDATE (January 2026)**
+>
+> This document was originally written with the assumption that treasury functionality would be integrated into a single `operational_governance` canister. The system has since been **refactored** to use two separate canisters:
+>
+> - **`treasury_canister`**: Holds the 4.25B MC balance, manages allowance, executes MMCR, processes transfers
+> - **`governance_canister`**: Manages proposals, voting, board members, and content governance
+>
+> Where this document references `operational_governance`, it should be interpreted as follows:
+> - **Treasury state, MMCR, get_spendable_balance** → `treasury_canister`
+> - **Proposals, voting, execute_proposal** → `governance_canister` (which calls `treasury_canister` for transfers)
+>
+> The core tokenomics and mechanisms described remain accurate.
 
 ---
 
@@ -96,6 +107,7 @@ This document outlines the implementation plan for the new GHC tokenomics with T
 │   • Allowance += MMCR_Amount (15.2M monthly, except final month)            │
 │   • Balance: UNCHANGED (funds unlocked, not moved)                          │
 │   • Executes: 1st of each month at 12:00 AM Eastern Time                    │
+│   • Handles EST (UTC-5) and EDT (UTC-4) transitions automatically           │
 │                                                                             │
 │   APPROVED TRANSFER/SPENDING                                                │
 │   ───────────────────────────                                               │

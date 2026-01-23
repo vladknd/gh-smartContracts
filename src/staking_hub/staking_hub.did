@@ -9,6 +9,7 @@ type InitArgs = record {
     ledger_id : principal;
     learning_content_id : principal;
     user_profile_wasm : vec nat8;
+    archive_canister_wasm : opt vec nat8;
 };
 
 // Global statistics (simplified - no interest/tier tracking)
@@ -30,12 +31,33 @@ type ShardInfo = record {
     created_at : nat64;
     user_count : nat64;
     status : ShardStatus;
+    archive_canister_id : opt principal;
 };
 
 // Board member share entry
 type BoardMemberShare = record {
     member : principal;
     percentage : nat8;
+};
+
+// Cached quiz config for distribution to shards
+type CachedQuizConfig = record {
+    reward_amount : nat64;
+    pass_threshold_percent : nat8;
+    max_daily_attempts : nat8;
+    max_daily_quizzes : nat8;
+    max_weekly_quizzes : nat8;
+    max_monthly_quizzes : nat8;
+    max_yearly_quizzes : nat16;
+    version : nat64;
+};
+
+// Quiz cache data for distribution
+type QuizCacheData = record {
+    content_id : text;
+    answer_hashes : vec blob;
+    question_count : nat8;
+    version : nat64;
 };
 
 service : (InitArgs) -> {
@@ -53,6 +75,7 @@ service : (InitArgs) -> {
     "get_shard_for_new_user": () -> (opt principal) query;
     "is_registered_shard": (principal) -> (bool) query;
     "get_shard_count": () -> (nat64) query;
+    "get_archive_for_shard": (principal) -> (opt principal) query;
     
     // =========================================================================
     // Shard Operations (Called ONLY by registered shards)
@@ -73,6 +96,16 @@ service : (InitArgs) -> {
     // Admin Operations
     // =========================================================================
     "add_allowed_minter": (principal) -> ();
+    
+    // =========================================================================
+    // Quiz Cache & Config Distribution (called by learning_engine)
+    // =========================================================================
+    
+    // Distribute quiz cache data to all shards
+    "distribute_quiz_cache": (text, QuizCacheData) -> (variant { Ok: nat64; Err: text });
+    
+    // Distribute quiz config update to all shards
+    "distribute_quiz_config": (CachedQuizConfig) -> (variant { Ok: nat64; Err: text });
     
     // =========================================================================
     // Query Functions

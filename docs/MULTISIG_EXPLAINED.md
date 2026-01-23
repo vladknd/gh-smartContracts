@@ -2,6 +2,14 @@
 
 This document explains how multi-signature (multi-sig) works in the context of Internet Computer canisters and your GreenHero dApp.
 
+> **⚠️ ARCHITECTURE UPDATE (January 2026)**
+>
+> This document references `operational_governance` which has been refactored into:
+> - **`treasury_canister`**: Token custody*, multi-sig for treasury transfers
+> - **`governance_canister`**: Proposals, voting, board member management
+>
+> Multi-sig implementation will be added to `treasury_canister` for treasury transfers.
+
 ---
 
 ## 🔑 Understanding Principals and Wallets

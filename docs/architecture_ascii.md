@@ -10,6 +10,7 @@ This document provides a comprehensive visual representation of how all canister
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                           GHC SYSTEM ARCHITECTURE                                                │
 │                                              (January 2026)                                                      │
+│                                      *** REFACTORED: Separate Treasury & Governance ***                         │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
                                     ┌─────────────────────────────────────┐
@@ -20,48 +21,47 @@ This document provides a comprehensive visual representation of how all canister
                                                        ▼
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                              USER / FRONTEND                                                      │
-└───────┬───────────────────────────────────────────┬─────────────────────────────────────────────────┬────────────┘
-        │                                           │                                                 │
-        │ proposals, votes                          │ register, quiz, unstake                         │ claim tokens
-        ▼                                           ▼                                                 ▼
-┌───────────────────────────┐    ┌──────────────────────────────────────┐    ┌───────────────────────────────────┐
-│  OPERATIONAL_GOVERNANCE   │    │           USER_PROFILE               │    │        FOUNDER_VESTING            │
-│   (Treasury + Board)      │    │      (Sharded User Accounts)         │    │     (Time-Locked Tokens)          │
-├───────────────────────────┤    ├──────────────────────────────────────┤    ├───────────────────────────────────┤
-│ [STORES]                  │    │ [STORES]                             │    │ [STORES]                          │
-│ • Board Member Shares     │    │ • User profiles (email, name)        │    │ • Founder 1: 0.35B MC             │
-│ • Proposals + Votes       │    │ • staked_balance (virtual)           │    │ • Founder 2: 0.15B MC             │
-│ • Treasury State (4.25B)  │    │ • Completed quizzes                  │    │ • Vesting timestamps              │
-│                           │    │ • Transaction history                │    │                                   │
-│ [ACTIONS]                 │    │                                      │    │ [ACTIONS]                         │
-│ • create_treasury_        │    │ [ACTIONS]                            │    │ • claim_vested()                  │
-│   proposal()              │    │ • register_user()                    │    │ • get_vesting_status()            │
-│ • create_board_member_    │    │ • submit_quiz()                      │    │                                   │
-│   proposal()              │    │ • unstake()                          │    └─────────────┬─────────────────────┘
-│ • vote()                  │    │                                      │                  │
-│ • set_board_member_       │    └───────┬───────────────────────────┬──┘                  │
-│   shares()                │            │      │                    │                     │
-└───────────┬───────────────┘            │      │                    │                     │claim_vested()
-            │                            │      │ verify_quiz()      │                     │
-            │ get_vuc()                  │      │                    │                     │
-            │ fetch_user_voting_power()  │      │                    │                     │
-            │                            │      │                    │                     │
-            │                            │      │                    │ transfer tokens()   │
-            │                            │      │                    │                     │
-            │     ┌──────────────────────┘      │                    │                     │
-            |     |                             │                    │                     │
-            |     │ sync_shard()                │                    │                     │
-            |     │ process_unstake()           │                    │                     │
-            |     │                             │                    │                     │
-            |     │                             │                    │                     │
-            ▼     ▼                             ▼                    ▼                     ▼
+└───────┬─────────────────────────┬─────────────────────────────┬─────────────────────────────────┬────────────────┘
+        │                         │                             │                                 │
+        │ proposals, votes        │ treasury state, MMCR        │ register, quiz, unstake         │ claim tokens
+        ▼                         ▼                             ▼                                 ▼
+┌────────────────────────┐ ┌────────────────────────┐  ┌──────────────────────────────┐  ┌───────────────────────────┐
+│  GOVERNANCE_CANISTER   │ │   TREASURY_CANISTER    │  │        USER_PROFILE          │  │    FOUNDER_VESTING        │
+│  (Proposals & Voting)  │ │   (Token Custody)      │  │   (Sharded User Accounts)    │  │   (Time-Locked Tokens)    │
+├────────────────────────┤ ├────────────────────────┤  ├──────────────────────────────┤  ├───────────────────────────┤
+│ [STORES]               │ │ [STORES]               │  │ [STORES]                     │  │ [STORES]                  │
+│ • Board Member Shares  │ │ • Treasury Balance     │  │ • User profiles              │  │ • Founder 1: 0.35B MC     │
+│ • Proposals + Votes    │ │   (4.25B MC)           │  │ • staked_balance (virtual)   │  │ • Founder 2: 0.15B MC     │
+│ • Support Records      │ │ • Allowance (spendable)│  │ • Completed quizzes          │  │ • Vesting timestamps      │
+│                        │ │ • MMCR state           │  │ • Transaction history        │  │                           │
+│ [ACTIONS]              │ │                        │  │                              │  │ [ACTIONS]                 │
+│ • create_treasury_     │ │ [ACTIONS]              │  │ [ACTIONS]                    │  │ • claim_vested()          │
+│   proposal()           │ │ • execute_transfer()   │  │ • register_user()            │  │ • get_vesting_status()    │
+│ • create_board_member_ │ │   (governance only!)   │  │ • submit_quiz()              │  │                           │
+│   proposal()           │ │ • execute_mmcr()       │  │ • unstake()                  │  └─────────────┬─────────────┘
+│ • vote()               │ │ • get_treasury_state() │  │                              │                │
+│ • execute_proposal() ──┼─┼▶                       │  └───────┬───────────────────┬──┘                │
+│                        │ └────────────┬───────────┘          │      │            │                   │
+│ • set_board_member_    │              │                      │      │            │                   │claim_vested()
+│   shares()             │              │                      │      │            │                   │
+└───────────┬────────────┘              │                      │      │            │                   │
+            │                           │ icrc1_transfer()     │      │            │                   │
+            │ get_vuc()                 │                      │      │            │                   │
+            │ fetch_user_voting_power() │                      │      │verify_quiz │transfer tokens()  │
+            │                           │                      │      │            │                   │
+            │     ┌─────────────────────┼──────────────────────┘      │            │                   │
+            |     │                     │                             │            │                   │
+            |     │ sync_shard()        │      ┌──────────────────────┘            │                   │
+            |     │ process_unstake()   │      │                                   │                   │
+            |     │                     │      │                                   │                   │
+            ▼     ▼                     ▼      ▼                                   ▼                   ▼
 ┌───────────────────────┐    ┌────────────────────┐    ┌─────────────────────────────────────────────────────────┐
 │     STAKING_HUB       │    │  LEARNING_ENGINE   │    │                       GHC_LEDGER                        │
 │   (Central Bank)      │    │ (Stateless Content)│    │                      (ICRC-1/2)                         │
 ├───────────────────────┤    ├────────────────────┤    ├─────────────────────────────────────────────────────────┤
 │ [STORES]              │    │ [STORES]           │    │ [TOKEN BALANCES]                                        │
 │ • Global Stats        │    │ • Learning Units   │    │  ┌───────────────┐ ┌────────────────┐ ┌───────────────┐ │
-│ • MAX_SUPPLY (4.75B)  │    │ • Quizzes + Answers│    │  │staking_hub    │ │operational_gov │ │founder_vesting│ │
+│ • MAX_SUPPLY (4.75B)  │    │ • Quizzes + Answers│    │  │staking_hub    │ │treasury_canister│ │founder_vesting│ │
 │ • Registered Shards   │    │                    │    │  │   4.75B MUC   │ │   4.25B MC     │ │   0.5B MC     │ │
 │ • User→Shard mapping  │    │ [QUERIES]          │    │  └───────────────┘ └────────────────┘ └───────────────┘ │
 │                       │    │ • get_learning_    │    │                                                         │
@@ -76,18 +76,29 @@ This document provides a comprehensive visual representation of how all canister
 │ • process_unstake()   │                              └─────────────────────────────────────────────────────────┘
 └───────────────────────┘
 
-                        ┌────────────────────────────────┐
-                        │      CONTENT_GOVERNANCE        │
-                        │    (Content Management)        │
-                        ├────────────────────────────────┤
-                        │ [STORES]                       │
-                        │ • Book proposals               │
-                        │ • Approved content             │
-                        │                                │
-                        │ [FUTURE]                       │
-                        │ • Content voting               │
-                        │ • Moderation                   │
-                        └────────────────────────────────┘
+                        ┌────────────────────────────────────────────────────────────────────────┐
+                        │                      CONTENT GOVERNANCE (REFACTORED)                    │
+                        ├────────────────────────────────────────────────────────────────────────┤
+                        │                                                                         │
+                        │  ┌─────────────────┐   ┌──────────────────┐   ┌──────────────────────┐│
+                        │  │  MEDIA_ASSETS   │   │  STAGING_ASSETS  │   │  GOVERNANCE_CANISTER ││
+                        │  │   (Permanent)   │   │   (Temporary)    │   │  (Content Proposals) ││
+                        │  ├─────────────────┤   ├──────────────────┤   ├──────────────────────┤│
+                        │  │ • Videos/Audio  │   │ • Content awaiting│──▶│ AddContentFromStaging││
+                        │  │ • Images/PDFs   │   │   approval       │   │ UpdateContentNode    ││
+                        │  │ • Immutable     │   │ • Metadata chunks │   │ UpdateGlobalQuizConfig│
+                        │  │ • Deduplicated  │   │                  │   │ DeleteContentNode    ││
+                        │  └─────────────────┘   └──────────────────┘   └──────────────────────┘│
+                        │                                   │                      │            │
+                        │                                   │   execute_proposal() │            │
+                        │                                   ▼                      ▼            │
+                        │                        ┌─────────────────────────────────────────┐    │
+                        │                        │            LEARNING_ENGINE             │    │
+                        │                        │         (ContentNode Tree)             │    │
+                        │                        │  • Quiz Index • Version History       │    │
+                        │                        └─────────────────────────────────────────┘    │
+                        │                                                                         │
+                        └────────────────────────────────────────────────────────────────────────┘
 
 ---
 
@@ -102,10 +113,14 @@ USER
   │                  │
   │                  ▼
   │    ┌──────────────────────────────────────┐
-  │    │       OPERATIONAL_GOVERNANCE          │
+  │    │       GOVERNANCE_CANISTER             │
   │    │                                       │
   │    │  2. Check: is_board_member_local()   │
   │    │  3. Query voting power ──────────────┼───────┐
+  │    │                                       │       │
+  │    │  4. (For treasury proposals)          │       │
+  │    │     Check allowance ─────────────────┼───────┼───▶ TREASURY_CANISTER
+  │    │                                       │       │       (can_transfer)
   │    └──────────────────────────────────────┘       │
   │                                                   │
   │                                                   ▼
@@ -113,47 +128,53 @@ USER
   │                                      │      STAKING_HUB       │
   │                                      │                        │
   │                                      │ If board member:       │
-  │                                      │   4a. get_vuc()        │
+  │                                      │   5a. get_vuc()        │
   │                                      │ Else:                  │
-  │                                      │   4b. fetch_user_      │
+  │                                      │   5b. fetch_user_      │
   │                                      │       voting_power()   │
   │                                      │                        │
-  │                                      │ 5. Return voting power │
+  │                                      │ 6. Return voting power │
   │                                      └────────────────────────┘
   │
-  ├──6. vote(proposal_id, approve) or support_proposal(proposal_id)
+  ├──7. vote(proposal_id, approve) or support_proposal(proposal_id)
   │                  │
   │                  ▼
   │    ┌──────────────────────────────────────┐
-  │    │       OPERATIONAL_GOVERNANCE          │
+  │    │       GOVERNANCE_CANISTER             │
   │    │                                       │
-  │    │  7. Record vote/support              │
-  │    │  8. Query voting power ──────────────┼───────▶ STAKING_HUB
-  │    │  9. Update proposal state            │
+  │    │  8. Record vote/support              │
+  │    │  9. Query voting power ──────────────┼───────▶ STAKING_HUB
+  │    │ 10. Update proposal state            │
   │    └──────────────────────────────────────┘
 ```
 
-### 2. Proposal Execution
+### 2. Proposal Execution (NEW: Inter-canister flow)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                         PROPOSAL EXECUTION FLOW                               │
+│                    *** NEW: Separate Treasury & Governance ***               │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 TREASURY PROPOSAL:
                     ┌─────────────────────────────────┐
-execute_proposal()──▶│   OPERATIONAL_GOVERNANCE        │
+execute_proposal()──▶│     GOVERNANCE_CANISTER         │
                     │                                 │
                     │ 1. Verify status == Approved    │
-                    │ 2. Check treasury allowance     │
-                    │ 3. Execute transfer ────────────┼──────▶ GHC_LEDGER
-                    │ 4. Update treasury state        │◀────── (transfer success)
-                    │ 5. Set status = Executed        │
+                    │ 2. Prepare transfer input       │
+                    │ 3. Call treasury canister ──────┼──────▶ TREASURY_CANISTER
+                    │                                 │         │
+                    │                                 │         │ 4. Check caller == governance
+                    │                                 │         │ 5. Check allowance
+                    │                                 │         │ 6. Execute transfer ──▶ GHC_LEDGER
+                    │                                 │         │ 7. Update treasury state
+                    │                                 │◀────────┘ 8. Return success
+                    │ 9. Set status = Executed        │
                     └─────────────────────────────────┘
 
 BOARD MEMBER PROPOSAL:
                     ┌─────────────────────────────────┐
-execute_proposal()──▶│   OPERATIONAL_GOVERNANCE        │
+execute_proposal()──▶│     GOVERNANCE_CANISTER         │
                     │                                 │
                     │ 1. Verify status == Approved    │
                     │ 2. Calculate new shares         │
@@ -224,8 +245,11 @@ USER
 │           └───────────────────────────────────────────────▶ USER_PROFILE shards          │
 │                           virtual minting                    (staked_balance)            │
 │                                                                                          │
-│  OPERATIONAL_GOVERNANCE (4.25B MC) ──────────────────────▶ RECIPIENT WALLETS            │
-│                              treasury spending proposals                                 │
+│  TREASURY_CANISTER (4.25B MC) ────────────────────────────▶ RECIPIENT WALLETS           │
+│           ▲                      treasury spending proposals                             │
+│           │                                                                              │
+│  GOVERNANCE_CANISTER ─────────────────────────────────────▶ (calls execute_transfer)    │
+│                              approved proposals trigger                                  │
 │                                                                                          │
 │  FOUNDER_VESTING (0.5B MC) ──────────────────────────────▶ FOUNDER WALLETS              │
 │                              claim_vested() over 10 years                               │
@@ -241,6 +265,7 @@ USER
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                              CANISTER DEPENDENCY GRAPH                                   │
 │                            (arrows show "depends on")                                    │
+│                       *** UPDATED for new architecture ***                              │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                          │
 │                           ┌─────────────────────────────┐                               │
@@ -250,21 +275,30 @@ USER
 │                                            │                                            │
 │         ┌──────────────────────────────────┼──────────────────────────────────┐         │
 │         │                                  │                                  │         │
-│ ┌───────┴───────┐               ┌──────────┴──────────┐            ┌─────────┴───────┐ │
-│ │ STAKING_HUB   │               │  OPERATIONAL_GOV    │            │ FOUNDER_VESTING │ │
-│ │ depends on:   │               │  depends on:        │            │ depends on:     │ │
-│ │  • ledger     │               │   • ledger          │            │  • ledger       │ │
-│ └───────▲───────┘               │   • staking_hub     │◀───────────┴─────────────────┘ │
-│         │                       └─────────────────────┘                                 │
-│         │                                                                               │
-│ ┌───────┴───────┐               ┌─────────────────────┐                                │
+│ ┌───────┴───────┐            ┌─────────────┴──────────────┐         ┌─────────┴───────┐ │
+│ │ STAKING_HUB   │            │   TREASURY_CANISTER        │         │ FOUNDER_VESTING │ │
+│ │ depends on:   │            │   depends on:              │         │ depends on:     │ │
+│ │  • ledger     │            │    • ledger                │         │  • ledger       │ │
+│ └───────▲───────┘            └─────────────▲──────────────┘         └─────────────────┘ │
+│         │                                  │                                            │
+│         │                    ┌─────────────┴──────────────┐                             │
+│         │                    │   GOVERNANCE_CANISTER      │                             │
+│         │                    │   depends on:              │                             │
+│         └────────────────────┤    • staking_hub           │                             │
+│                              │    • treasury_canister     │                             │
+│                              └─────────────────────────────┘                             │
+│                                                                                          │
+│ ┌───────────────┐               ┌─────────────────────┐                                │
 │ │ USER_PROFILE  │               │   LEARNING_ENGINE   │                                │
 │ │ depends on:   │───────────────▶│   (no dependencies) │                                │
 │ │  • staking_hub│               └─────────────────────┘                                │
 │ │  • learning   │                                                                       │
 │ └───────────────┘                                                                       │
 │                                                                                          │
-│ KEY: operational_governance → staking_hub (one-way only, no circular dependency!)       │
+│ KEY INSIGHT:                                                                            │
+│  • governance_canister → treasury_canister (one-way only)                               │
+│  • treasury_canister verifies caller == governance_canister (security!)                 │
+│  • No circular dependencies in the entire system                                        │
 │                                                                                          │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -275,17 +309,21 @@ USER
 
 | Canister | Memory ID | Purpose |
 |----------|-----------|---------|
-| **operational_governance** | 0 | LEDGER_ID |
-| | 1 | STAKING_HUB_ID |
+| **treasury_canister** | 0 | LEDGER_ID |
+| | 1 | GOVERNANCE_CANISTER_ID |
+| | 2 | TREASURY_STATE |
+| **governance_canister** | 0 | STAKING_HUB_ID |
+| | 1 | TREASURY_CANISTER_ID |
 | | 2 | PROPOSALS |
 | | 3 | PROPOSAL_COUNT |
 | | 4 | VOTE_RECORDS |
 | | 5 | SUPPORT_RECORDS |
-| | 6 | TREASURY_STATE |
-| | 7 | BOARD_MEMBER_SHARES |
-| | 8 | BOARD_SHARES_LOCKED |
+| | 6 | BOARD_MEMBER_SHARES |
+| | 7 | BOARD_SHARES_LOCKED |
 | **staking_hub** | 0-9 | Various storage |
 | | 10, 11, 12 | Reserved (previously board member storage) |
+
+> **Note**: The old `operational_governance` canister is deprecated. Its memory layout is preserved for reference but new deployments should use the separated canisters.
 
 ---
 
@@ -294,4 +332,4 @@ USER
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - High-level architecture overview
 - [BOARD_MEMBER_VOTING_POWER.md](./BOARD_MEMBER_VOTING_POWER.md) - Board member voting power system
 - [PROPOSAL_VOTING_FLOW.md](./PROPOSAL_VOTING_FLOW.md) - Proposal lifecycle details
-- [FRONTEND_INTEGRATION.md](./FRONTEND_INTEGRATION.md) - Frontend API integration guide
+- [FRONTEND_INTEGRATION.md](./FRONTEND_INTEGRATION.md) - Frontend API integration guide (includes migration guide)

@@ -1,8 +1,14 @@
 # Governance Implementation Plan
 
-> **Last Updated:** December 2024  
+> **Last Updated:** January 2026  
 > **Status:** ✅ **IMPLEMENTED**  
-> **Version:** 2.0
+> **Version:** 3.0
+
+> **⚠️ ARCHITECTURE UPDATE (January 2026)**
+>
+> This document references `operational_governance` which has been refactored into:
+> - **`treasury_canister`**: Token custody (4.25B MC), MMCR, transfer execution
+> - **`governance_canister`**: Proposals, voting, board member management, content governance
 
 ---
 
@@ -12,23 +18,23 @@
 |-----------|--------|-------|
 | **Staking Hub - Voting Power Oracle** | ✅ Implemented | VUC calculation, user registry, fetch_voting_power |
 | **Staking Hub - Founder Management** | ✅ Implemented | Dynamic add_founder/remove_founder |
-| **Operational Governance - Proposals** | ✅ Implemented | Treasury proposals with voting |
-| **Operational Governance - Voting** | ✅ Implemented | Vote with staked tokens or VUC |
-| **Operational Governance - Treasury** | ✅ Implemented | 4.25B MC with MMCR |
+| **Governance Canister - Proposals** | ✅ Implemented | Treasury proposals with voting |
+| **Governance Canister - Voting** | ✅ Implemented | Vote with staked tokens or VUC |
+| **Treasury Canister** | ✅ Implemented | 4.25B MC with MMCR |
 | **User Profile - User Registry** | ✅ Implemented | register_user_location on registration |
-| **Content Governance** | ⏳ Pending | Not yet fully implemented |
+| **Content Governance** | ✅ Implemented | Integrated into governance_canister |
 | **Snapshot Voting** | ⏳ Pending | Current implementation uses real-time balances |
 
 ### Implemented Parameters
 
 | Parameter | Value | Where |
 |-----------|-------|-------|
-| Min voting power to propose | 150 tokens | operational_governance |
-| Approval threshold | 15,000 YES votes | operational_governance |
-| Voting period | 14 days | operational_governance |
-| Resubmission cooldown | 6 months | operational_governance |
-| MMCR monthly release | 15.2M MC | operational_governance |
-| Treasury initial allowance | 0.6B MC | operational_governance |
+| Min voting power to propose | 150 tokens | governance_canister |
+| Approval threshold | 15,000 YES votes | governance_canister |
+| Voting period | 14 days | governance_canister |
+| Resubmission cooldown | 6 months | governance_canister |
+| MMCR monthly release | 15.2M MC | treasury_canister |
+| Treasury initial allowance | 0.6B MC | treasury_canister |
 
 ---
 
@@ -794,48 +800,57 @@ Add:
 └── get_voting_power_at_timestamp(user, ts) -> historical balance
 ```
 
-### Phase 3: Operational Governance (Week 2-3)
+### Phase 3: Governance & Treasury Canisters (Week 2-3) ✅ IMPLEMENTED
 
-**Files to create:** `src/operational_governance/`
+> **Note**: This phase was implemented with a split architecture:
+> - `governance_canister` for proposals, voting, and board member management
+> - `treasury_canister` for token custody and MMCR
+
+**Files created:** `src/governance_canister/` and `src/treasury_canister/`
 
 ```
-Create:
+governance_canister:
 ├── Cargo.toml
 ├── src/lib.rs
-│   ├── Proposal storage with snapshots
-│   ├── Voting logic with snapshot verification
-│   ├── Quorum checking
+│   ├── Proposal storage and voting
+│   ├── Board member management
+│   ├── Content governance proposals
 │   ├── Time-locked execution
-│   ├── Treasury transfer integration
-│   └── Monthly spending limit enforcement
-└── operational_governance.did
-```
+│   └── Calls treasury_canister for transfers
+└── governance_canister.did
 
-### Phase 4: Content Governance (Week 3)
-
-**Files to create:** `src/content_governance/`
-
-```
-Create:
-├── Cargo.toml  
+treasury_canister:
+├── Cargo.toml
 ├── src/lib.rs
-│   ├── Same voting mechanics as operational
-│   ├── Content-specific proposal types
-│   ├── Learning engine integration
-│   └── Moderator management
-└── content_governance.did
+│   ├── Treasury state (balance/allowance)
+│   ├── MMCR execution
+│   ├── Transfer execution
+│   └── Only accepts calls from governance_canister
+└── treasury_canister.did
 ```
 
-### Phase 5: Learning Engine Integration (Week 4)
+### Phase 4: Content Governance ✅ IMPLEMENTED (Integrated)
 
-**Files to modify:** `src/learning_engine/src/lib.rs`
+> **Note**: Content governance is now integrated into `governance_canister` with support from `media_assets` and `staging_assets` canisters.
+
+**Implementation:**
+- Content proposal types in `governance_canister` (AddContentFromStaging, UpdateContentNode, etc.)
+- `staging_assets` for temporary content storage
+- `media_assets` for permanent media storage
+- `learning_engine` for ContentNode tree structure
+
+### Phase 5: Learning Engine Integration (Week 4) ✅ IMPLEMENTED
+
+**Files modified:** `src/learning_engine/src/lib.rs`
 
 ```
-Add:
-├── Set content_governance as authorized caller
-├── governance_add_unit() - called by governance only
-├── governance_remove_unit() - called by governance only
-└── moderator_add_unit() - called by approved moderators
+Added:
+├── Set governance_canister as authorized caller
+├── ContentNode tree structure with version history
+├── Quiz index for O(1) lookups
+├── Global quiz configuration
+├── start_content_load() - triggered by governance
+└── Resilient batch loading from staging_assets
 ```
 
 ### Phase 6: Testing & Deployment (Week 4-5)

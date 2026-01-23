@@ -1,41 +1,46 @@
-type InitArgs = record {
-  learning_content_id : principal;
-  staking_hub_id : principal;
+type FileMetadata = record {
+  hash : text;
+  media_type : MediaType;
+  size : nat64;
+  content_type : text;
+  filename : text;
+  chunk_count : nat32;
+  uploader : principal;
+  uploaded_at : nat64;
 };
-type TransactionRecord = record {
-  timestamp : nat64;
-  tx_type : TransactionType;
-  amount : nat64;
-};
-type TransactionType = variant { Unstake; QuizReward };
-type UserDailyStats = record {
-  quizzes_taken : nat8;
-  tokens_earned : nat64;
-  day_index : nat64;
-};
-type UserProfile = record {
-  name : text;
-  education : text;
-  email : text;
-  staked_balance : nat64;
-  gender : text;
-  transaction_count : nat64;
-};
-type UserProfileUpdate = record {
-  name : text;
-  education : text;
-  email : text;
-  gender : text;
+type InitArgs = record { allowed_uploaders : vec principal };
+type MediaType = variant { PDF; Image; Audio; Other; Video };
+type UploadSession = record {
+  uploaded_size : nat64;
+  session_id : text;
+  chunks_received : vec nat32;
+  media_type : MediaType;
+  content_type : text;
+  expected_size : nat64;
+  filename : text;
+  uploader : principal;
+  started_at : nat64;
 };
 service : {
-  debug_force_sync : () -> (variant { Ok; Err : text });
-  get_profile : (principal) -> (opt UserProfile) query;
-  get_user_count : () -> (nat64) query;
-  get_user_daily_status : (principal) -> (UserDailyStats) query;
-  get_user_transactions : (principal) -> (vec TransactionRecord) query;
-  is_quiz_completed : (principal, text) -> (bool) query;
-  register_user : (UserProfileUpdate) -> (variant { Ok; Err : text });
-  submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
-  unstake : (nat64) -> (variant { Ok : nat64; Err : text });
-  update_profile : (UserProfileUpdate) -> (variant { Ok; Err : text });
+  add_allowed_uploader : (principal) -> (variant { Ok; Err : text });
+  cancel_upload : (text) -> (variant { Ok; Err : text });
+  file_exists : (text) -> (bool) query;
+  finalize_upload : (text) -> (variant { Ok : text; Err : text });
+  get_allowed_uploaders : () -> (vec principal) query;
+  get_file : (text) -> (variant { Ok : blob; Err : text }) query;
+  get_file_chunk : (text, nat32) -> (opt blob) query;
+  get_file_count : () -> (nat64) query;
+  get_file_metadata : (text) -> (opt FileMetadata) query;
+  get_file_url : (text) -> (variant { Ok : text; Err : text }) query;
+  get_total_storage : () -> (nat64) query;
+  get_upload_session : (text) -> (opt UploadSession) query;
+  list_files : (nat64, nat64) -> (vec FileMetadata) query;
+  remove_allowed_uploader : (principal) -> (variant { Ok; Err : text });
+  start_upload : (text, text, MediaType, nat64) -> (
+      variant { Ok : text; Err : text },
+    );
+  upload_chunk : (text, nat32, blob) -> (variant { Ok; Err : text });
+  upload_file : (text, text, MediaType, blob) -> (
+      variant { Ok : text; Err : text },
+    );
 }

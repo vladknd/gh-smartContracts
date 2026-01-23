@@ -1,7 +1,15 @@
 # DEX Integration Guide
 
-> **Last Updated:** December 2024  
+> **Last Updated:** January 2026  
 > **Purpose:** How to add/remove DEX liquidity through governance
+
+> **⚠️ ARCHITECTURE UPDATE (January 2026)**
+>
+> This document references `operational_governance` which has been refactored into:
+> - **`treasury_canister`**: Token custody, transfers, MMCR
+> - **`governance_canister`**: Proposals, voting, DEX liquidity proposals
+>
+> For DEX operations: governance proposals go to `governance_canister`, which calls `treasury_canister` for token approvals and transfers.
 
 ---
 

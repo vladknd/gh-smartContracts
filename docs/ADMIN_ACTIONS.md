@@ -1,181 +1,115 @@
-# Admin Actions Guide
+# Admin Actions & Initial Setup
 
-This guide details administrative actions available to controllers for managing the GreenHero ecosystem.
+This guide details administrative actions available to canister controllers (admins). These actions are primarily used for system initialization, emergency maintenance, and testing.
+
+## ⚠️ Important Note
+Most actions listed here are **Controller Only** actions. This means they must be executed by the identity that controls the canisters (usually the identity that deployed them).
+
+Once the system is fully initialized and locked, day-to-day management moves to the **Governance Proposal System**.
 
 ---
 
-## 👥 Board Member Management
+## 1. Board Member Initialization
 
-Board members exercise VUC (Volume of Unmined Coins) voting power for governance decisions. Each board member has a percentage share of the total VUC.
+**Goal**: Assign the initial board members (e.g., the first 3 founders) and then LOCK the configuration.
+**Critical**: After locking, board members can **only** be added or removed via `AddBoardMember` governance proposals. This ensures decentralization.
 
-> **Note**: Board members are separate from founders. Founders receive token vesting through `founder_vesting`. Board members exercise voting power and are managed through `operational_governance`.
+### Step 1: Assign Initial Board Members
+Use `set_board_member_shares` on the `governance_canister`.
 
-### Set Board Member Shares
+**Rules:**
+- Total percentage sum MUST equal exactly `100`.
+- All percentages must be integers (`1` to `100`).
 
-Sets all board members atomically. Percentages must sum to exactly 100%.
-
+**Command (Bash):**
 ```bash
-# Set board members with their voting power percentages
-dfx canister call operational_governance set_board_member_shares '(vec { 
-  record { member = principal "brcis-myp3t-sgc2i-7fzce-onoy6-4cknk-o7zrq-rp2yj-r3adh-wwjm5-2ae"; percentage = 60 : nat8 };
-  record { member = principal "cjd7b-pozyi-lvcpt-i2dnz-7ubh5-v5xgm-imvzz-46ecb-2ytr4-ypfor-yqe"; percentage = 30 : nat8 };
-  record { member = principal "bqnyh-6ivts-3zmpt-ykoof-ggqza-2jgjp-wri4l-nxhn6-iv4ni-owd53-iae"; percentage = 10 : nat8 };
-})'
+# Example: 3 Founders
+# Founder 1: 50%
+# Founder 2: 30%
+# Founder 3: 20%
+
+FOUNDER1="5y7pt-llxsr-oprwi-lmraj-mdeso-g2b36-hgci4-cu3nc-ameyz-6gtee-mae"
+FOUNDER2="gnuto-ixx4d-oloia-qf27q-izbjr-lnypz-u4tr3-henbi-xvpoi-wnkvh-2qe"
+FOUNDER3="4foj6-fafq5-4vlch-lkieu-pybyg-ve4ba-bfhdw-rkklx-6n2gb-epjv3-4qe"
+
+dfx canister call governance_canister set_board_member_shares "(vec {
+  record { member = principal \"$FOUNDER1\"; percentage = 60 };
+  record { member = principal \"$FOUNDER2\"; percentage = 30 };
+  record { member = principal \"$FOUNDER3\"; percentage = 10 };
+})"
 ```
 
-### Query Board Members
+### Step 2: Verify Configuration
+Check that the shares are set correctly.
 
 ```bash
-# Get all board members with their percentages
-dfx canister call operational_governance get_board_member_shares
-
-# Check if someone is a board member
-dfx canister call operational_governance is_board_member '(principal "PRINCIPAL_ID")'
-
-# Get specific member's percentage
-dfx canister call operational_governance get_board_member_share '(principal "PRINCIPAL_ID")'
-
-# Get count of board members
-dfx canister call operational_governance get_board_member_count
+dfx canister call governance_canister get_board_member_shares
 ```
 
-### Lock Board Member Shares
+### Step 3: Lock Board Configuration
+Once the initial board is verified, you **MUST** lock it to transfer control to the governance protocol.
 
-⚠️ **WARNING**: After locking, use governance proposals to add new board members!
-
-Once locked, shares can only be changed via `AddBoardMember` governance proposals.
-
+**Command:**
 ```bash
-# Check if already locked
-dfx canister call operational_governance are_board_shares_locked
-
-# Lock shares (use governance proposals after this)
-dfx canister call operational_governance lock_board_member_shares
+dfx canister call governance_canister lock_board_member_shares
 ```
 
-### Add Board Member via Governance (After Lock)
-
+**Verify Lock Status:**
 ```bash
-# Create a proposal to add a new board member
-dfx canister call operational_governance create_board_member_proposal '(record {
-  title = "Add New Board Member";
-  description = "Proposing to add Alice with 15% share";
-  new_member = principal "NEW_MEMBER_PRINCIPAL";
-  percentage = 15 : nat8;
-  external_link = null
-})'
+dfx canister call governance_canister are_board_shares_locked
+# Output should be: (true)
 ```
 
 ---
 
-## 💰 Founder Vesting
+## 2. Testing & Debugging (Admin Only)
 
-Founders receive token allocations through a separate vesting system.
+These commands are strictly for testing and debugging purposes. They allow skipping voting delays.
 
-### Check Founder Vesting Status
+### Force Proposal Status
+Useful for testing execution logic without waiting 2 weeks for voting.
 
 ```bash
-# View all founders' vesting schedules
-dfx canister call founder_vesting get_all_vesting_schedules
+# Force Approve Proposal ID 1
+dfx canister call governance_canister admin_set_proposal_status '(1 : nat64, variant { Approved })'
 
-# Check specific founder's status
-dfx canister call founder_vesting get_vesting_status '(principal "FOUNDER_PRINCIPAL_ID")'
+# Force Reject Proposal ID 1
+dfx canister call governance_canister admin_set_proposal_status '(1 : nat64, variant { Rejected })'
 ```
 
 ---
 
-## 🏛️ Operational Governance
+## 3. Staking Hub Administration
 
-### Execute a Proposal Early
-
-Proposals normally have a 14-day voting period. However, if a proposal reaches the **Approval Threshold (15,000 YES votes)**, it can be executed immediately.
-
-**Steps:**
-1. **Vote**: Ensure enough voting power has voted YES to reach 15,000 tokens.
-2. **Finalize**: Normally, a background timer checks this every hour. To execute *immediately*, call:
+### Manually Set User Shard
+In rare cases (e.g., shard migration or error recovery), an admin may need to manually map a user to a specific shard.
 
 ```bash
-# Replace PROPOSAL_ID with the actual ID (e.g., 0, 1, 2)
-dfx canister call operational_governance finalize_proposal '(PROPOSAL_ID : nat64)'
-```
-
-If the threshold is met, this will change the status to `Executed` and transfer the funds immediately.
-
-### Trigger MMCR (Manual)
-
-The Monthly Market Coin Release (MMCR) releases funds to the treasury allowance every 30 days.
-If the time has passed but the timer hasn't triggered it yet, you can force it:
-
-```bash
-dfx canister call operational_governance execute_mmcr
-```
-
-### Check Treasury Status
-
-```bash
-# View treasury balance and allowance
-dfx canister call operational_governance get_treasury_state
-
-# View MMCR release status
-dfx canister call operational_governance get_mmcr_status
+dfx canister call staking_hub admin_set_user_shard '(principal "USER_ID", principal "SHARD_ID")'
 ```
 
 ---
 
-## ⚙️ System Management
+## 4. Emergency & Upgrades
 
-### Manually Add a Shard (Minter)
-
-If you deploy a custom `user_profile` canister and want it to be recognized as a valid shard (able to mint tokens):
-
-```bash
-# 1. Deploy the new canister
-# 2. Register it in the hub
-dfx canister call staking_hub add_allowed_minter '(principal "NEW_CANISTER_ID")'
-```
-
-### Check Global Stats
-
-View the total staked, unstaked, and allocated tokens across the entire ecosystem.
+### Canister Upgrades
+Controllers can upgrade canister code using `dfx`.
 
 ```bash
-dfx canister call staking_hub get_global_stats
+dfx canister install governance_canister --mode upgrade
 ```
 
-### Check Tokenomics
+### Re-Linking Canisters (If IDs Change)
+If you redeploy a canister and its ID changes, you may need to update the references in other canisters.
 
+**Governance Canister:**
 ```bash
-# Returns: (max_supply, total_allocated, vuc, total_voting_power)
-dfx canister call staking_hub get_tokenomics
+# Update Treasury Link
+dfx canister call governance_canister set_treasury_canister_id '(principal "NEW_TREASURY_ID")'
 ```
 
-### Check Voting Power
-
+**Treasury Canister:**
 ```bash
-# Get VUC (total board member voting power pool)
-dfx canister call staking_hub get_vuc
-
-# Get user's staked balance (regular users)
-dfx canister call staking_hub fetch_user_voting_power '(principal "PRINCIPAL_ID")'
-
-# Get total voting power in system
-dfx canister call staking_hub get_total_voting_power
+# Update Governance Link
+dfx canister call treasury_canister set_governance_canister_id '(principal "NEW_GOVERNANCE_ID")'
 ```
-
----
-
-## 📋 Quick Reference
-
-| Action | Canister | Command |
-|--------|----------|---------|
-| Set board members | `operational_governance` | `set_board_member_shares` |
-| Query board members | `operational_governance` | `get_board_member_shares` |
-| Lock shares | `operational_governance` | `lock_board_member_shares` |
-| Check if locked | `operational_governance` | `are_board_shares_locked` |
-| Add board member (after lock) | `operational_governance` | `create_board_member_proposal` |
-| Get VUC | `staking_hub` | `get_vuc` |
-| Get user voting power | `staking_hub` | `fetch_user_voting_power` |
-| Founder vesting status | `founder_vesting` | `get_all_vesting_schedules` |
-| Finalize proposal early | `operational_governance` | `finalize_proposal` |
-| Manual MMCR | `operational_governance` | `execute_mmcr` |
-| Treasury status | `operational_governance` | `get_treasury_state` |

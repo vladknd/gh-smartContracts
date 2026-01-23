@@ -2,6 +2,14 @@
 
 This document addresses critical security scenarios: what happens when a board member's principal is compromised, lost, or needs to be replaced.
 
+> **⚠️ ARCHITECTURE UPDATE (January 2026)**
+>
+> This document references `operational_governance` which has been refactored into:
+> - **`treasury_canister`**: Token custody, multi-sig for treasury transfers
+> - **`governance_canister`**: Proposals, voting, board member management
+>
+> Multi-sig and board member management are now in `governance_canister`.
+
 ---
 
 ## 🚨 The Problem
@@ -576,10 +584,10 @@ Internet Identity already supports:
    dfx identity use alice-primary
    
    # Get your member ID
-   dfx canister call operational_governance get_my_board_member_info
+   dfx canister call governance_canister get_my_board_member_info
    
    # Add recovery principal
-   dfx canister call operational_governance add_recovery_principal '(
+   dfx canister call governance_canister add_recovery_principal '(
      "alice",  
      principal "alice-backup-principal..."
    )'

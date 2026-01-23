@@ -2,6 +2,14 @@
 
 This document compares how to implement multi-signature security for treasury operations in both **unified** (current) and **split** canister architectures.
 
+> **⚠️ ARCHITECTURE UPDATE (January 2026)**
+>
+> The **split architecture** described in Approach 2 is now implemented:
+> - **`treasury_canister`**: Token custody (4.25B MC), executes transfers
+> - **`governance_canister`**: Proposals, voting, calls treasury for transfers
+>
+> Multi-sig implementation should follow Approach 2 (Split Architecture).
+
 ---
 
 ## Table of Contents

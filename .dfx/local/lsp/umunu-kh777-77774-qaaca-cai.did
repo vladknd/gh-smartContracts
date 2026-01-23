@@ -1,100 +1,253 @@
-type Account = record { owner : principal; subaccount : opt SubAccount };
-type Approve = record {
-  fee : opt Tokens;
-  from : Account;
-  memo : opt blob;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  expected_allowance : opt Tokens;
-  expires_at : opt nat64;
-  spender : Account;
+type AddBoardMemberPayload = record {
+  new_member : principal;
+  percentage : nat8;
 };
-type Block = Value;
-type BlockIndex = nat;
-type Burn = record {
-  fee : opt nat;
-  from : Account;
-  memo : opt blob;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  spender : opt Account;
+type AddContentFromStagingPayload = record {
+  unit_count : nat32;
+  staging_path : text;
+  content_hash : text;
+  staging_canister : principal;
+  content_title : text;
 };
-type FeeCollectorRanges = record {
-  ranges : vec record { Account; vec record { BlockIndex; BlockIndex } };
+type BoardMemberShare = record { member : principal; percentage : nat8 };
+type CreateAddContentProposalInput = record {
+  external_link : opt text;
+  title : text;
+  unit_count : nat32;
+  staging_path : text;
+  content_hash : text;
+  description : text;
+  staging_canister : principal;
+  content_title : text;
 };
-type GetAccountTransactionsArgs = record {
-  max_results : nat;
-  start : opt BlockIndex;
-  account : Account;
+type CreateBoardMemberProposalInput = record {
+  external_link : opt text;
+  title : text;
+  description : text;
+  new_member : principal;
+  percentage : nat8;
 };
-type GetBlocksRequest = record { start : nat; length : nat };
-type GetBlocksResponse = record { blocks : vec Block; chain_length : nat64 };
-type GetTransactions = record {
-  balance : Tokens;
-  transactions : vec TransactionWithId;
-  oldest_tx_id : opt BlockIndex;
+type CreateDeleteContentProposalInput = record {
+  external_link : opt text;
+  title : text;
+  content_id : text;
+  description : text;
+  reason : text;
 };
-type GetTransactionsErr = record { message : text };
-type GetTransactionsResult = variant {
-  Ok : GetTransactions;
-  Err : GetTransactionsErr;
+type CreateRemoveBoardMemberProposalInput = record {
+  external_link : opt text;
+  title : text;
+  description : text;
+  member_to_remove : principal;
 };
-type IndexArg = variant { Upgrade : UpgradeArg; Init : InitArg };
-type InitArg = record {
-  ledger_id : principal;
-  retrieve_blocks_from_ledger_interval_seconds : opt nat64;
+type CreateTreasuryProposalInput = record {
+  external_link : opt text;
+  title : text;
+  recipient : principal;
+  description : text;
+  category : ProposalCategory;
+  amount : nat64;
+  token_type : TokenType;
 };
-type ListSubaccountsArgs = record { owner : principal; start : opt SubAccount };
-type Map = vec record { text; Value };
-type Mint = record {
-  to : Account;
-  fee : opt nat;
-  memo : opt blob;
-  created_at_time : opt nat64;
-  amount : Tokens;
+type CreateUpdateBoardMemberShareProposalInput = record {
+  member : principal;
+  external_link : opt text;
+  title : text;
+  description : text;
+  new_percentage : nat8;
 };
-type Status = record { num_blocks_synced : BlockIndex };
-type SubAccount = blob;
-type Tokens = nat;
-type Transaction = record {
-  burn : opt Burn;
-  kind : text;
-  mint : opt Mint;
-  approve : opt Approve;
+type CreateUpdateGovernanceConfigProposalInput = record {
+  external_link : opt text;
+  title : text;
+  new_support_period_days : opt nat16;
+  new_approval_percentage : opt nat8;
+  description : text;
+  new_min_voting_power : opt nat64;
+  new_support_threshold : opt nat64;
+  new_voting_period_days : opt nat16;
+  new_resubmission_cooldown_days : opt nat16;
+};
+type CreateUpdateQuizConfigProposalInput = record {
+  external_link : opt text;
+  new_pass_threshold : opt nat8;
+  title : text;
+  new_max_daily_quizzes : opt nat8;
+  new_max_weekly_quizzes : opt nat8;
+  new_max_yearly_quizzes : opt nat16;
+  new_max_attempts : opt nat8;
+  description : text;
+  new_max_monthly_quizzes : opt nat8;
+  new_reward_amount : opt nat64;
+};
+type DeleteContentNodePayload = record { content_id : text; reason : text };
+type InitArgs = record {
+  learning_engine_id : opt principal;
+  treasury_canister_id : principal;
+  staking_hub_id : principal;
+};
+type Proposal = record {
+  id : nat64;
+  status : ProposalStatus;
+  external_link : opt text;
+  title : text;
+  update_quiz_config_payload : opt UpdateGlobalQuizConfigPayload;
+  add_content_payload : opt AddContentFromStagingPayload;
+  votes_no : nat64;
+  recipient : opt principal;
+  update_quiz_questions_payload : opt UpdateQuizQuestionsPayload;
+  description : text;
+  delete_content_payload : opt DeleteContentNodePayload;
+  created_at : nat64;
+  board_member_payload : opt AddBoardMemberPayload;
+  update_governance_config_payload : opt UpdateGovernanceConfigPayload;
+  required_yes_votes : nat64;
+  voting_ends_at : nat64;
+  supporter_count : nat64;
+  category : opt ProposalCategory;
+  proposer : principal;
+  voter_count : nat64;
+  votes_yes : nat64;
+  remove_board_member_payload : opt RemoveBoardMemberPayload;
+  update_content_payload : opt UpdateContentNodePayload;
+  update_board_member_payload : opt UpdateBoardMemberSharePayload;
+  amount : opt nat64;
+  token_type : opt TokenType;
+  proposal_type : ProposalType;
+  support_amount : nat64;
+};
+type ProposalCategory = variant {
+  Partnership;
+  CommunityGrant;
+  Custom : text;
+  Operations;
+  Development;
+  Marketing;
+  Liquidity;
+};
+type ProposalStatus = variant {
+  Active;
+  Approved;
+  Rejected;
+  Proposed;
+  Executed;
+};
+type ProposalType = variant {
+  UpdateGovernanceConfig;
+  UpdateBoardMemberShare;
+  UpdateContentNode;
+  UpdateGlobalQuizConfig;
+  AddContentFromStaging;
+  UpdateQuizQuestions;
+  DeleteContentNode;
+  Treasury;
+  AddBoardMember;
+  RemoveBoardMember;
+};
+type QuizQuestion = record {
+  question : text;
+  answer : nat8;
+  options : vec text;
+};
+type RemoveBoardMemberPayload = record { member_to_remove : principal };
+type SupportRecord = record {
+  supporter : principal;
+  proposal_id : nat64;
   timestamp : nat64;
-  transfer : opt Transfer;
+  support_amount : nat64;
 };
-type TransactionWithId = record { id : BlockIndex; transaction : Transaction };
-type Transfer = record {
-  to : Account;
-  fee : opt Tokens;
-  from : Account;
-  memo : opt blob;
-  created_at_time : opt nat64;
-  amount : Tokens;
-  spender : opt Account;
+type TokenType = variant { GHC; ICP; USDC };
+type UpdateBoardMemberSharePayload = record {
+  member : principal;
+  new_percentage : nat8;
 };
-type UpgradeArg = record {
-  ledger_id : opt principal;
-  retrieve_blocks_from_ledger_interval_seconds : opt nat64;
+type UpdateContentNodePayload = record {
+  content_id : text;
+  new_title : opt text;
+  new_content : opt text;
+  new_paraphrase : opt text;
 };
-type Value = variant {
-  Int : int;
-  Map : Map;
-  Nat : nat;
-  Nat64 : nat64;
-  Blob : blob;
-  Text : text;
-  Array : vec Value;
+type UpdateGlobalQuizConfigPayload = record {
+  new_pass_threshold : opt nat8;
+  new_max_daily_quizzes : opt nat8;
+  new_max_weekly_quizzes : opt nat8;
+  new_max_yearly_quizzes : opt nat16;
+  new_max_attempts : opt nat8;
+  new_max_monthly_quizzes : opt nat8;
+  new_reward_amount : opt nat64;
+};
+type UpdateGovernanceConfigPayload = record {
+  new_support_period_days : opt nat16;
+  new_approval_percentage : opt nat8;
+  new_min_voting_power : opt nat64;
+  new_support_threshold : opt nat64;
+  new_voting_period_days : opt nat16;
+  new_resubmission_cooldown_days : opt nat16;
+};
+type UpdateQuizQuestionsPayload = record {
+  content_id : text;
+  new_questions : vec QuizQuestion;
+};
+type VoteRecord = record {
+  voter : principal;
+  vote : bool;
+  proposal_id : nat64;
+  timestamp : nat64;
+  voting_power : nat64;
 };
 service : {
-  get_account_transactions : (GetAccountTransactionsArgs) -> (
-      GetTransactionsResult,
-    ) query;
-  get_blocks : (GetBlocksRequest) -> (GetBlocksResponse) query;
-  get_fee_collectors_ranges : () -> (FeeCollectorRanges) query;
-  icrc1_balance_of : (Account) -> (Tokens) query;
-  ledger_id : () -> (principal) query;
-  list_subaccounts : (ListSubaccountsArgs) -> (vec SubAccount) query;
-  status : () -> (Status) query;
+  admin_expire_proposal : (nat64) -> (variant { Ok; Err : text });
+  admin_set_proposal_status : (nat64, ProposalStatus) -> (
+      variant { Ok; Err : text },
+    );
+  are_board_shares_locked : () -> (bool) query;
+  create_add_content_proposal : (CreateAddContentProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_board_member_proposal : (CreateBoardMemberProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_delete_content_proposal : (CreateDeleteContentProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_remove_board_member_proposal : (
+      CreateRemoveBoardMemberProposalInput,
+    ) -> (variant { Ok : nat64; Err : text });
+  create_treasury_proposal : (CreateTreasuryProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_update_board_member_share_proposal : (
+      CreateUpdateBoardMemberShareProposalInput,
+    ) -> (variant { Ok : nat64; Err : text });
+  create_update_governance_config_proposal : (
+      CreateUpdateGovernanceConfigProposalInput,
+    ) -> (variant { Ok : nat64; Err : text });
+  create_update_quiz_config_proposal : (
+      CreateUpdateQuizConfigProposalInput,
+    ) -> (variant { Ok : nat64; Err : text });
+  execute_proposal : (nat64) -> (variant { Ok; Err : text });
+  finalize_proposal : (nat64) -> (variant { Ok : ProposalStatus; Err : text });
+  get_active_proposals : () -> (vec Proposal) query;
+  get_all_proposals : () -> (vec Proposal) query;
+  get_board_member_count : () -> (nat64) query;
+  get_board_member_share : (principal) -> (opt nat8) query;
+  get_board_member_shares : () -> (vec BoardMemberShare) query;
+  get_governance_config : () -> (nat64, nat64, nat64, nat64, nat64, nat8) query;
+  get_learning_engine_id : () -> (principal) query;
+  get_my_voting_power : () -> (variant { Ok : nat64; Err : text });
+  get_proposal : (nat64) -> (opt Proposal) query;
+  get_proposal_supporters : (nat64) -> (vec SupportRecord) query;
+  get_proposal_votes : (nat64) -> (vec VoteRecord) query;
+  get_staking_hub_id : () -> (principal) query;
+  get_treasury_canister_id : () -> (principal) query;
+  get_user_voting_power : (principal) -> (variant { Ok : nat64; Err : text });
+  has_voted : (nat64, principal) -> (bool) query;
+  is_board_member : (principal) -> (bool) query;
+  lock_board_member_shares : () -> (variant { Ok; Err : text });
+  set_board_member_shares : (vec BoardMemberShare) -> (
+      variant { Ok; Err : text },
+    );
+  set_learning_engine_id : (principal) -> (variant { Ok; Err : text });
+  set_treasury_canister_id : (principal) -> (variant { Ok; Err : text });
+  support_proposal : (nat64) -> (variant { Ok; Err : text });
+  vote : (nat64, bool) -> (variant { Ok; Err : text });
 }

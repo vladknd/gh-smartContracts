@@ -1,4 +1,14 @@
 type BoardMemberShare = record { member : principal; percentage : nat8 };
+type CachedQuizConfig = record {
+  max_daily_quizzes : nat8;
+  reward_amount : nat64;
+  max_monthly_quizzes : nat8;
+  pass_threshold_percent : nat8;
+  max_daily_attempts : nat8;
+  version : nat64;
+  max_weekly_quizzes : nat8;
+  max_yearly_quizzes : nat16;
+};
 type GlobalStats = record {
   total_staked : nat64;
   total_allocated : nat64;
@@ -6,23 +16,38 @@ type GlobalStats = record {
 };
 type InitArgs = record {
   learning_content_id : principal;
+  archive_canister_wasm : opt blob;
   ledger_id : principal;
   user_profile_wasm : blob;
+};
+type QuizCacheData = record {
+  question_count : nat8;
+  content_id : text;
+  version : nat64;
+  answer_hashes : vec blob;
 };
 type ShardInfo = record {
   user_count : nat64;
   status : ShardStatus;
   canister_id : principal;
   created_at : nat64;
+  archive_canister_id : opt principal;
 };
 type ShardStatus = variant { Full; Active };
 service : (InitArgs) -> {
   add_allowed_minter : (principal) -> ();
   admin_set_user_shard : (principal, principal) -> (variant { Ok; Err : text });
   are_board_shares_locked : () -> (bool) query;
+  distribute_quiz_cache : (text, QuizCacheData) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  distribute_quiz_config : (CachedQuizConfig) -> (
+      variant { Ok : nat64; Err : text },
+    );
   ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
   fetch_voting_power : (principal) -> (nat64);
   get_active_shards : () -> (vec ShardInfo) query;
+  get_archive_for_shard : (principal) -> (opt principal) query;
   get_board_member_count : () -> (nat64) query;
   get_board_member_share : (principal) -> (opt nat8) query;
   get_board_member_shares : () -> (vec BoardMemberShare) query;

@@ -1,6 +1,40 @@
+// ============================================================================
+// Learning Engine Candid Interface
+// ============================================================================
+// Flexible tree-based content structure with quiz management
+// Updated: January 2026
+
+// ============================================================================
+// Initialization
+// ============================================================================
+
 type InitArgs = record {
     staking_hub_id : principal;
+    governance_canister_id : opt principal;
 };
+
+// ============================================================================
+// Media Types
+// ============================================================================
+
+type MediaType = variant {
+    Video;
+    Audio;
+    Image;
+    PDF;
+};
+
+type MediaContent = record {
+    media_type : MediaType;
+    url : text;
+    thumbnail_url : opt text;
+    duration_seconds : opt nat32;
+    file_hash : opt text;
+};
+
+// ============================================================================
+// Quiz Types
+// ============================================================================
 
 type QuizQuestion = record {
     question : text;
@@ -8,16 +42,41 @@ type QuizQuestion = record {
     answer : nat8;
 };
 
-type LearningUnit = record {
-    unit_id : text;
-    unit_title : text;
-    chapter_id : text;
-    chapter_title : text;
-    head_unit_id : text;
-    head_unit_title : text;
-    content : text;
-    paraphrase : text;
-    quiz : vec QuizQuestion;
+type QuizData = record {
+    questions : vec QuizQuestion;
+};
+
+type QuizConfig = record {
+    reward_amount : nat64;
+    pass_threshold_percent : nat8;
+    max_daily_attempts : nat8;
+};
+
+type QuizCacheData = record {
+    content_id : text;
+    answer_hashes : vec blob;
+    question_count : nat8;
+    version : nat64;
+};
+
+// ============================================================================
+// Content Node Types
+// ============================================================================
+
+type ContentNode = record {
+    id : text;
+    parent_id : opt text;
+    order : nat32;
+    display_type : text;
+    title : text;
+    description : opt text;
+    content : opt text;
+    paraphrase : opt text;
+    media : opt MediaContent;
+    quiz : opt QuizData;
+    created_at : nat64;
+    updated_at : nat64;
+    version : nat64;
 };
 
 type PublicQuizQuestion = record {
@@ -25,36 +84,153 @@ type PublicQuizQuestion = record {
     options : vec text;
 };
 
-type PublicLearningUnit = record {
-    unit_id : text;
-    unit_title : text;
-    chapter_id : text;
-    chapter_title : text;
-    head_unit_id : text;
-    head_unit_title : text;
-    content : text;
-    paraphrase : text;
-    quiz : vec PublicQuizQuestion;
+type PublicQuizData = record {
+    questions : vec PublicQuizQuestion;
 };
 
-type LearningUnitMetadata = record {
-    unit_id : text;
-    unit_title : text;
-    chapter_id : text;
-    chapter_title : text;
+type PublicContentNode = record {
+    id : text;
+    parent_id : opt text;
+    order : nat32;
+    display_type : text;
+    title : text;
+    description : opt text;
+    content : opt text;
+    paraphrase : opt text;
+    media : opt MediaContent;
+    quiz : opt PublicQuizData;
+    created_at : nat64;
+    updated_at : nat64;
+    version : nat64;
 };
+
+// ============================================================================
+// Loading Job Types
+// ============================================================================
+
+type LoadingStatus = variant {
+    InProgress;
+    Completed;
+    Failed;
+    Paused;
+};
+
+type LoadingJob = record {
+    proposal_id : nat64;
+    staging_canister : principal;
+    staging_path : text;
+    content_hash : text;
+    total_units : nat32;
+    loaded_units : nat32;
+    status : LoadingStatus;
+    last_error : opt text;
+    started_at : nat64;
+    updated_at : nat64;
+};
+
+// ============================================================================
+// Version History Types
+// ============================================================================
+
+type ChangeType = variant {
+    Created;
+    Updated;
+    Deleted;
+};
+
+type ContentSnapshot = record {
+    content : ContentNode;
+    modified_at : nat64;
+    modified_by_proposal : nat64;
+    change_type : ChangeType;
+};
+
+// ============================================================================
+// Service Definition
+// ============================================================================
 
 service : (InitArgs) -> {
-    // Add a new learning unit (admin function)
-    "add_learning_unit": (LearningUnit) -> (variant { Ok: null; Err: text });
+    // =========================================================================
+    // Content Node Management
+    // =========================================================================
     
-    // Get a learning unit by ID (returns public version without answers)
-    "get_learning_unit": (text) -> (variant { Ok: PublicLearningUnit; Err: text }) query;
+    // Add or update a content node
+    "add_content_node": (ContentNode) -> (variant { Ok: null; Err: text });
     
-    // Get metadata for all learning units (for curriculum listing)
-    "get_learning_units_metadata": () -> (vec LearningUnitMetadata) query;
+    // Add multiple content nodes (batch)
+    "add_content_nodes": (vec ContentNode) -> (variant { Ok: nat32; Err: text });
     
-    // Verify quiz answers (called by user_profile shards)
-    // Returns: (passed: bool, correct_count: u64, total_questions: u64)
+    // Get a content node by ID (public version without answers)
+    "get_content_node": (text) -> (opt PublicContentNode) query;
+    
+    // Get children of a content node
+    "get_children": (text) -> (vec PublicContentNode) query;
+    
+    // Get all root nodes (nodes without parents)
+    "get_root_nodes": () -> (vec PublicContentNode) query;
+    
+    // Delete a content node
+    "delete_content_node": (text, nat64) -> (variant { Ok: null; Err: text });
+    
+    // =========================================================================
+    // Quiz Functions
+    // =========================================================================
+    
+    // Get quiz cache data for user profile shards
+    "get_quiz_data": (text) -> (opt QuizCacheData) query;
+    
+    // Get global quiz configuration
+    "get_global_quiz_config": () -> (QuizConfig) query;
+    
+    // Update global quiz configuration (governance only)
+    "update_global_quiz_config": (opt nat64, opt nat8, opt nat8) -> (variant { Ok: null; Err: text });
+    
+    // Verify quiz answers
+    // Returns: (passed: bool, correct_count: nat64, total_questions: nat64)
     "verify_quiz": (text, vec nat8) -> (bool, nat64, nat64) query;
+    
+    // =========================================================================
+    // Content Loading (Resilient)
+    // =========================================================================
+    
+    // Start loading content from staging (governance call)
+    "start_content_load": (nat64, principal, text, text, nat32) -> (variant { Ok: null; Err: text });
+    
+    // Continue loading (self-call pattern)
+    "continue_loading": (nat64) -> (variant { Ok: null; Err: text });
+    
+    // Resume loading after error
+    "resume_loading": (nat64) -> (variant { Ok: null; Err: text });
+    
+    // Get loading status for a proposal
+    "get_loading_status": (nat64) -> (opt LoadingJob) query;
+    
+    // Get all loading jobs
+    "get_all_loading_jobs": () -> (vec LoadingJob) query;
+    
+    // =========================================================================
+    // Version History & Audit Trail
+    // =========================================================================
+    
+    // Get version history for a content node
+    "get_content_version_history": (text) -> (vec record { nat64; ContentSnapshot }) query;
+    
+    // Get content at a specific version
+    "get_content_at_version": (text, nat64) -> (opt ContentNode) query;
+    
+    // Get current version number for a content node
+    "get_content_current_version": (text) -> (nat64) query;
+    
+    // Get all changes made by a specific proposal
+    "get_changes_by_proposal": (nat64) -> (vec record { text; ChangeType }) query;
+    
+    // Get global content version
+    "get_content_version_global": () -> (nat64) query;
+    
+    // =========================================================================
+    // Statistics
+    // =========================================================================
+    
+    // Get content statistics: (node_count, quiz_count)
+    "get_content_stats": () -> (nat64, nat64) query;
 }

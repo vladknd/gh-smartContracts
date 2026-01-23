@@ -1,8 +1,8 @@
 {
   "__Candid_UI": {
-    "local": "vg3po-ix777-77774-qaafa-cai"
+    "local": "v56tl-sp777-77774-qaahq-cai"
   },
-  "content_governance": {
+  "archive_canister": {
     "local": "uxrrr-q7777-77774-qaaaq-cai"
   },
   "founder_vesting": {
@@ -11,22 +11,37 @@
   "ghc_ledger": {
     "local": "uzt4z-lp777-77774-qaabq-cai"
   },
-  "icrc1_index_canister": {
+  "governance_canister": {
     "local": "umunu-kh777-77774-qaaca-cai"
   },
-  "internet_identity": {
+  "ico_canister": {
     "local": "ulvla-h7777-77774-qaacq-cai"
   },
-  "learning_engine": {
+  "icrc1_index_canister": {
     "local": "ucwa4-rx777-77774-qaada-cai"
   },
-  "operational_governance": {
+  "internet_identity": {
     "local": "ufxgi-4p777-77774-qaadq-cai"
   },
-  "staking_hub": {
+  "learning_engine": {
     "local": "vizcg-th777-77774-qaaea-cai"
   },
-  "user_profile": {
+  "media_assets": {
     "local": "vpyes-67777-77774-qaaeq-cai"
+  },
+  "sonic_adapter": {
+    "local": "vg3po-ix777-77774-qaafa-cai"
+  },
+  "staging_assets": {
+    "local": "vb2j2-fp777-77774-qaafq-cai"
+  },
+  "staking_hub": {
+    "local": "vu5yx-eh777-77774-qaaga-cai"
+  },
+  "treasury_canister": {
+    "local": "vt46d-j7777-77774-qaagq-cai"
+  },
+  "user_profile": {
+    "local": "v27v7-7x777-77774-qaaha-cai"
   }
 }

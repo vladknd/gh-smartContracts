@@ -6,6 +6,16 @@ export interface BoardMemberShare {
   'member' : Principal,
   'percentage' : number,
 }
+export interface CachedQuizConfig {
+  'max_daily_quizzes' : number,
+  'reward_amount' : bigint,
+  'max_monthly_quizzes' : number,
+  'pass_threshold_percent' : number,
+  'max_daily_attempts' : number,
+  'version' : bigint,
+  'max_weekly_quizzes' : number,
+  'max_yearly_quizzes' : number,
+}
 export interface GlobalStats {
   'total_staked' : bigint,
   'total_allocated' : bigint,
@@ -13,14 +23,22 @@ export interface GlobalStats {
 }
 export interface InitArgs {
   'learning_content_id' : Principal,
+  'archive_canister_wasm' : [] | [Uint8Array | number[]],
   'ledger_id' : Principal,
   'user_profile_wasm' : Uint8Array | number[],
+}
+export interface QuizCacheData {
+  'question_count' : number,
+  'content_id' : string,
+  'version' : bigint,
+  'answer_hashes' : Array<Uint8Array | number[]>,
 }
 export interface ShardInfo {
   'user_count' : bigint,
   'status' : ShardStatus,
   'canister_id' : Principal,
   'created_at' : bigint,
+  'archive_canister_id' : [] | [Principal],
 }
 export type ShardStatus = { 'Full' : null } |
   { 'Active' : null };
@@ -32,6 +50,16 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'are_board_shares_locked' : ActorMethod<[], boolean>,
+  'distribute_quiz_cache' : ActorMethod<
+    [string, QuizCacheData],
+    { 'Ok' : bigint } |
+      { 'Err' : string }
+  >,
+  'distribute_quiz_config' : ActorMethod<
+    [CachedQuizConfig],
+    { 'Ok' : bigint } |
+      { 'Err' : string }
+  >,
   'ensure_capacity' : ActorMethod<
     [],
     { 'Ok' : [] | [Principal] } |
@@ -39,6 +67,7 @@ export interface _SERVICE {
   >,
   'fetch_voting_power' : ActorMethod<[Principal], bigint>,
   'get_active_shards' : ActorMethod<[], Array<ShardInfo>>,
+  'get_archive_for_shard' : ActorMethod<[Principal], [] | [Principal]>,
   'get_board_member_count' : ActorMethod<[], bigint>,
   'get_board_member_share' : ActorMethod<[Principal], [] | [number]>,
   'get_board_member_shares' : ActorMethod<[], Array<BoardMemberShare>>,

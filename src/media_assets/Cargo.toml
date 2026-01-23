@@ -1,0 +1,15 @@
+[package]
+name = "media_assets"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ic-cdk = "0.17"
+candid = "0.10"
+ic-stable-structures = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_bytes = "0.11"
+sha2 = "0.10"

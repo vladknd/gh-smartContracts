@@ -1,43 +1,110 @@
-type InitArgs = record { staking_hub_id : principal };
-type LearningUnit = record {
-  content : text;
-  head_unit_title : text;
-  paraphrase : text;
-  quiz : vec QuizQuestion;
-  chapter_title : text;
-  unit_id : text;
-  chapter_id : text;
-  head_unit_id : text;
-  unit_title : text;
+type ChangeType = variant { Updated; Created; Deleted };
+type ContentNode = record {
+  id : text;
+  media : opt MediaContent;
+  title : text;
+  updated_at : nat64;
+  content : opt text;
+  order : nat32;
+  paraphrase : opt text;
+  quiz : opt QuizData;
+  description : opt text;
+  created_at : nat64;
+  display_type : text;
+  version : nat64;
+  parent_id : opt text;
 };
-type LearningUnitMetadata = record {
-  chapter_title : text;
-  unit_id : text;
-  chapter_id : text;
-  unit_title : text;
+type ContentSnapshot = record {
+  modified_at : nat64;
+  content : ContentNode;
+  change_type : ChangeType;
+  modified_by_proposal : nat64;
 };
-type PublicLearningUnit = record {
-  content : text;
-  head_unit_title : text;
-  paraphrase : text;
-  quiz : vec PublicQuizQuestion;
-  chapter_title : text;
-  unit_id : text;
-  chapter_id : text;
-  head_unit_id : text;
-  unit_title : text;
+type InitArgs = record {
+  governance_canister_id : opt principal;
+  staking_hub_id : principal;
 };
+type LoadingJob = record {
+  last_error : opt text;
+  status : LoadingStatus;
+  updated_at : nat64;
+  staging_path : text;
+  total_units : nat32;
+  content_hash : text;
+  loaded_units : nat32;
+  staging_canister : principal;
+  proposal_id : nat64;
+  started_at : nat64;
+};
+type LoadingStatus = variant { Failed; Paused; InProgress; Completed };
+type MediaContent = record {
+  url : text;
+  duration_seconds : opt nat32;
+  media_type : MediaType;
+  file_hash : opt text;
+  thumbnail_url : opt text;
+};
+type MediaType = variant { PDF; Image; Audio; Video };
+type PublicContentNode = record {
+  id : text;
+  media : opt MediaContent;
+  title : text;
+  updated_at : nat64;
+  content : opt text;
+  order : nat32;
+  paraphrase : opt text;
+  quiz : opt PublicQuizData;
+  description : opt text;
+  created_at : nat64;
+  display_type : text;
+  version : nat64;
+  parent_id : opt text;
+};
+type PublicQuizData = record { questions : vec PublicQuizQuestion };
 type PublicQuizQuestion = record { question : text; options : vec text };
+type QuizCacheData = record {
+  question_count : nat8;
+  content_id : text;
+  version : nat64;
+  answer_hashes : vec blob;
+};
+type QuizConfig = record {
+  reward_amount : nat64;
+  pass_threshold_percent : nat8;
+  max_daily_attempts : nat8;
+};
+type QuizData = record { questions : vec QuizQuestion };
 type QuizQuestion = record {
   question : text;
   answer : nat8;
   options : vec text;
 };
 service : (InitArgs) -> {
-  add_learning_unit : (LearningUnit) -> (variant { Ok; Err : text });
-  get_learning_unit : (text) -> (
-      variant { Ok : PublicLearningUnit; Err : text },
+  add_content_node : (ContentNode) -> (variant { Ok; Err : text });
+  add_content_nodes : (vec ContentNode) -> (variant { Ok : nat32; Err : text });
+  continue_loading : (nat64) -> (variant { Ok; Err : text });
+  delete_content_node : (text, nat64) -> (variant { Ok; Err : text });
+  get_all_loading_jobs : () -> (vec LoadingJob) query;
+  get_changes_by_proposal : (nat64) -> (vec record { text; ChangeType }) query;
+  get_children : (text) -> (vec PublicContentNode) query;
+  get_content_at_version : (text, nat64) -> (opt ContentNode) query;
+  get_content_current_version : (text) -> (nat64) query;
+  get_content_node : (text) -> (opt PublicContentNode) query;
+  get_content_stats : () -> (nat64, nat64) query;
+  get_content_version_global : () -> (nat64) query;
+  get_content_version_history : (text) -> (
+      vec record { nat64; ContentSnapshot },
     ) query;
-  get_learning_units_metadata : () -> (vec LearningUnitMetadata) query;
+  get_global_quiz_config : () -> (QuizConfig) query;
+  get_loading_status : (nat64) -> (opt LoadingJob) query;
+  get_quiz_data : (text) -> (opt QuizCacheData) query;
+  get_root_nodes : () -> (vec PublicContentNode) query;
+  resume_loading : (nat64) -> (variant { Ok; Err : text });
+  start_content_load : (nat64, principal, text, text, nat32) -> (
+      variant { Ok; Err : text },
+    );
+  update_global_quiz_config : (opt nat64, opt nat8, opt nat8) -> (
+      variant { Ok; Err : text },
+    );
   verify_quiz : (text, blob) -> (bool, nat64, nat64) query;
 }

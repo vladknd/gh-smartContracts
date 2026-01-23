@@ -7,8 +7,8 @@
     },
     "internet_identity": {
       "type": "custom",
-      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
-      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz",
+      "candid": "https://github.com/dfinity/internet-identity/releases/download/release-2025-11-28/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/download/release-2025-11-28/internet_identity_dev.wasm.gz",
       "remote": {
         "id": {
           "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
@@ -30,16 +30,6 @@
       "candid": "src/staking_hub/staking_hub.did",
       "package": "staking_hub"
     },
-    "operational_governance": {
-      "type": "rust",
-      "candid": "src/operational_governance/operational_governance.did",
-      "package": "operational_governance"
-    },
-    "content_governance": {
-      "type": "rust",
-      "candid": "src/content_governance/content_governance.did",
-      "package": "content_governance"
-    },
     "learning_engine": {
       "type": "rust",
       "candid": "src/learning_engine/learning_engine.did",
@@ -54,6 +44,41 @@
       "type": "rust",
       "candid": "src/founder_vesting/founder_vesting.did",
       "package": "founder_vesting"
+    },
+    "treasury_canister": {
+      "type": "rust",
+      "candid": "src/treasury_canister/treasury_canister.did",
+      "package": "treasury_canister"
+    },
+    "governance_canister": {
+      "type": "rust",
+      "candid": "src/governance_canister/governance_canister.did",
+      "package": "governance_canister"
+    },
+    "media_assets": {
+      "type": "rust",
+      "candid": "src/media_assets/media_assets.did",
+      "package": "media_assets"
+    },
+    "staging_assets": {
+      "type": "rust",
+      "candid": "src/staging_assets/staging_assets.did",
+      "package": "staging_assets"
+    },
+    "sonic_adapter": {
+      "type": "rust",
+      "candid": "src/sonic_adapter/sonic_adapter.did",
+      "package": "sonic_adapter"
+    },
+    "ico_canister": {
+      "type": "rust",
+      "candid": "src/ico_canister/ico_canister.did",
+      "package": "ico_canister"
+    },
+    "archive_canister": {
+      "type": "rust",
+      "candid": "src/archive_canister/archive_canister.did",
+      "package": "archive_canister"
     }
   },
   "defaults": {

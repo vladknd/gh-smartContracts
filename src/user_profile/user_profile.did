@@ -18,10 +18,24 @@ type UserProfile = record {
     transaction_count : nat64;
 };
 
-type UserDailyStats = record {
-    day_index : nat64;
-    quizzes_taken : nat8;
-    tokens_earned : nat64;
+type UserTimeStats = record {
+    last_active_day : nat64;
+    
+    // Daily
+    daily_quizzes : nat8;
+    daily_earnings : nat64;
+    
+    // Weekly
+    weekly_quizzes : nat8;
+    weekly_earnings : nat64;
+    
+    // Monthly
+    monthly_quizzes : nat8;
+    monthly_earnings : nat64;
+    
+    // Yearly
+    yearly_quizzes : nat16;
+    yearly_earnings : nat64;
 };
 
 type InitArgs = record {
@@ -47,6 +61,62 @@ type TransactionRecord = record {
     amount : nat64;
 };
 
+// Paginated transaction response with archive info
+type TransactionPage = record {
+    transactions : vec TransactionRecord;
+    total_count : nat64;
+    local_count : nat64;
+    archived_count : nat64;
+    archive_canister_id : principal;
+    source : text;  // "local" or "archive"
+};
+
+// Archive configuration info
+type ArchiveConfig = record {
+    retention_limit : nat64;       // Transactions kept locally per user
+    trigger_threshold : nat64;     // Threshold for immediate archive
+    check_interval_secs : nat64;   // Periodic archive check interval
+    archive_canister_id : principal;
+    is_configured : bool;
+};
+
+// Cached quiz configuration (stored locally, updated via staking_hub)
+type CachedQuizConfig = record {
+    reward_amount : nat64;
+    pass_threshold_percent : nat8;
+    max_daily_attempts : nat8;
+    max_daily_quizzes : nat8;
+    max_weekly_quizzes : nat8;
+    max_monthly_quizzes : nat8;
+    max_yearly_quizzes : nat16;
+    version : nat64;
+};
+
+// Verification tier for users
+type VerificationTier = variant {
+    None;   // Fresh user
+    Human;  // DecideID verified
+    KYC;    // Full legal KYC
+};
+
+// Summary of a registered user for admin listing
+type UserSummary = record {
+    user_principal : principal;
+    name : text;
+    email : text;
+    staked_balance : nat64;
+    verification_tier : VerificationTier;
+};
+
+// Result of admin user listing with pagination info
+type UserListResult = record {
+    users : vec UserSummary;
+    total_count : nat64;
+    page : nat32;
+    page_size : nat32;
+    has_more : bool;
+};
+
 service : (InitArgs) -> {
     // =========================================================================
     // User Registration & Profile
@@ -61,10 +131,14 @@ service : (InitArgs) -> {
     submit_quiz : (text, vec nat8) -> (variant { Ok : nat64; Err : text });
     is_quiz_completed : (principal, text) -> (bool) query;
     
+    // Quiz config caching (updated by staking_hub when governance proposals pass)
+    receive_quiz_config : (CachedQuizConfig) -> ();
+    get_cached_quiz_config : () -> (CachedQuizConfig) query;
+    
     // =========================================================================
-    // Daily Stats
+    // User Stats
     // =========================================================================
-    get_user_daily_status : (principal) -> (UserDailyStats) query;
+    get_user_stats : (principal) -> (UserTimeStats) query;
     
     // =========================================================================
     // Economy Functions
@@ -76,6 +150,15 @@ service : (InitArgs) -> {
     // Transaction History
     // =========================================================================
     get_user_transactions : (principal) -> (vec TransactionRecord) query;
+    get_transactions_page : (principal, nat32) -> (TransactionPage) query;
+    
+    // =========================================================================
+    // Archive Operations
+    // =========================================================================
+    set_archive_canister : (principal) -> (variant { Ok : null; Err : text });
+    get_archive_canister : () -> (principal) query;
+    get_archive_config : () -> (ArchiveConfig) query;
+    trigger_archive : () -> (variant { Ok : nat64; Err : text });
     
     // =========================================================================
     // Shard Metrics
@@ -86,4 +169,15 @@ service : (InitArgs) -> {
     // Debug / Testing
     // =========================================================================
     debug_force_sync : () -> (variant { Ok : null; Err : text });
+    
+    // =========================================================================
+    // Admin Debug Endpoints (Controller-Only)
+    // =========================================================================
+    // For debugging authentication issues
+    admin_list_all_users : (nat32, nat32) -> (variant { Ok : UserListResult; Err : text }) query;
+    admin_get_user_details : (principal) -> (variant { Ok : opt UserProfile; Err : text }) query;
+    
+    // Public debug helpers
+    whoami : () -> (principal) query;
+    is_user_registered : (principal) -> (bool) query;
 }

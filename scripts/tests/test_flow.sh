@@ -1,100 +1,135 @@
 #!/bin/bash
 
-# Stop on error
+# Basic Flow Test - Tests the simplified tokenomics flow
+# User registers -> Submits quiz -> Gets staked balance -> Unstakes (100% return)
+
 set -e
 
-echo "=== Starting GHC Dapp Verification Flow ==="
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log() {
+    echo -e "${BLUE}[FLOW] $1${NC}"
+}
+
+success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+fail() {
+    echo -e "${RED}❌ $1${NC}"
+    exit 1
+}
+
+log "=== Starting GHC Basic Flow Test ==="
 
 # Generate a unique identity for this test run
 TEST_IDENTITY="test_user_$(date +%s)"
-echo "Creating temporary identity: $TEST_IDENTITY"
+log "Creating temporary identity: $TEST_IDENTITY"
 
 # Create new identity (plaintext to avoid password prompt)
-dfx identity new "$TEST_IDENTITY" --storage-mode plaintext || true
+dfx identity new "$TEST_IDENTITY" --storage-mode plaintext 2>/dev/null || true
 dfx identity use "$TEST_IDENTITY"
 
 USER_PRINCIPAL=$(dfx identity get-principal)
-echo "Testing as User: $USER_PRINCIPAL"
+log "Testing as User: $USER_PRINCIPAL"
 
 # Cleanup function to run on exit
 cleanup() {
     echo -e "\n=== Cleaning up identity... ==="
     dfx identity use default
-    dfx identity remove "$TEST_IDENTITY"
+    dfx identity remove "$TEST_IDENTITY" 2>/dev/null || true
 }
 trap cleanup EXIT
 
-# 1. Register & Mining
-echo -e "\n[Step 1] Registering & Submitting Quiz..."
+# 1. Register User
+log "[Step 1] Registering User..."
+REG=$(dfx canister call user_profile register_user '(record { 
+    email = "test@example.com"; 
+    name = "Test User"; 
+    education = "PhD"; 
+    gender = "Non-binary" 
+})' 2>&1)
 
-# Register first
-dfx canister call user_profile register_user '(record { email = "test@example.com"; name = "Test User"; education = "PhD"; gender = "Non-binary" })'
+if [[ $REG == *"Ok"* ]]; then
+    success "User registered"
+else
+    fail "Registration failed: $REG"
+fi
 
-# Quiz ID "unit_1", Answer [0] (Correct) - Calling user_profile, not learning_engine
-RESULT=$(dfx canister call user_profile submit_quiz '("unit_1", vec {0})')
-echo "Result: $RESULT"
+# 2. Submit Quiz (as admin first to add unit)
+log "[Step 2] Adding learning unit (if not exists)..."
+dfx identity use default
+ADD=$(dfx canister call learning_engine add_learning_unit '(record {
+    unit_id = "flow_test_unit";
+    unit_title = "Flow Test Unit";
+    chapter_id = "1";
+    chapter_title = "Test Chapter";
+    head_unit_id = "1";
+    head_unit_title = "Test Head Unit";
+    content = "Content";
+    paraphrase = "Paraphrase";
+    quiz = vec { record { question = "Q?"; options = vec {"A"}; answer = 0 } };
+})' 2>&1)
+dfx identity use "$TEST_IDENTITY"
+
+if [[ $ADD == *"Ok"* ]] || [[ $ADD == *"exists"* ]]; then
+    success "Learning unit ready"
+else
+    fail "Failed to add unit: $ADD"
+fi
+
+# 3. Submit Quiz
+log "[Step 3] Submitting Quiz..."
+RESULT=$(dfx canister call user_profile submit_quiz '("flow_test_unit", vec {0})' 2>&1)
+
 if [[ $RESULT == *"Ok"* ]]; then
-    echo "✅ Quiz submitted successfully"
+    success "Quiz submitted successfully"
 else
-    echo "❌ Quiz submission failed"
-    exit 1
+    fail "Quiz submission failed: $RESULT"
 fi
 
-# 2. Check Pending
-echo -e "\n[Step 2] Checking Pending Rewards..."
-PENDING=$(dfx canister call staking_hub get_pending_reward "(principal \"$USER_PRINCIPAL\")")
-echo "Pending: $PENDING"
-if [[ $PENDING == *"(500_000_000 : nat64)"* ]] || [[ $PENDING == *"(500000000 : nat64)"* ]]; then
-    echo "✅ Pending reward is correct (5 GHC)"
+# 4. Check Staked Balance
+log "[Step 4] Checking Staked Balance..."
+PROFILE=$(dfx canister call user_profile get_profile "(principal \"$USER_PRINCIPAL\")")
+
+if [[ $PROFILE == *"staked_balance = 100_000_000"* ]] || [[ $PROFILE == *"staked_balance = 100000000"* ]]; then
+    success "Staked balance correct (1 GHC = 100,000,000 e8s)"
 else
-    echo "❌ Pending reward incorrect"
-    exit 1
+    fail "Staked balance incorrect: $PROFILE"
 fi
 
-# 3. Claim & Stake
-echo -e "\n[Step 3] Claiming & Staking..."
-CLAIM=$(dfx canister call staking_hub claim_and_stake)
-echo "Claim Result: $CLAIM"
-if [[ $CLAIM == *"Ok"* ]]; then
-    echo "✅ Claim successful"
-else
-    echo "❌ Claim failed"
-    exit 1
-fi
+# 5. Unstake (No Penalty - 100% return)
+log "[Step 5] Unstaking 0.5 GHC (100% return, no penalty)..."
+UNSTAKE=$(dfx canister call user_profile unstake '(50_000_000)' 2>&1)
 
-# 4. Verify Staked Balance
-echo -e "\n[Step 4] Verifying Staked Balance..."
-STAKED=$(dfx canister call staking_hub get_user_staked_balance "(principal \"$USER_PRINCIPAL\")")
-echo "Staked: $STAKED"
-if [[ $STAKED == *"(500000000 : nat64)"* ]] || [[ $STAKED == *"(500_000_000 : nat64)"* ]]; then
-    echo "✅ Staked balance correct"
+if [[ $UNSTAKE == *"Ok"* ]]; then
+    success "Unstake successful (100% returned)"
 else
-    echo "❌ Staked balance incorrect"
-    exit 1
-fi
-
-# 5. Unstake
-echo -e "\n[Step 5] Unstaking 1 GHC..."
-# Unstake 100,000,000 e8s
-UNSTAKE=$(dfx canister call staking_hub unstake '(100000000)')
-echo "Unstake Result: $UNSTAKE"
-# Expected return: 90,000,000 (90%)
-if [[ $UNSTAKE == *"90000000"* ]] || [[ $UNSTAKE == *"90_000_000"* ]]; then
-    echo "✅ Unstake successful (Received 90%)"
-else
-    echo "❌ Unstake failed or incorrect amount"
-    exit 1
+    fail "Unstake failed: $UNSTAKE"
 fi
 
 # 6. Check Wallet Balance
-echo -e "\n[Step 6] Checking Wallet Balance..."
+log "[Step 6] Checking Wallet Balance..."
 BALANCE=$(dfx canister call ghc_ledger icrc1_balance_of "(record { owner = principal \"$USER_PRINCIPAL\"; subaccount = null })")
-echo "Wallet Balance: $BALANCE"
-if [[ $BALANCE == *"(90000000 : nat)"* ]] || [[ $BALANCE == *"(90_000_000 : nat)"* ]]; then
-    echo "✅ Wallet balance correct"
+
+if [[ $BALANCE == *"50_000_000"* ]] || [[ $BALANCE == *"50000000"* ]]; then
+    success "Wallet balance correct (0.5 GHC received)"
 else
-    echo "❌ Wallet balance incorrect"
-    exit 1
+    fail "Wallet balance incorrect: $BALANCE"
 fi
 
-echo -e "\n=== Verification Complete: ALL TESTS PASSED ==="
+# 7. Check Remaining Staked Balance
+log "[Step 7] Checking Remaining Staked Balance..."
+PROFILE=$(dfx canister call user_profile get_profile "(principal \"$USER_PRINCIPAL\")")
+
+if [[ $PROFILE == *"staked_balance = 50_000_000"* ]] || [[ $PROFILE == *"staked_balance = 50000000"* ]]; then
+    success "Remaining staked balance correct (0.5 GHC)"
+else
+    fail "Remaining staked balance incorrect: $PROFILE"
+fi
+
+log "=== Flow Test Complete: ALL TESTS PASSED ==="

@@ -1,0 +1,17 @@
+type InitArgs = record {
+    sonic_canister_id : principal;
+    ghc_ledger_id : principal;
+    usdc_ledger_id : principal;
+    owner : principal;
+};
+
+type LaunchIcoArgs = record {
+    ghc_amount : nat64;
+    usdc_amount : nat64;
+};
+
+service : (InitArgs) -> {
+    "launch_ico": (LaunchIcoArgs) -> (variant { Ok: text; Err: text });
+    "add_liquidity": (principal, principal, nat64, nat64) -> (variant { Ok: text; Err: text });
+    "swap": (principal, nat64, principal, nat64) -> (variant { Ok: text; Err: text });
+}

@@ -1,0 +1,367 @@
+{
+    "metadata": {
+        "name": "Sample Environmental Science Curriculum",
+        "description": "A test curriculum with hierarchical content for content governance testing",
+        "version": "1.0.0",
+        "created_at": "2026-01-19",
+        "levels": [
+            "CHAPTER",
+            "SECTION",
+            "UNIT"
+        ]
+    },
+    "content": [
+        {
+            "id": "env_chapter_1",
+            "parent_id": null,
+            "order": 1,
+            "display_type": "CHAPTER",
+            "title": "Introduction to Environmental Science",
+            "description": "Understanding our planet and the challenges it faces",
+            "content": null,
+            "paraphrase": null,
+            "media": null,
+            "quiz": null
+        },
+        {
+            "id": "env_section_1_1",
+            "parent_id": "env_chapter_1",
+            "order": 1,
+            "display_type": "SECTION",
+            "title": "What is Environmental Science?",
+            "description": "The scientific study of our environment",
+            "content": null,
+            "paraphrase": null,
+            "media": null,
+            "quiz": null
+        },
+        {
+            "id": "env_unit_1_1_1",
+            "parent_id": "env_section_1_1",
+            "order": 1,
+            "display_type": "UNIT",
+            "title": "Defining Environmental Science",
+            "description": "Core concepts and scope",
+            "content": "Environmental science is an interdisciplinary field that integrates physical, biological, and information sciences to study the environment and find solutions to environmental problems. It encompasses ecology, geology, meteorology, biology, chemistry, and physics. The field examines how humans interact with their environment and the impacts of human activities on natural systems.",
+            "paraphrase": "Environmental science combines multiple scientific disciplines to study nature and human impacts. Key fields: ecology, geology, biology, chemistry, physics. Focus: understanding human-environment interactions.",
+            "media": null,
+            "quiz": {
+                "questions": [
+                    {
+                        "question": "What is environmental science?",
+                        "options": [
+                            "Study of animals only",
+                            "Interdisciplinary study of the environment",
+                            "Study of weather",
+                            "Study of rocks"
+                        ],
+                        "answer": 1
+                    },
+                    {
+                        "question": "Which is NOT a component of environmental science?",
+                        "options": [
+                            "Ecology",
+                            "Geology",
+                            "Astrology",
+                            "Chemistry"
+                        ],
+                        "answer": 2
+                    }
+                ]
+            }
+        },
+        {
+            "id": "env_unit_1_1_2",
+            "parent_id": "env_section_1_1",
+            "order": 2,
+            "display_type": "UNIT",
+            "title": "The Scientific Method",
+            "description": "How scientists study environmental problems",
+            "content": "Environmental scientists use the scientific method to investigate problems. This involves: 1) Making observations, 2) Forming a hypothesis, 3) Designing and conducting experiments, 4) Analyzing data, 5) Drawing conclusions. This systematic approach ensures findings are reliable and reproducible.",
+            "paraphrase": "Scientific method steps: Observe → Hypothesize → Experiment → Analyze → Conclude. This ensures reliable, reproducible results in environmental research.",
+            "media": null,
+            "quiz": {
+                "questions": [
+                    {
+                        "question": "What is the first step of the scientific method?",
+                        "options": [
+                            "Forming a hypothesis",
+                            "Making observations",
+                            "Conducting experiments",
+                            "Drawing conclusions"
+                        ],
+                        "answer": 1
+                    },
+                    {
+                        "question": "Why is the scientific method important?",
+                        "options": [
+                            "It's fun",
+                            "It's fast",
+                            "It ensures reliable results",
+                            "It's cheap"
+                        ],
+                        "answer": 2
+                    }
+                ]
+            }
+        },
+        {
+            "id": "env_section_1_2",
+            "parent_id": "env_chapter_1",
+            "order": 2,
+            "display_type": "SECTION",
+            "title": "Ecosystems and Biodiversity",
+            "description": "Understanding living systems",
+            "content": null,
+            "paraphrase": null,
+            "media": null,
+            "quiz": null
+        },
+        {
+            "id": "env_unit_1_2_1",
+            "parent_id": "env_section_1_2",
+            "order": 1,
+            "display_type": "UNIT",
+            "title": "What is an Ecosystem?",
+            "description": "Components and structure of ecosystems",
+            "content": "An ecosystem is a community of living organisms interacting with their physical environment. It includes biotic factors (plants, animals, microorganisms) and abiotic factors (water, air, soil, sunlight). Energy flows through ecosystems via food chains and food webs, while nutrients cycle between organisms and the environment.",
+            "paraphrase": "Ecosystem = Living things + Physical environment. Biotic (living): plants, animals. Abiotic (non-living): water, air, soil, sun. Energy flows through food chains; nutrients cycle continuously.",
+            "media": null,
+            "quiz": {
+                "questions": [
+                    {
+                        "question": "What are biotic factors?",
+                        "options": [
+                            "Non-living things",
+                            "Living organisms",
+                            "Water and air",
+                            "Rocks and soil"
+                        ],
+                        "answer": 1
+                    },
+                    {
+                        "question": "What is an abiotic factor?",
+                        "options": [
+                            "A tree",
+                            "A fish",
+                            "Sunlight",
+                            "A bird"
+                        ],
+                        "answer": 2
+                    }
+                ]
+            }
+        },
+        {
+            "id": "env_unit_1_2_2",
+            "parent_id": "env_section_1_2",
+            "order": 2,
+            "display_type": "UNIT",
+            "title": "Biodiversity and Its Importance",
+            "description": "Why variety of life matters",
+            "content": "Biodiversity refers to the variety of life on Earth at all levels: genetic, species, and ecosystem diversity. High biodiversity provides ecosystem services like clean air, water purification, pollination, and climate regulation. The current rate of species extinction is 1,000 times higher than natural levels, making biodiversity conservation critical.",
+            "paraphrase": "Biodiversity = Variety of life (genes, species, ecosystems). Benefits: clean air, water purification, pollination, climate control. URGENT: Extinction rate is 1000x higher than natural!",
+            "media": null,
+            "quiz": {
+                "questions": [
+                    {
+                        "question": "What does biodiversity include?",
+                        "options": [
+                            "Only species diversity",
+                            "Only genetic diversity",
+                            "Genetic, species, and ecosystem diversity",
+                            "Only ecosystem diversity"
+                        ],
+                        "answer": 2
+                    },
+                    {
+                        "question": "How much higher is the current extinction rate compared to natural levels?",
+                        "options": [
+                            "10 times",
+                            "100 times",
+                            "1,000 times",
+                            "10,000 times"
+                        ],
+                        "answer": 2
+                    }
+                ]
+            }
+        },
+        {
+            "id": "env_chapter_2",
+            "parent_id": null,
+            "order": 2,
+            "display_type": "CHAPTER",
+            "title": "Climate and Climate Change",
+            "description": "Understanding Earth's climate system and human impacts",
+            "content": null,
+            "paraphrase": null,
+            "media": null,
+            "quiz": null
+        },
+        {
+            "id": "env_section_2_1",
+            "parent_id": "env_chapter_2",
+            "order": 1,
+            "display_type": "SECTION",
+            "title": "Climate Basics",
+            "description": "How Earth's climate system works",
+            "content": null,
+            "paraphrase": null,
+            "media": null,
+            "quiz": null
+        },
+        {
+            "id": "env_unit_2_1_1",
+            "parent_id": "env_section_2_1",
+            "order": 1,
+            "display_type": "UNIT",
+            "title": "Weather vs Climate",
+            "description": "Understanding the difference",
+            "content": "Weather refers to short-term atmospheric conditions like temperature, precipitation, and wind at a specific time and place. Climate is the average weather patterns over a long period (typically 30+ years) in a region. A simple way to remember: 'Climate is what you expect, weather is what you get.'",
+            "paraphrase": "Weather = Short-term conditions (today's temperature, rain). Climate = Long-term average patterns (30+ years). Remember: 'Climate is what you expect, weather is what you get.'",
+            "media": null,
+            "quiz": {
+                "questions": [
+                    {
+                        "question": "What is the main difference between weather and climate?",
+                        "options": [
+                            "Weather is about water, climate is about land",
+                            "Weather is short-term, climate is long-term",
+                            "They are the same thing",
+                            "Climate is about cold regions only"
+                        ],
+                        "answer": 1
+                    },
+                    {
+                        "question": "How many years of data typically defines climate?",
+                        "options": [
+                            "1 year",
+                            "5 years",
+                            "10 years",
+                            "30+ years"
+                        ],
+                        "answer": 3
+                    }
+                ]
+            }
+        },
+        {
+            "id": "env_unit_2_1_2",
+            "parent_id": "env_section_2_1",
+            "order": 2,
+            "display_type": "UNIT",
+            "title": "The Greenhouse Effect",
+            "description": "How Earth stays warm",
+            "content": "The greenhouse effect is a natural process that warms Earth's surface. When the sun's energy reaches Earth, some is reflected back to space while the rest is absorbed. Greenhouse gases (CO2, methane, water vapor) trap some of this heat, keeping Earth warm enough to support life. Without it, Earth would be about -18°C (0°F).",
+            "paraphrase": "Greenhouse effect: Sun warms Earth → Some heat trapped by gases (CO2, methane, water vapor) → Earth stays warm. Natural process! Without it, Earth = -18°C (freezing cold).",
+            "media": null,
+            "quiz": {
+                "questions": [
+                    {
+                        "question": "What is the greenhouse effect?",
+                        "options": [
+                            "A type of farming",
+                            "When greenhouses get hot",
+                            "Natural process that warms Earth",
+                            "A type of pollution"
+                        ],
+                        "answer": 2
+                    },
+                    {
+                        "question": "Which is a greenhouse gas?",
+                        "options": [
+                            "Oxygen",
+                            "Nitrogen",
+                            "Carbon dioxide",
+                            "Helium"
+                        ],
+                        "answer": 2
+                    }
+                ]
+            }
+        },
+        {
+            "id": "env_section_2_2",
+            "parent_id": "env_chapter_2",
+            "order": 2,
+            "display_type": "SECTION",
+            "title": "Human Impact on Climate",
+            "description": "How human activities affect climate",
+            "content": null,
+            "paraphrase": null,
+            "media": null,
+            "quiz": null
+        },
+        {
+            "id": "env_unit_2_2_1",
+            "parent_id": "env_section_2_2",
+            "order": 1,
+            "display_type": "UNIT",
+            "title": "Causes of Climate Change",
+            "description": "Human activities driving climate change",
+            "content": "Human activities have increased greenhouse gas concentrations since the Industrial Revolution. Main causes: 1) Burning fossil fuels (coal, oil, gas) for energy, 2) Deforestation, which reduces CO2 absorption, 3) Agriculture, especially livestock producing methane, 4) Industrial processes. CO2 levels have risen from 280 ppm to over 420 ppm.",
+            "paraphrase": "Human causes of climate change: 1) Fossil fuels (coal, oil, gas), 2) Deforestation (fewer trees to absorb CO2), 3) Agriculture (livestock methane), 4) Industry. CO2: 280 ppm → 420+ ppm since 1800s.",
+            "media": null,
+            "quiz": {
+                "questions": [
+                    {
+                        "question": "What is the main source of human-caused greenhouse gas emissions?",
+                        "options": [
+                            "Agriculture",
+                            "Burning fossil fuels",
+                            "Deforestation",
+                            "Ocean pollution"
+                        ],
+                        "answer": 1
+                    },
+                    {
+                        "question": "What was the pre-industrial CO2 level?",
+                        "options": [
+                            "100 ppm",
+                            "280 ppm",
+                            "420 ppm",
+                            "500 ppm"
+                        ],
+                        "answer": 1
+                    }
+                ]
+            }
+        },
+        {
+            "id": "env_unit_2_2_2",
+            "parent_id": "env_section_2_2",
+            "order": 2,
+            "display_type": "UNIT",
+            "title": "Effects of Climate Change",
+            "description": "Observed and projected impacts",
+            "content": "Climate change impacts are already visible: rising global temperatures (1.1°C above pre-industrial levels), melting ice caps, rising sea levels, more extreme weather events, shifting ecosystems, and ocean acidification. These changes threaten food security, water availability, human health, and biodiversity.",
+            "paraphrase": "Climate change effects we see: +1.1°C global warming, melting ice, rising seas, extreme weather, ecosystem shifts, ocean acidification. Risks: food, water, health, biodiversity all threatened.",
+            "media": null,
+            "quiz": {
+                "questions": [
+                    {
+                        "question": "How much has Earth warmed compared to pre-industrial levels?",
+                        "options": [
+                            "0.1°C",
+                            "0.5°C",
+                            "1.1°C",
+                            "3.0°C"
+                        ],
+                        "answer": 2
+                    },
+                    {
+                        "question": "Which is NOT a direct effect of climate change?",
+                        "options": [
+                            "Rising sea levels",
+                            "More extreme weather",
+                            "Earthquakes",
+                            "Melting ice caps"
+                        ],
+                        "answer": 2
+                    }
+                ]
+            }
+        }
+    ]
+}

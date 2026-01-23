@@ -1,7 +1,15 @@
 # GHC Token ICO Strategy
 
-> **Last Updated:** January 2025  
+> **Last Updated:** January 2026  
 > **Purpose:** Comprehensive plan for GHC token Initial Coin Offering (ICO)
+
+> **⚠️ ARCHITECTURE UPDATE (January 2026)**
+>
+> This document references `operational_governance` which has been refactored into:
+> - **`treasury_canister`**: Token custody (4.25B MC), MMCR, transfer execution
+> - **`governance_canister`**: Proposals, voting, ICO funding proposals
+>
+> For ICO operations: `FundIco` and `CreateLbp` proposals go to `governance_canister`, which calls `treasury_canister` for token transfers.
 
 ---
 

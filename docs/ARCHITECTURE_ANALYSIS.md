@@ -1,13 +1,28 @@
 # 🏗️ GreenHero Coin (GHC) Architecture Analysis
 
 **Generated**: December 7, 2025  
+**Last Updated**: January 2026  
 **Status**: Pre-Mainnet Review
+
+> **Note**: This document was originally written in December 2025. The system has since been **refactored** in January 2026 to use separate `treasury_canister` and `governance_canister` instead of a single `operational_governance`. The old `content_governance` has been replaced with `media_assets`, `staging_assets`, and content governance functionality integrated into `governance_canister`. Some recommendations in this analysis may have already been addressed.
 
 ---
 
 ## Executive Summary
 
-Your system implements a **"Pre-Mint & Allocate" tokenomics model** on the Internet Computer Protocol (ICP). The architecture is well-designed with a clear separation of concerns, using a **Micro-Bank + Batching** model for scalability. However, there are several areas where improvements can significantly enhance **security**, **scalability**, **resilience**, and **operational robustness**.
+The system implements a **"Pre-Mint & Allocate" tokenomics model** on the Internet Computer Protocol (ICP). The architecture is well-designed with a clear separation of concerns, using a **Micro-Bank + Batching** model for scalability. 
+
+### Current Architecture (January 2026 Refactoring)
+
+The system has been refactored into these core canisters:
+- **treasury_canister** - Token custody (4.25B MC), MMCR management, transfer execution
+- **governance_canister** - Proposals, voting, board member management, content governance
+- **staking_hub** - Central bank for mining (4.75B MUC), VUC provider, global stats
+- **learning_engine** - Content storage, quiz management, version history
+- **media_assets** - Permanent storage for videos/images/audio/PDFs
+- **staging_assets** - Temporary content before approval
+- **user_profile** - Sharded user accounts, quiz submissions, staked balances
+- **founder_vesting** - Time-locked founder tokens (0.5B MC)
 
 ---
 
@@ -15,11 +30,14 @@ Your system implements a **"Pre-Mint & Allocate" tokenomics model** on the Inter
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                                    GOVERNANCE LAYER                                   │
-│  ┌───────────────────────────────┐    ┌───────────────────────────────┐             │
-│  │   operational_governance      │    │    content_governance         │             │
-│  │   (Treasury: 4.25B GHC)       │    │    (Content Whitelisting)     │             │
-│  └───────────────────────────────┘    └───────────────────────────────┘             │
+│                              GOVERNANCE & TREASURY LAYER                              │
+│  ┌────────────────────────────────┐    ┌────────────────────────────────┐           │
+│  │     governance_canister        │◄──►│     treasury_canister          │           │
+│  │   (Proposals & Voting)         │    │   (Token Custody: 4.25B MC)    │           │
+│  │   • Board member management    │    │   • MMCR (15.2M/month)          │           │
+│  │   • Calls treasury on execute  │    │   • Only accepts calls from    │           │
+│  └────────────────────────────────┘    │     governance for transfers   │           │
+│                                         └────────────────────────────────┘           │
 └─────────────────────────────────────────────────────────────────────────────────────┘
                                           │
                                           ▼
@@ -28,7 +46,7 @@ Your system implements a **"Pre-Mint & Allocate" tokenomics model** on the Inter
 │  ┌─────────────────────────────────────────────────────────────────────────────────┐│
 │  │                              staking_hub (Central Bank)                          ││
 │  │   • Holds 4.75B "Mined Utility" tokens      • Global Stats (Staked, Allocated)  ││
-│  │   • Allowance Manager                       • Settlement (Unstaking)             ││
+│  │   • VUC Provider for governance             • Settlement (Unstaking)             ││
 │  └─────────────────────────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────────────────────────┘
                       │                                            ▲
@@ -41,10 +59,15 @@ Your system implements a **"Pre-Mint & Allocate" tokenomics model** on the Inter
 │  └───────────────────────────────┘    └───────────────────────────────┘             │
 │                                                     │                                │
 │                                                     ▼                                │
-│                                       ┌───────────────────────────────┐             │
-│                                       │      learning_engine          │             │
-│                                       │   (Stateless Content Store)   │             │
-│                                       └───────────────────────────────┘             │
+│  ┌───────────────────────────────┐    ┌───────────────────────────────┐             │
+│  │      learning_engine          │◄───│      staging_assets           │             │
+│  │   (Content + Quiz Storage)    │    │   (Temporary Content)         │             │
+│  └───────────────────────────────┘    └───────────────────────────────┘             │
+│                                                     ▲                                │
+│                                        ┌───────────────────────────────┐             │
+│                                        │      media_assets            │             │
+│                                        │   (Permanent Media Files)    │             │
+│                                        └───────────────────────────────┘             │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -119,22 +142,17 @@ fn add_learning_unit(unit: LearningUnit) -> Result<(), String> {
 
 ---
 
-#### **C. Voting Power Function Missing**
-**Location**: `operational_governance/src/lib.rs` lines 110-120, 148-160
+#### **C. Voting Power Function** ✅ RESOLVED (January 2026)
+**Location**: `governance_canister/src/lib.rs`
 
-The governance canister calls `staking_hub.get_voting_power()`, but this function was **removed** from `staking_hub`:
+> **Note**: This issue was **resolved** in January 2026. The `governance_canister` now has `get_user_voting_power` and `get_my_voting_power` update methods that query `staking_hub`, which in turn aggregates voting power from user profile shards.
 
-```rust
-// Comment in staking_hub/src/lib.rs line 285-286:
-// Removed get_user_stats and get_voting_power
-// These must now be queried from the User Profile Shards directly.
-```
+The original concern was that the governance canister called `staking_hub.get_voting_power()`, but this function was **removed** from `staking_hub`. This has since been resolved.
 
-**Risk**: **HIGH** - Governance voting is completely broken! Calls to `get_voting_power` will fail.
-
-**Recommendation**: Either:
-1. Add `get_voting_power` back to `staking_hub` that queries user profile shards, OR
-2. Update `operational_governance` to query `user_profile` shards directly
+**Current Flow**:
+1. `governance_canister.get_user_voting_power(principal)` calls `staking_hub.get_vuc(principal)`
+2. `staking_hub` aggregates VUC from the appropriate `user_profile` shard
+3. Result is returned to governance canister for voting weight calculation
 
 ---
 
@@ -343,17 +361,16 @@ enum TransactionType {
 
 ---
 
-#### **B. Content Governance is Empty**
-**Location**: `content_governance/src/lib.rs`
+#### **B. Content Governance** ✅ RESOLVED (January 2026)
+**Location**: Previously `content_governance/src/lib.rs`
 
-```rust
-#[query]
-fn get_book_count() -> u64 {
-    0  // Hardcoded!
-}
-```
+> **Note**: This issue was **resolved** in January 2026. The old `content_governance` canister was replaced with:
+> - **`media_assets`**: Permanent, immutable storage for videos/audio/images/PDFs
+> - **`staging_assets`**: Temporary content storage awaiting governance approval
+> - **`governance_canister`**: Content proposal types integrated (AddContentFromStaging, UpdateContentNode, etc.)
+> - **`learning_engine`**: ContentNode tree structure with version history
 
-**Problem**: This canister does nothing useful currently.
+The new architecture provides comprehensive content governance with proper staging, approval flow, and automatic loading.
 
 ---
 
@@ -455,11 +472,19 @@ The architecture is **sound and well-designed** for scale, but requires **critic
 
 ## Appendix: Files Analyzed
 
+### Current Canister Structure (January 2026)
 - `src/staking_hub/src/lib.rs`
 - `src/user_profile/src/lib.rs`
 - `src/learning_engine/src/lib.rs`
-- `src/operational_governance/src/lib.rs`
-- `src/content_governance/src/lib.rs`
+- `src/treasury_canister/src/lib.rs` (formerly part of operational_governance)
+- `src/governance_canister/src/lib.rs` (formerly part of operational_governance)
+- `src/founder_vesting/src/lib.rs`
+
+### Asset Canisters
+- `media_assets` (certified asset canister)
+- `staging_assets` (certified asset canister)
+
+### Documentation
 - `docs/ARCHITECTURE.md`
 - `docs/scalability_plan.md`
 - `docs/STAKING_MECHANICS.md`

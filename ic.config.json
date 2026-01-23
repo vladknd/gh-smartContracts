@@ -2,14 +2,16 @@
     "network": "local",
     "host": "http://localhost:4943",
     "canisters": {
-        "icrc1_index": "umunu-kh777-77774-qaaca-cai",
-        "user_profile": "vpyes-67777-77774-qaaeq-cai",
-        "learning_engine": "ucwa4-rx777-77774-qaada-cai",
-        "staking_hub": "vizcg-th777-77774-qaaea-cai",
-        "operational_governance": "ufxgi-4p777-77774-qaadq-cai",
+        "icrc1_index": "ucwa4-rx777-77774-qaada-cai",
+        "user_profile": "v27v7-7x777-77774-qaaha-cai",
+        "learning_engine": "vizcg-th777-77774-qaaea-cai",
+        "staking_hub": "vu5yx-eh777-77774-qaaga-cai",
+        "treasury_canister": "vt46d-j7777-77774-qaagq-cai",
+        "governance_canister": "umunu-kh777-77774-qaaca-cai",
         "ghc_ledger": "uzt4z-lp777-77774-qaabq-cai",
-        "content_governance": "uxrrr-q7777-77774-qaaaq-cai",
-        "internet_identity": "ulvla-h7777-77774-qaacq-cai",
+        "media_assets": "vpyes-67777-77774-qaaeq-cai",
+        "staging_assets": "vb2j2-fp777-77774-qaafq-cai",
+        "internet_identity": "ufxgi-4p777-77774-qaadq-cai",
         "founder_vesting": "u6s2n-gx777-77774-qaaba-cai"
     },
     "founders": [

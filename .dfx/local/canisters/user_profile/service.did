@@ -1,6 +1,31 @@
+type ArchiveConfig = record {
+  trigger_threshold : nat64;
+  is_configured : bool;
+  archive_canister_id : principal;
+  retention_limit : nat64;
+  check_interval_secs : nat64;
+};
+type CachedQuizConfig = record {
+  max_daily_quizzes : nat8;
+  reward_amount : nat64;
+  max_monthly_quizzes : nat8;
+  pass_threshold_percent : nat8;
+  max_daily_attempts : nat8;
+  version : nat64;
+  max_weekly_quizzes : nat8;
+  max_yearly_quizzes : nat16;
+};
 type InitArgs = record {
   learning_content_id : principal;
   staking_hub_id : principal;
+};
+type TransactionPage = record {
+  source : text;
+  archive_canister_id : principal;
+  transactions : vec TransactionRecord;
+  archived_count : nat64;
+  local_count : nat64;
+  total_count : nat64;
 };
 type TransactionRecord = record {
   timestamp : nat64;
@@ -8,10 +33,12 @@ type TransactionRecord = record {
   amount : nat64;
 };
 type TransactionType = variant { Unstake; QuizReward };
-type UserDailyStats = record {
-  quizzes_taken : nat8;
-  tokens_earned : nat64;
-  day_index : nat64;
+type UserListResult = record {
+  page_size : nat32;
+  page : nat32;
+  users : vec UserSummary;
+  total_count : nat64;
+  has_more : bool;
 };
 type UserProfile = record {
   name : text;
@@ -27,15 +54,49 @@ type UserProfileUpdate = record {
   email : text;
   gender : text;
 };
+type UserSummary = record {
+  user_principal : principal;
+  name : text;
+  email : text;
+  staked_balance : nat64;
+  verification_tier : VerificationTier;
+};
+type UserTimeStats = record {
+  weekly_earnings : nat64;
+  monthly_earnings : nat64;
+  daily_earnings : nat64;
+  last_active_day : nat64;
+  weekly_quizzes : nat8;
+  yearly_quizzes : nat16;
+  monthly_quizzes : nat8;
+  daily_quizzes : nat8;
+  yearly_earnings : nat64;
+};
+type VerificationTier = variant { KYC; None; Human };
 service : {
+  admin_get_user_details : (principal) -> (
+      variant { Ok : opt UserProfile; Err : text },
+    ) query;
+  admin_list_all_users : (nat32, nat32) -> (
+      variant { Ok : UserListResult; Err : text },
+    ) query;
   debug_force_sync : () -> (variant { Ok; Err : text });
+  get_archive_canister : () -> (principal) query;
+  get_archive_config : () -> (ArchiveConfig) query;
+  get_cached_quiz_config : () -> (CachedQuizConfig) query;
   get_profile : (principal) -> (opt UserProfile) query;
+  get_transactions_page : (principal, nat32) -> (TransactionPage) query;
   get_user_count : () -> (nat64) query;
-  get_user_daily_status : (principal) -> (UserDailyStats) query;
+  get_user_stats : (principal) -> (UserTimeStats) query;
   get_user_transactions : (principal) -> (vec TransactionRecord) query;
   is_quiz_completed : (principal, text) -> (bool) query;
+  is_user_registered : (principal) -> (bool) query;
+  receive_quiz_config : (CachedQuizConfig) -> ();
   register_user : (UserProfileUpdate) -> (variant { Ok; Err : text });
+  set_archive_canister : (principal) -> (variant { Ok; Err : text });
   submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
+  trigger_archive : () -> (variant { Ok : nat64; Err : text });
   unstake : (nat64) -> (variant { Ok : nat64; Err : text });
   update_profile : (UserProfileUpdate) -> (variant { Ok; Err : text });
+  whoami : () -> (principal) query;
 }

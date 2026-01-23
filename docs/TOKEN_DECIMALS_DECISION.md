@@ -72,7 +72,8 @@ This exceeds the u64 maximum by approximately **5x**, causing integer overflow.
 1. Change all `u64` balance fields to `u128` in:
    - `staking_hub/src/lib.rs`
    - `user_profile/src/lib.rs`
-   - `operational_governance/src/lib.rs`
+   - `treasury_canister/src/lib.rs`
+   - `governance_canister/src/lib.rs`
    - All Candid interface files (`.did`)
 2. Update all arithmetic operations
 3. Update serialization/deserialization logic

@@ -1,11 +1,16 @@
 [workspace]
 members = [
     "src/staking_hub",
-    "src/operational_governance",
-    "src/content_governance",
     "src/learning_engine",
     "src/user_profile",
     "src/founder_vesting",
+    "src/treasury_canister",
+    "src/governance_canister",
+    "src/media_assets",
+    "src/staging_assets",
+    "src/sonic_adapter",
+    "src/ico_canister",
+    "src/archive_canister",
 ]
 resolver = "2"
 

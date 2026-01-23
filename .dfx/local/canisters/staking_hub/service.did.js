@@ -1,8 +1,25 @@
 export const idlFactory = ({ IDL }) => {
   const InitArgs = IDL.Record({
     'learning_content_id' : IDL.Principal,
+    'archive_canister_wasm' : IDL.Opt(IDL.Vec(IDL.Nat8)),
     'ledger_id' : IDL.Principal,
     'user_profile_wasm' : IDL.Vec(IDL.Nat8),
+  });
+  const QuizCacheData = IDL.Record({
+    'question_count' : IDL.Nat8,
+    'content_id' : IDL.Text,
+    'version' : IDL.Nat64,
+    'answer_hashes' : IDL.Vec(IDL.Vec(IDL.Nat8)),
+  });
+  const CachedQuizConfig = IDL.Record({
+    'max_daily_quizzes' : IDL.Nat8,
+    'reward_amount' : IDL.Nat64,
+    'max_monthly_quizzes' : IDL.Nat8,
+    'pass_threshold_percent' : IDL.Nat8,
+    'max_daily_attempts' : IDL.Nat8,
+    'version' : IDL.Nat64,
+    'max_weekly_quizzes' : IDL.Nat8,
+    'max_yearly_quizzes' : IDL.Nat16,
   });
   const ShardStatus = IDL.Variant({ 'Full' : IDL.Null, 'Active' : IDL.Null });
   const ShardInfo = IDL.Record({
@@ -10,6 +27,7 @@ export const idlFactory = ({ IDL }) => {
     'status' : ShardStatus,
     'canister_id' : IDL.Principal,
     'created_at' : IDL.Nat64,
+    'archive_canister_id' : IDL.Opt(IDL.Principal),
   });
   const BoardMemberShare = IDL.Record({
     'member' : IDL.Principal,
@@ -28,6 +46,16 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'are_board_shares_locked' : IDL.Func([], [IDL.Bool], ['query']),
+    'distribute_quiz_cache' : IDL.Func(
+        [IDL.Text, QuizCacheData],
+        [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
+        [],
+      ),
+    'distribute_quiz_config' : IDL.Func(
+        [CachedQuizConfig],
+        [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
+        [],
+      ),
     'ensure_capacity' : IDL.Func(
         [],
         [IDL.Variant({ 'Ok' : IDL.Opt(IDL.Principal), 'Err' : IDL.Text })],
@@ -35,6 +63,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'fetch_voting_power' : IDL.Func([IDL.Principal], [IDL.Nat64], []),
     'get_active_shards' : IDL.Func([], [IDL.Vec(ShardInfo)], ['query']),
+    'get_archive_for_shard' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(IDL.Principal)],
+        ['query'],
+      ),
     'get_board_member_count' : IDL.Func([], [IDL.Nat64], ['query']),
     'get_board_member_share' : IDL.Func(
         [IDL.Principal],
@@ -109,6 +142,7 @@ export const idlFactory = ({ IDL }) => {
 export const init = ({ IDL }) => {
   const InitArgs = IDL.Record({
     'learning_content_id' : IDL.Principal,
+    'archive_canister_wasm' : IDL.Opt(IDL.Vec(IDL.Nat8)),
     'ledger_id' : IDL.Principal,
     'user_profile_wasm' : IDL.Vec(IDL.Nat8),
   });

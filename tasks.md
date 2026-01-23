@@ -46,42 +46,48 @@ Enable each board member to register multiple wallet principals for enhanced sec
 
 ---
 
-## Task 3: Refactor Operational Governance into Separate Canisters
+## Task 3: Refactor Operational Governance into Separate Canisters ✅ COMPLETED
 
 ### Description
-Split the current `operational_governance` canister into two specialized canisters: `governance_canister` and `treasury_canister`. This improves separation of concerns, security, and maintainability.
+Split the legacy `operational_governance` canister into two specialized canisters: `governance_canister` and `treasury_canister`. This improves separation of concerns, security, and maintainability.
+
+**STATUS: COMPLETED** - The `operational_governance` canister has been removed. The system now uses:
+- `governance_canister` - Proposals, voting, board member management
+- `treasury_canister` - Token custody, transfers, MMCR
+
+Additionally, content governance has been integrated:
+- `media_assets` - Permanent media file storage
+- `staging_assets` - Temporary content before governance approval
+- `learning_engine` - Content storage with version history
 
 ### Proposed Structure
 
-#### Governance Canister
+#### Governance Canister ✅ Implemented
 Responsibilities:
 - Proposal creation, voting, and approval logic
 - Board member management (add, remove, update shares)
 - Voting power calculations
 - Proposal state management (Proposed → Active → Approved/Rejected)
 - Configuration management
+- Content governance proposals (add content, update quiz config, delete content)
 
-#### Treasury Canister
+#### Treasury Canister ✅ Implemented
 Responsibilities:
 - Token custody and transfers
 - Execution of approved treasury proposals
-- Balance tracking (treasury, founders, etc.)
-- Token allocation and distribution
+- Balance tracking
+- MMCR (Monthly Maximum Cumulative Release)
 - Financial reporting and queries
 
-### Tips & Considerations
-- Inter-canister communication: governance canister calls treasury canister to execute approved proposals
-- Treasury canister should ONLY accept execution calls from governance canister (verify caller principal)
-- Migration strategy: deploy new canisters, migrate data, update frontend
-- Benefits: clearer code organization, better security isolation, easier testing, allows independent upgrades
-- See `docs/MULTISIG_EXPLAINED.md` for why this makes multi-sig easier to implement
-
-### Questions to Clarify
-- Should the treasury canister be controlled by the governance canister (as controller), or just verify caller identity?
-- How should we handle the data migration from the existing unified canister?
-- Should we keep the old canister for historical data, or migrate everything?
-- What inter-canister call patterns should we use? (async/await, one-way calls, etc.)
-- Should board member data live in governance, treasury, or both?
+### Completed Work
+- ✅ Created `governance_canister` with full proposal system
+- ✅ Created `treasury_canister` with token management
+- ✅ Removed `operational_governance` canister completely
+- ✅ Created `media_assets` canister for permanent media storage
+- ✅ Created `staging_assets` canister for content staging
+- ✅ Updated `learning_engine` with content governance integration
+- ✅ Updated deployment script with all canister linkages
+- ✅ Updated frontend configuration
 
 ---
 
@@ -142,6 +148,139 @@ Add comprehensive board member management functionality through governance propo
 
 ---
 
+## Task 5: Multi-Token Treasury Support
+
+### Description
+Extend the treasury canister to support multiple token types beyond GHC. Initially support USDC (stablecoin) for ICO proceeds, with architecture to easily add more tokens (ICP, ckBTC, etc.) in the future.
+
+### Tips & Considerations
+- Use a `HashMap<TokenType, Balance>` or similar structure to track multiple token balances
+- Each token type needs its own ledger canister principal for transfers
+- Implement token-agnostic transfer functions that route to appropriate ledger
+- Treasury proposals should specify token type for transfers (e.g., "Send 1000 USDC to X" vs "Send 100 GHC to Y")
+- Add query functions to get treasury balance by token type
+- Consider implementing token swap proposals (exchange X amount of token A for token B via DEX)
+- Track token inflows/outflows separately for accounting and reporting
+- Integration with ICRC-1 or ICRC-2 token standards for compatibility
+
+### Token Types to Support (Priority Order)
+1. **GHC** (native token) - already implemented
+2. **USDC** (stablecoin) - needed for ICO
+3. **ICP** (Internet Computer native) - ecosystem integration
+4. **ckBTC** (wrapped Bitcoin) - future treasury diversification
+5. **ckETH** (wrapped Ethereum) - future treasury diversification
+
+### Questions to Clarify
+- Should the treasury support any ICRC-1 token, or only whitelisted tokens approved via governance?
+- How should token balances be displayed in the frontend dashboard?
+- Should there be separate governance thresholds for different token types? (e.g., spending USDC requires higher approval)
+- Do we need exchange rate oracles to value different tokens in a common denominator?
+- Should token deposits require approval, or can anyone send tokens to treasury?
+- How should we handle token standards (ICRC-1, ICRC-2, DIP-20)?
+
+---
+
+## Task 6: Create ICO Canister
+
+### Description
+Build a dedicated ICO (Initial Coin Offering) canister to conduct the first phase of token sale. Users send USDC to the ICO canister and receive GHC tokens at a fixed price. All USDC proceeds go directly to the treasury.
+
+### Core Functionality
+
+#### Phase 1: Fixed Price Sale
+- Set a fixed GHC/USDC exchange rate (e.g., 1 GHC = 0.10 USDC)
+- Users call `buy_tokens(usdc_amount)` and receive GHC in return
+- Automatically transfer USDC to treasury canister
+- Mint or transfer GHC tokens to buyer
+- Track total tokens sold and total USDC raised
+
+#### ICO Configuration (via Governance)
+- Start time and end time
+- Fixed price per token
+- Minimum purchase amount (prevent spam)
+- Maximum purchase per user (optional - promote fair distribution)
+- Total token allocation for sale
+- Whitelist mode (optional - restrict to approved participants)
+
+#### Safety Features
+- Pause/resume functionality (emergency stop via governance)
+- Purchase limits per transaction
+- Time-based phases (pre-sale, public sale, etc.)
+- Automatic closure when token allocation is sold out
+- Refund mechanism if ICO is cancelled
+
+### Tips & Considerations
+- ICO canister needs approval to transfer GHC from treasury or have pre-allocated supply
+- Requires integration with USDC ledger canister for receiving payments
+- Consider implementing purchase history queries for transparency
+- Add events/logs for all purchases for audit trail
+- Frontend integration: simple "Buy GHC" interface with USDC wallet connection
+- Post-ICO: canister can be frozen or repurposed for future sale rounds
+- Security: validate all USDC transfers before minting GHC (prevent double-spend)
+- Consider vesting schedules for large purchases (optional)
+
+### Questions to Clarify
+- What should the fixed price be for GHC in USDC? (e.g., $0.10 per GHC)
+- How many GHC tokens should be allocated for the ICO? (e.g., 10% of total supply)
+- Should there be a minimum/maximum purchase limit per user?
+- Do we need KYC/whitelist for ICO participants, or open to anyone?
+- Should the ICO have multiple phases (pre-sale, public sale) with different prices?
+- What happens to unsold tokens after ICO ends? (burn, return to treasury, save for future rounds)
+- Should early buyers get bonuses/discounts?
+- How should we handle failed transactions or refunds?
+
+---
+
+## Task 7: DEX Integration Canister
+
+### Description
+Create a canister that integrates with decentralized exchanges (DEX) on the Internet Computer ecosystem. This enables automated token swaps, liquidity provision, and price discovery for GHC and other treasury tokens.
+
+### Core Functionality
+
+#### Swap Integration
+- Integrate with major IC DEXes (ICPSwap, Sonic, etc.)
+- Execute token swaps via governance proposals (e.g., "Swap 1000 USDC for ICP")
+- Query current market prices for supported token pairs
+- Calculate slippage and estimated output before swaps
+
+#### Liquidity Management (Future)
+- Add/remove liquidity to GHC trading pairs
+- Track LP token positions
+- Collect trading fees from liquidity pools
+- Automated liquidity rebalancing strategies
+
+#### Price Oracle
+- Fetch current GHC market price from DEX
+- Provide price feeds for treasury valuation
+- Historical price tracking for analytics
+
+### Tips & Considerations
+- Start with read-only integration (price queries) before implementing swaps
+- Each DEX has different APIs - may need adapters for each
+- Slippage protection: set maximum acceptable slippage for swaps
+- All swaps should go through governance proposals for transparency
+- Consider MEV (Maximal Extractable Value) protection
+- Test thoroughly on testnet before mainnet integration
+- May need to handle failed swaps and retries
+- Frontend: display current GHC price, trading volume, liquidity
+
+### DEX Platforms to Consider
+1. **ICPSwap** - largest DEX on Internet Computer
+2. **Sonic** - high-performance DEX
+3. **ICDex** - order book based DEX
+
+### Questions to Clarify
+- Which DEX should we integrate with first? (Recommended: ICPSwap)
+- Should DEX swaps require governance proposals, or can board members execute directly?
+- Do we want to provide liquidity (become a liquidity provider), or just use DEX for swaps?
+- Should the system automatically create GHC/USDC and GHC/ICP liquidity pools?
+- What percentage of treasury should be available for DEX operations?
+- How should we handle price impact on large swaps (split into smaller trades)?
+- Should we implement automated trading strategies, or keep it manual via governance?
+
+---
+
 ## Priority Recommendations
 
 Based on security and functionality needs:
@@ -150,7 +289,10 @@ Based on security and functionality needs:
 2. **High Priority**: Task 4A & 4B (Remove/Update board member proposals) - Critical governance functions
 3. **Medium Priority**: Task 1 (Multi-sig for execution) - Enhanced security for treasury
 4. **Medium Priority**: Task 3 (Canister refactoring) - Improves architecture but can be done incrementally
-5. **Low Priority**: Task 4C-F (Additional board member features) - Nice-to-have features
+5. **Medium Priority**: Task 5 (Multi-token treasury support) - Needed before ICO
+6. **Medium Priority**: Task 6 (ICO canister) - Revenue generation for project
+7. **Low Priority**: Task 4C-F (Additional board member features) - Nice-to-have features
+8. **Low Priority**: Task 7 (DEX integration) - Useful but not critical initially
 
 ---
 

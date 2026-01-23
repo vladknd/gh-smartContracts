@@ -38,6 +38,8 @@ struct InitArgs {
     learning_content_id: Principal,
     /// Embedded WASM binary for auto-deploying user_profile shard canisters
     user_profile_wasm: Vec<u8>,
+    /// Embedded WASM binary for auto-deploying archive canisters (optional)
+    archive_canister_wasm: Option<Vec<u8>>,
 }
 
 /// Global statistics tracked by the staking hub
@@ -85,6 +87,8 @@ pub struct ShardInfo {
     pub user_count: u64,
     /// Operational status of the shard
     pub status: ShardStatus,
+    /// Principal ID of the associated archive canister (if created)
+    pub archive_canister_id: Option<Principal>,
 }
 
 /// Operational status of a shard canister
@@ -132,6 +136,40 @@ impl Storable for WasmBlob {
     const BOUND: Bound = Bound::Unbounded;
 }
 
+/// Quiz cache data structure for distribution
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct QuizCacheData {
+    pub content_id: String,
+    pub answer_hashes: Vec<[u8; 32]>,
+    pub question_count: u8,
+    pub version: u64,
+}
+
+/// Cached quiz config for distribution to shards
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct CachedQuizConfig {
+    pub reward_amount: u64,
+    pub pass_threshold_percent: u8,
+    pub max_daily_attempts: u8,
+    pub max_daily_quizzes: u8,
+    pub max_weekly_quizzes: u8,
+    pub max_monthly_quizzes: u8,
+    pub max_yearly_quizzes: u16,
+    pub version: u64,
+}
+
+/// Quiz config returned by learning_engine
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct QuizConfig {
+    pub reward_amount: u64,
+    pub pass_threshold_percent: u8,
+    pub max_daily_attempts: u8,
+    pub max_daily_quizzes: u8,
+    pub max_weekly_quizzes: u8,
+    pub max_monthly_quizzes: u8,
+    pub max_yearly_quizzes: u16,
+}
+
 // ============================================================================
 // THREAD-LOCAL STORAGE
 // ============================================================================
@@ -148,6 +186,7 @@ impl Storable for WasmBlob {
 //   6 - LEARNING_CONTENT_ID: Learning engine canister principal
 //   7 - EMBEDDED_WASM: User profile WASM for auto-deployment
 //   8 - INITIALIZED: Whether init() has been called
+//   9 - EMBEDDED_ARCHIVE_WASM: Archive canister WASM for auto-deployment
 
 thread_local! {
     // ─────────────────────────────────────────────────────────────────────
@@ -188,6 +227,15 @@ thread_local! {
     static EMBEDDED_WASM: RefCell<StableCell<WasmBlob, Memory>> = RefCell::new(
         StableCell::init(
             MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(7))),
+            WasmBlob::default()
+        ).unwrap()
+    );
+
+    /// Embedded archive_canister WASM binary for auto-deploying archive canisters
+    /// Each user_profile shard gets its own archive canister
+    static EMBEDDED_ARCHIVE_WASM: RefCell<StableCell<WasmBlob, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(9))),
             WasmBlob::default()
         ).unwrap()
     );
@@ -273,8 +321,18 @@ fn init(args: InitArgs) {
     if !args.user_profile_wasm.is_empty() {
         EMBEDDED_WASM.with(|w| {
             w.borrow_mut().set(WasmBlob { data: args.user_profile_wasm })
-                .expect("Failed to store WASM");
+                .expect("Failed to store user_profile WASM");
         });
+    }
+    
+    // Store the archive_canister WASM (immutable after init)
+    if let Some(archive_wasm) = args.archive_canister_wasm {
+        if !archive_wasm.is_empty() {
+            EMBEDDED_ARCHIVE_WASM.with(|w| {
+                w.borrow_mut().set(WasmBlob { data: archive_wasm })
+                    .expect("Failed to store archive_canister WASM");
+            });
+        }
     }
     
     INITIALIZED.with(|i| {
@@ -297,6 +355,108 @@ fn start_auto_scale_timer() {
             let _ = ensure_capacity_internal().await;
         });
     });
+}
+
+// ===============================
+// Quiz Cache Router
+// ===============================
+
+/// Distribute quiz cache updates to all active shards
+#[update]
+async fn distribute_quiz_cache(unit_id: String, cache_data: QuizCacheData) -> Result<u64, String> {
+    let caller = ic_cdk::caller();
+    let learning_id = LEARNING_CONTENT_ID.with(|id| *id.borrow().get());
+    if caller != learning_id {
+        return Err("Unauthorized".to_string());
+    }
+
+    let shards: Vec<Principal> = SHARD_REGISTRY.with(|r| {
+        r.borrow().iter().map(|(_, s)| s.canister_id).collect()
+    });
+
+    let mut success_count = 0;
+    for shard in shards {
+        let u = unit_id.clone();
+        let c = cache_data.clone();
+        // Fire and forget to avoid blocking hub
+        ic_cdk::spawn(async move {
+            let _ = ic_cdk::call::<_, ()>(shard, "receive_quiz_cache", (u, c)).await;
+        });
+        success_count += 1;
+    }
+    Ok(success_count)
+}
+
+/// Distribute quiz config update to all shards
+/// Called by learning_engine when config is updated via governance
+#[update]
+async fn distribute_quiz_config(config: CachedQuizConfig) -> Result<u64, String> {
+    let caller = ic_cdk::caller();
+    let learning_id = LEARNING_CONTENT_ID.with(|id| *id.borrow().get());
+    if caller != learning_id {
+        return Err("Unauthorized".to_string());
+    }
+
+    let shards: Vec<Principal> = SHARD_REGISTRY.with(|r| {
+        r.borrow().iter().map(|(_, s)| s.canister_id).collect()
+    });
+
+    let mut success_count = 0;
+    for shard in shards {
+        let c = config.clone();
+        // Fire and forget to avoid blocking hub
+        ic_cdk::spawn(async move {
+            let _ = ic_cdk::call::<_, ()>(shard, "receive_quiz_config", (c,)).await;
+        });
+        success_count += 1;
+    }
+    Ok(success_count)
+}
+
+/// Helper to sync a newly created shard with full quiz cache AND config
+async fn sync_new_shard(shard_id: Principal) -> Result<(), String> {
+    let learning_id = LEARNING_CONTENT_ID.with(|id| *id.borrow().get());
+    
+    // Fetch all cache data
+    let (all_caches,): (Vec<(String, QuizCacheData)>,) = ic_cdk::call(
+        learning_id,
+        "get_all_quiz_cache_data",
+        ()
+    ).await.map_err(|(c, m)| format!("Sync failed: {:?} {}", c, m))?;
+
+    // Push to new shard
+    let _ = ic_cdk::call::<_, ()>(
+        shard_id,
+        "receive_full_quiz_cache",
+        (all_caches,)
+    ).await;
+    
+    // Also sync the quiz config
+    let (config,): (QuizConfig,) = ic_cdk::call(
+        learning_id,
+        "get_global_quiz_config",
+        ()
+    ).await.map_err(|(c, m)| format!("Config sync failed: {:?} {}", c, m))?;
+    
+    // Convert to cached format and send
+    let cached_config = CachedQuizConfig {
+        reward_amount: config.reward_amount,
+        pass_threshold_percent: config.pass_threshold_percent,
+        max_daily_attempts: config.max_daily_attempts,
+        max_daily_quizzes: config.max_daily_quizzes,
+        max_weekly_quizzes: config.max_weekly_quizzes,
+        max_monthly_quizzes: config.max_monthly_quizzes,
+        max_yearly_quizzes: config.max_yearly_quizzes,
+        version: 1,
+    };
+    
+    let _ = ic_cdk::call::<_, ()>(
+        shard_id,
+        "receive_quiz_config",
+        (cached_config,)
+    ).await;
+    
+    Ok(())
 }
 
 // ===============================
@@ -348,24 +508,25 @@ async fn ensure_capacity_internal() -> Result<Option<Principal>, String> {
 }
 
 async fn create_shard_internal() -> Result<Principal, String> {
-    // 1. Get embedded WASM
-    let wasm_module = EMBEDDED_WASM.with(|w| w.borrow().get().data.clone());
+    // 1. Get embedded WASMs
+    let user_profile_wasm = EMBEDDED_WASM.with(|w| w.borrow().get().data.clone());
+    let archive_wasm = EMBEDDED_ARCHIVE_WASM.with(|w| w.borrow().get().data.clone());
     
-    if wasm_module.is_empty() {
-        return Err("No WASM embedded".to_string());
+    if user_profile_wasm.is_empty() {
+        return Err("No user_profile WASM embedded".to_string());
     }
     
     // 2. Get required IDs
     let learning_content_id = LEARNING_CONTENT_ID.with(|id| *id.borrow().get());
     let staking_hub_id = ic_cdk::id();
     
-    // 3. Create canister via management canister
+    // 3. Define types for management canister calls
     #[derive(CandidType)]
     struct CreateCanisterArgs {
         settings: Option<CanisterSettings>,
     }
     
-    #[derive(CandidType)]
+    #[derive(CandidType, Clone)]
     struct CanisterSettings {
         controllers: Option<Vec<Principal>>,
         compute_allocation: Option<Nat>,
@@ -378,25 +539,6 @@ async fn create_shard_internal() -> Result<Principal, String> {
         canister_id: Principal,
     }
     
-    let create_args = CreateCanisterArgs {
-        settings: Some(CanisterSettings {
-            controllers: Some(vec![staking_hub_id]), // Hub controls the shard
-            compute_allocation: None,
-            memory_allocation: None,
-            freezing_threshold: None,
-        }),
-    };
-    
-    // Call management canister to create
-    let (create_result,): (CreateCanisterResult,) = ic_cdk::call(
-        Principal::management_canister(),
-        "create_canister",
-        (create_args,)
-    ).await.map_err(|(code, msg)| format!("Failed to create canister: {:?} {}", code, msg))?;
-    
-    let new_canister_id = create_result.canister_id;
-    
-    // 4. Install the WASM code
     #[derive(CandidType)]
     struct InstallCodeArgs {
         mode: InstallMode,
@@ -415,38 +557,118 @@ async fn create_shard_internal() -> Result<Principal, String> {
         upgrade,
     }
     
-    // Prepare init args for user_profile
+    // 4. Create user_profile canister
+    let create_args = CreateCanisterArgs {
+        settings: Some(CanisterSettings {
+            controllers: Some(vec![staking_hub_id]),
+            compute_allocation: None,
+            memory_allocation: None,
+            freezing_threshold: None,
+        }),
+    };
+    
+    let (user_profile_result,): (CreateCanisterResult,) = ic_cdk::call(
+        Principal::management_canister(),
+        "create_canister",
+        (create_args,)
+    ).await.map_err(|(code, msg)| format!("Failed to create user_profile canister: {:?} {}", code, msg))?;
+    
+    let user_profile_id = user_profile_result.canister_id;
+    
+    // 5. Create archive canister (if WASM is available)
+    let archive_canister_id: Option<Principal> = if !archive_wasm.is_empty() {
+        let archive_create_args = CreateCanisterArgs {
+            settings: Some(CanisterSettings {
+                controllers: Some(vec![staking_hub_id]),
+                compute_allocation: None,
+                memory_allocation: None,
+                freezing_threshold: None,
+            }),
+        };
+        
+        let (archive_result,): (CreateCanisterResult,) = ic_cdk::call(
+            Principal::management_canister(),
+            "create_canister",
+            (archive_create_args,)
+        ).await.map_err(|(code, msg)| format!("Failed to create archive canister: {:?} {}", code, msg))?;
+        
+        let archive_id = archive_result.canister_id;
+        
+        // Install archive canister code
+        #[derive(CandidType)]
+        struct ArchiveInitArgs {
+            parent_shard_id: Principal,
+        }
+        
+        let archive_init = ArchiveInitArgs {
+            parent_shard_id: user_profile_id,
+        };
+        
+        let archive_install_args = InstallCodeArgs {
+            mode: InstallMode::install,
+            canister_id: archive_id,
+            wasm_module: archive_wasm,
+            arg: Encode!(&archive_init).map_err(|e| format!("Failed to encode archive init args: {}", e))?,
+        };
+        
+        let _: () = ic_cdk::call(
+            Principal::management_canister(),
+            "install_code",
+            (archive_install_args,)
+        ).await.map_err(|(code, msg)| format!("Failed to install archive code: {:?} {}", code, msg))?;
+        
+        Some(archive_id)
+    } else {
+        None
+    };
+    
+    // 6. Install user_profile code
     #[derive(CandidType)]
     struct UserProfileInitArgs {
         staking_hub_id: Principal,
         learning_content_id: Principal,
     }
     
-    let init_args = UserProfileInitArgs {
+    let user_profile_init = UserProfileInitArgs {
         staking_hub_id,
         learning_content_id,
     };
     
-    let install_args = InstallCodeArgs {
+    let user_profile_install_args = InstallCodeArgs {
         mode: InstallMode::install,
-        canister_id: new_canister_id,
-        wasm_module,
-        arg: Encode!(&init_args).map_err(|e| format!("Failed to encode init args: {}", e))?,
+        canister_id: user_profile_id,
+        wasm_module: user_profile_wasm,
+        arg: Encode!(&user_profile_init).map_err(|e| format!("Failed to encode user_profile init args: {}", e))?,
     };
     
     let _: () = ic_cdk::call(
         Principal::management_canister(),
         "install_code",
-        (install_args,)
-    ).await.map_err(|(code, msg)| format!("Failed to install code: {:?} {}", code, msg))?;
+        (user_profile_install_args,)
+    ).await.map_err(|(code, msg)| format!("Failed to install user_profile code: {:?} {}", code, msg))?;
     
-    // 5. Register the new shard
-    register_shard_internal(new_canister_id);
+    // 7. Link archive canister to user_profile (if archive was created)
+    if let Some(archive_id) = archive_canister_id {
+        let _: Result<(), _> = ic_cdk::call(
+            user_profile_id,
+            "set_archive_canister",
+            (archive_id,)
+        ).await;
+        // Note: We ignore errors here as the shard is still functional without the link
+    }
     
-    Ok(new_canister_id)
+    // 8. Register the new shard with archive info
+    register_shard_internal(user_profile_id, archive_canister_id);
+
+    // 9. Sync initial quiz cache (async, ignore error)
+    ic_cdk::spawn(async move {
+        let _ = sync_new_shard(user_profile_id).await;
+    });
+    
+    Ok(user_profile_id)
 }
 
-fn register_shard_internal(canister_id: Principal) {
+fn register_shard_internal(canister_id: Principal, archive_canister_id: Option<Principal>) {
     let shard_index = SHARD_COUNT.with(|c| {
         let mut cell = c.borrow_mut();
         let idx = *cell.get();
@@ -459,6 +681,7 @@ fn register_shard_internal(canister_id: Principal) {
         created_at: ic_cdk::api::time(),
         user_count: 0,
         status: ShardStatus::Active,
+        archive_canister_id,
     };
     
     REGISTERED_SHARDS.with(|m| m.borrow_mut().insert(canister_id, true));
@@ -533,8 +756,22 @@ fn get_shard_count() -> u64 {
 /// SECURITY: This should only be callable by controllers in production
 #[update]
 fn add_allowed_minter(canister_id: Principal) {
-    // Register the shard
-    register_shard_internal(canister_id);
+    // Register the shard (without archive - manual setup)
+    register_shard_internal(canister_id, None);
+}
+
+/// Get the archive canister ID for a specific shard
+#[query]
+fn get_archive_for_shard(shard_id: Principal) -> Option<Principal> {
+    let shard_count = SHARD_COUNT.with(|c| *c.borrow().get());
+    
+    SHARD_REGISTRY.with(|r| {
+        let registry = r.borrow();
+        (0..shard_count)
+            .filter_map(|i| registry.get(&i))
+            .find(|s| s.canister_id == shard_id)
+            .and_then(|s| s.archive_canister_id)
+    })
 }
 
 // ===============================
