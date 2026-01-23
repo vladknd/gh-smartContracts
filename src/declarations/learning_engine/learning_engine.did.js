@@ -89,9 +89,13 @@ export const idlFactory = ({ IDL }) => {
     'modified_by_proposal' : IDL.Nat64,
   });
   const QuizConfig = IDL.Record({
+    'max_daily_quizzes' : IDL.Nat8,
     'reward_amount' : IDL.Nat64,
+    'max_monthly_quizzes' : IDL.Nat8,
     'pass_threshold_percent' : IDL.Nat8,
     'max_daily_attempts' : IDL.Nat8,
+    'max_weekly_quizzes' : IDL.Nat8,
+    'max_yearly_quizzes' : IDL.Nat16,
   });
   const QuizCacheData = IDL.Record({
     'question_count' : IDL.Nat8,
@@ -172,7 +176,15 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'update_global_quiz_config' : IDL.Func(
-        [IDL.Opt(IDL.Nat64), IDL.Opt(IDL.Nat8), IDL.Opt(IDL.Nat8)],
+        [
+          IDL.Opt(IDL.Nat64),
+          IDL.Opt(IDL.Nat8),
+          IDL.Opt(IDL.Nat8),
+          IDL.Opt(IDL.Nat8),
+          IDL.Opt(IDL.Nat8),
+          IDL.Opt(IDL.Nat8),
+          IDL.Opt(IDL.Nat16),
+        ],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),

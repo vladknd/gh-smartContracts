@@ -50,6 +50,11 @@ type QuizConfig = record {
     reward_amount : nat64;
     pass_threshold_percent : nat8;
     max_daily_attempts : nat8;
+    // Quiz limits - maximum quizzes per time period
+    max_daily_quizzes : nat8;
+    max_weekly_quizzes : nat8;
+    max_monthly_quizzes : nat8;
+    max_yearly_quizzes : nat16;
 };
 
 type QuizCacheData = record {
@@ -183,7 +188,8 @@ service : (InitArgs) -> {
     "get_global_quiz_config": () -> (QuizConfig) query;
     
     // Update global quiz configuration (governance only)
-    "update_global_quiz_config": (opt nat64, opt nat8, opt nat8) -> (variant { Ok: null; Err: text });
+    // Parameters: reward_amount, pass_threshold, max_attempts, max_daily, max_weekly, max_monthly, max_yearly
+    "update_global_quiz_config": (opt nat64, opt nat8, opt nat8, opt nat8, opt nat8, opt nat8, opt nat16) -> (variant { Ok: null; Err: text });
     
     // Verify quiz answers
     // Returns: (passed: bool, correct_count: nat64, total_questions: nat64)

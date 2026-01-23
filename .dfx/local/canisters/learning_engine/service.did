@@ -69,9 +69,13 @@ type QuizCacheData = record {
   answer_hashes : vec blob;
 };
 type QuizConfig = record {
+  max_daily_quizzes : nat8;
   reward_amount : nat64;
+  max_monthly_quizzes : nat8;
   pass_threshold_percent : nat8;
   max_daily_attempts : nat8;
+  max_weekly_quizzes : nat8;
+  max_yearly_quizzes : nat16;
 };
 type QuizData = record { questions : vec QuizQuestion };
 type QuizQuestion = record {
@@ -103,8 +107,14 @@ service : {
   start_content_load : (nat64, principal, text, text, nat32) -> (
       variant { Ok; Err : text },
     );
-  update_global_quiz_config : (opt nat64, opt nat8, opt nat8) -> (
-      variant { Ok; Err : text },
-    );
+  update_global_quiz_config : (
+      opt nat64,
+      opt nat8,
+      opt nat8,
+      opt nat8,
+      opt nat8,
+      opt nat8,
+      opt nat16,
+    ) -> (variant { Ok; Err : text });
   verify_quiz : (text, blob) -> (bool, nat64, nat64) query;
 }

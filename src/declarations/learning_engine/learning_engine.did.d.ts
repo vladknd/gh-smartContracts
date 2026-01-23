@@ -114,9 +114,16 @@ export interface QuizCacheData {
   'answer_hashes' : Array<Uint8Array | number[]>,
 }
 export interface QuizConfig {
+  /**
+   * Quiz limits - maximum quizzes per time period
+   */
+  'max_daily_quizzes' : number,
   'reward_amount' : bigint,
+  'max_monthly_quizzes' : number,
   'pass_threshold_percent' : number,
   'max_daily_attempts' : number,
+  'max_weekly_quizzes' : number,
+  'max_yearly_quizzes' : number,
 }
 export interface QuizData { 'questions' : Array<QuizQuestion> }
 /**
@@ -185,7 +192,15 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'update_global_quiz_config' : ActorMethod<
-    [[] | [bigint], [] | [number], [] | [number]],
+    [
+      [] | [bigint],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+    ],
     { 'Ok' : null } |
       { 'Err' : string }
   >,

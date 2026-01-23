@@ -28,9 +28,9 @@ Use `set_board_member_shares` on the `governance_canister`.
 # Founder 2: 30%
 # Founder 3: 20%
 
-FOUNDER1="5y7pt-llxsr-oprwi-lmraj-mdeso-g2b36-hgci4-cu3nc-ameyz-6gtee-mae"
-FOUNDER2="gnuto-ixx4d-oloia-qf27q-izbjr-lnypz-u4tr3-henbi-xvpoi-wnkvh-2qe"
-FOUNDER3="4foj6-fafq5-4vlch-lkieu-pybyg-ve4ba-bfhdw-rkklx-6n2gb-epjv3-4qe"
+FOUNDER1="n7kyi-a2ccw-erzef-tzywo-kuqyh-4x6on-6ltec-flkee-5zcdi-62drw-gae"
+FOUNDER2="vlg44-yhcay-gabeb-4qse6-k4tvu-ujdun-jyzjc-aq5nm-45hye-2qsr5-3ae"
+FOUNDER3="zgmvl-h4shw-3tgr2-sunlv-nujve-qh7o4-mwolg-hmais-ymglc-yt4q7-cqe"
 
 dfx canister call governance_canister set_board_member_shares "(vec {
   record { member = principal \"$FOUNDER1\"; percentage = 60 };
@@ -71,10 +71,10 @@ Useful for testing execution logic without waiting 2 weeks for voting.
 
 ```bash
 # Force Approve Proposal ID 1
-dfx canister call governance_canister admin_set_proposal_status '(1 : nat64, variant { Approved })'
+dfx canister call governance_canister admin_set_proposal_status '(0 : nat64, variant { Approved })'
 
 # Force Reject Proposal ID 1
-dfx canister call governance_canister admin_set_proposal_status '(1 : nat64, variant { Rejected })'
+dfx canister call governance_canister admin_set_proposal_status '(0 : nat64, variant { Rejected })'
 ```
 
 ---
