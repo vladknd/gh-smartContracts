@@ -1,0 +1,1157 @@
+{
+  "id": "proj-1",
+  "title": "Green Heroes",
+  "template": "book",
+  "targetAudience": "General Public",
+  "createdAt": "2026-01-21T15:06:48.992Z",
+  "updatedAt": "2026-01-23T06:04:44.765Z",
+  "resources": [
+    {
+      "id": "da801923-af5b-4676-b375-a5d6e6dccc7f",
+      "name": "ENv6 BGH KINDLE FINAL3.docx",
+      "type": "docx",
+      "size": 11350997,
+      "uploadedAt": "2026-01-21T15:50:51.282Z",
+      "status": "ready",
+      "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nEDITION 2 - KINDLE\n\nCopyright © 2024 Sae Chang\n\nAll rights reserved\n\nNo part of this book may be reproduced, or stored in a retrieval system, or transmitted in any form or by any means, electronic, mechanical, photocopying, recording, or otherwise, without express written permission of the publisher.\n\n\n\nASIN-Kindle Edition: ​ B0DHLRFTVW\n\nISBN-Paper Cover: 9798345635339\n\nISBN-Hard Cover: 9798344917191\n\n\n\nSae Chang, BE GREEN HEROES: FIGHTING WIDESPREAD MISINFORMATION AND PURSUING ENVIRONMENTAL LITERACY, HANDBOOK OF TEXTILE SUSTAINABILITY\n\n\n\nEdition 2 Notes: \n\nThis second edition has been thoughtfully refined to enhance readability for a broad audience, welcoming both casual readers and industry professionals. Passages offering in-depth insights for industry professionals and students in related fields are clearly marked as ***Industry Specifics***. These sections provide valuable technical detail for those who seek it, while allowing casual readers to bypass them without losing the flow or central emphasis of each topic.\n\n\n\nBE GREEN HEROES in Different Language Versions: \n\nFrench\n\nTitre: BE GREEN HEROES: LUTTER CONTRE LA DÉSINFORMATION GÉNÉRALISÉE ET PROMOUVOIR LA LITTÉRATIE ENVIRONNEMENTALE, MANUEL DE DURABILITÉ TEXTILE\n\nLien web et code QR: \n\nhttps://amzn.to/3UVzZ6M   \n\nItalian\n\nTitre: SIATE EROI VERDI: COMBATTIAMO CONTRO LA DISINFORMAZIONE, PERSEGUIAMO L’EDUCAZIONE AMBIENTALE, MANUALE DI SOSTENIBILITÀ TESSILE\n\nLien web et code QR: \n\nhttps://amzn.to/4fBdbTG \n\nSpanish\n\nTítulo: SER HÉROES VERDES: LUCHA CONTRA LA DESINFORMACIÓN COMÚN Y LA BÚSQUEDA DE LA ALFABETIZACIÓN AMBIENTAL, MANUAL DE SOSTENIBILIDAD TEXTIL\n\nEnlace web y código QR: \n\nhttps://amzn.to/3H3vIv2 \n\nTable of Contents\n\nIntroduction\n\nAbout the Author\n\nAbout the Book\n\nCredits\n\nChapter I: Consumers, Be Aware and Beware!\n\nSection 1. Unfortunate Consumers\n\nSection 2. “Fast fas... [truncated]"
+    }
+  ],
+  "nodes": {
+    "fcbb4f98-aa7b-413b-848a-a143ba3e970d": {
+      "id": "fcbb4f98-aa7b-413b-848a-a143ba3e970d",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 0,
+      "type": "learning",
+      "displayType": "Learning Point 1",
+      "title": "1.1 Material Choices and Care Methods",
+      "description": "Explore the misconceptions and environmental impacts regarding material choices between natural and synthetic fibers. Gain insight into how care methods affect textile longevity and sustainability.",
+      "content": "Origin Factor: This argument critically overlooks the significant energy consumption involved in farming natural fibers and, in some cases, the amount of the carbon footprint created in natural fibers can be multiple times higher than that of synthetic fibers.\nDecomposition Factor: The notion that natural fibers decompose quickly considers the breakdown of the natural elements like the cellulose of cotton and the protein of wool. However, it fails to account for the residual chemicals in textile waste.\nMicroplastic Factor: While synthetic fibers do release microplastics throughout their lifecycles, this argument critically overlooks the issues from natural fiber dust.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769117103461,
+      "version": 2
+    },
+    "7c80b704-376f-4ce4-b4a0-224be77f1832": {
+      "id": "7c80b704-376f-4ce4-b4a0-224be77f1832",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 1,
+      "type": "learning",
+      "displayType": "Learning Point",
+      "title": "1.1.1 Care Method Overview",
+      "description": "Understand the different care methods prescribed for textile goods, analyze the environmental impacts of these methods, and evaluate best practices for consumers.",
+      "content": "Material types can heavily influence the care frequencies during consumption period. For instance, cotton shirts and rags tend to develop odors more easily than their polyester counterparts, a phenomenon familiar to many. This observation aligns with the scientific understanding of the natural fibers and their chemical compositions, such as the presence of hydroxyl groups in the plant-based fibers (cotton, linen, etc.) and proteins in the animal-based fibers (wool, silk, etc.), which inherently offer high chemical reactivities with odor-causing microorganisms - A more detailed exploration on this topic is provided in Chapter II: Basics.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "ec46b838-02de-4465-b583-50f2152eb01c": {
+      "id": "ec46b838-02de-4465-b583-50f2152eb01c",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 2,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.1.2 Natural Materials and Care Methods",
+      "description": "Detailed exploration of care methods specifically for natural materials like cotton, wool, and down, and their environmental implications.",
+      "content": "Numerous natural materials are used in textiles, primarily categorized as either animal- or plant-based. In this subsection, we will explore three of the most commonly used natural materials: Cotton, Wool and Down.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "d239616f-7650-4b94-8ce1-31deff9889cf": {
+      "id": "d239616f-7650-4b94-8ce1-31deff9889cf",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 3,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.1.3 Synthetic Materials and Care Methods",
+      "description": "Discover how care methods for synthetic materials differ from natural ones and how they influence environmental outcomes. Understand the strengths and limitations of synthetic materials in care.",
+      "content": "One significant advantage of most synthetic materials is that they typically do not require drycleaning. This distinction, compared to their natural counterparts, stems from a significantly lower chemical reactivity, which gives them a strong resistance to color fading. Furthermore, they offer much higher strength, enabling them to withstand physical forces encountered in home laundering with water.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-1": {
+      "id": "quiz-1",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 4,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Material Choices and Care Methods",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "According to the book, what is a common misconception about natural fibers?",
+            "options": [
+              "They are more expensive than synthetic fibers.",
+              "They decompose quickly and without a trace.",
+              "They are weaker than synthetic fibers.",
+              "They require special washing techniques."
+            ],
+            "answer": 1
+          },
+          {
+            "question": "Which of the following is NOT a factor to consider when evaluating the environmental impact of fibers?",
+            "options": [
+              "Origin Factor",
+              "Decomposition Factor",
+              "Microplastic Factor",
+              "Color Factor"
+            ],
+            "answer": 3
+          },
+          {
+            "question": "Why do cotton shirts tend to develop odors more easily than polyester shirts?",
+            "options": [
+              "Because cotton is a natural fiber.",
+              "Because of the presence of hydroxyl groups in cotton.",
+              "Because polyester is a synthetic fiber.",
+              "Because cotton is more absorbent."
+            ],
+            "answer": 1
+          }
+        ]
+      }
+    },
+    "b63d7f19-9401-4eed-b4b0-759457e286b1": {
+      "id": "b63d7f19-9401-4eed-b4b0-759457e286b1",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 5,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.2 Water Resistance & Breathable Technology",
+      "description": "Explanation and analysis of water resistance and breathability technologies. Learn the effectiveness and environmental impact of these technologies in real-world applications.",
+      "content": "\"Breathability\" refers to the fabric's ability to allow moisture-laden air from the body to pass through (while providing a high level of water resistance in the context of this technology platform), providing dry comfort to wearers.The \"water resistant and breathable\" technology involves applying a polymeric membrane, typically made of the expanded-polytetrafluoroethylene (ePTFE), to the fabric's backside (the side opposite to the weather-facing surface).",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "1e27278a-6bf2-42d5-b57f-923351309846": {
+      "id": "1e27278a-6bf2-42d5-b57f-923351309846",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 6,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.3 Water-Repellency",
+      "description": "Explanation and analysis of water repellency technologies. Understand the chemical treatments used and their impact on the environment and fabric functionality.",
+      "content": "Water-repellency in textiles relates to the surface tension of fibers, fabric structures and their relationship with that of contacting water molecules. Per- and polyfluoroalkyl substances (PFAS) are applied to the weather-facing side of fabrics to create a high(er) degree of water repellency, preventing rain from wetting the surface.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-2": {
+      "id": "quiz-2",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 7,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Water Resistance and Repellency",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is the primary material used for the polymeric membrane in 'water resistant and breathable' technology?",
+            "options": [
+              "Polyvinyl Chloride (PVC)",
+              "Expanded-polytetrafluoroethylene (ePTFE)",
+              "Polyethylene terephthalate (PET)",
+              "Polystyrene (PS)"
+            ],
+            "answer": 1
+          },
+          {
+            "question": "What substances are commonly applied to fabrics to achieve water-repellency?",
+            "options": [
+              "Silicones",
+              "Waxes",
+              "Per- and polyfluoroalkyl substances (PFAS)",
+              "Acrylics"
+            ],
+            "answer": 2
+          }
+        ]
+      }
+    },
+    "6118ee45-7e7b-4f18-a535-3be0e638a28e": {
+      "id": "6118ee45-7e7b-4f18-a535-3be0e638a28e",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 8,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.4 Artificially Conceptual Value (ACV)",
+      "description": "Explore the concept of Artificially Conceptual Value (ACV), a phenomenon where technological features are perceived to be innovative yet lack proven scientific effectiveness. Understand the implications of ACVs on environmental sustainability and consumer perception, with examples from the textile industry.",
+      "content": "Artificially Conceptual Value (ACV) refers to a technical feature that lacks scientific evidence to support its effectiveness in real-life applications but is marketed in a way that convinces people it works. Companies engaged in promoting ACVs often introduce scientific explanations to justify their technologies, which may seem plausible to consumers without in-depth knowledge. This can lead to the adoption of technologies that do not contribute effectively to sustainability but are perceived to be valuable innovations. For example, heat reflective technology claims to reflect body heat to conserve warmth, but tests show minimal difference in thermal efficiency. Similarly, phase-change materials (PCMs) are marketed for their temperature-regulating properties, but the scale and activation conditions of PCMs often make them impractical for everyday textile applications. Furthermore, many performance claims associated with ACVs, such as health benefits from heat-generating technology, are unsupported when tested under realistic conditions. These ACVs not only mislead consumers but also pose environmental challenges, as unnecessary chemical treatments complicate recycling processes and contribute to environmental pollution.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011875830,
+      "version": 3
+    },
+    "62905c65-59d5-4356-a6ea-04a66adc15aa": {
+      "id": "62905c65-59d5-4356-a6ea-04a66adc15aa",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 9,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.4.1 Heat Reflective Technology",
+      "description": "Examine the science behind claimed heat reflective materials. Assess both the theoretical and real-life impact on consumer warmth and sustainability.",
+      "content": "A thin layer of a metallic silver pattern is applied to the inner lining fabric of winter jackets with the claim that it reflects the body heat back toward the wearer, conserving the heat and keeping him/her warmer than the person would be without this technology.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "97f0696a-4000-4c1e-b1d7-7d2d57784d75": {
+      "id": "97f0696a-4000-4c1e-b1d7-7d2d57784d75",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 10,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.4.2 Phase-Change-Material (PCM) technology",
+      "description": "Explanation and analysis of Phase-Change-Material technology. Understand its intended thermal regulation purposes and the realistic outcome of textile applications.",
+      "content": "The PCM technology involves certain materials that change their phases from, for example, liquid to solid, and maintain a constant temperature during the phase change.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "83bfcd95-363d-476c-ac88-8ce8aa153d81": {
+      "id": "83bfcd95-363d-476c-ac88-8ce8aa153d81",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 11,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.4.3 Heat-Generating Technology",
+      "description": "Examine the claim of heat-generating textiles, focusing on the material scientific logic and environmental impact. Explore consumer bias toward perceived technology innovations.",
+      "content": "Extremely small particles of various materials including ceramic, clay, carbon nanotube, etc., are added to and evenly distributed in a polymer tank where the polymer is in a molten state.Fibers are then extruded with these particles embedded in them",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-3": {
+      "id": "quiz-3",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 12,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Artificially Conceptual Value",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is the definition of Artificially Conceptual Value (ACV)?",
+            "options": [
+              "A product that is genuinely innovative and scientifically proven.",
+              "A marketing term for products that are environmentally friendly.",
+              "A technical feature that is marketed as innovative but lacks scientific proof of effectiveness.",
+              "A measure of a product's market value."
+            ],
+            "answer": 2
+          },
+          {
+            "question": "Which of these is an example of a technology that may have Artificially Conceptual Value?",
+            "options": [
+              "Heat reflective technology",
+              "Phase-Change-Material (PCM) technology",
+              "Heat-Generating Technology",
+              "All of the above"
+            ],
+            "answer": 3
+          }
+        ]
+      }
+    },
+    "9553ed5a-d319-491a-85fe-89a52f8c2efd": {
+      "id": "9553ed5a-d319-491a-85fe-89a52f8c2efd",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 13,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.5 Other Important Textiles and Environmental Impacts",
+      "description": "Delve into complex textile issues affecting both consumer experience and environmental sustainability. Analyze examples that illustrate these impacts.",
+      "content": "In this subsection, I will explore a couple of textile technologies that can either greatly benefit or harm consumers while also having significant environmental impacts.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "ec373cc1-dddf-4dcd-88b0-c20997b39171": {
+      "id": "ec373cc1-dddf-4dcd-88b0-c20997b39171",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 14,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.5.1 Home Textile & Energy Savings",
+      "description": "Explore sustainable energy practices through home textiles, examining practices and innovations that contribute meaningfully to energy conservation.",
+      "content": "The thermally insulated curtains are a cost-effective and simple solution suitable for any homes or commercial buildings, regardless of the age of construction or window size and location. These curtains are made with specifically designed synthetic non-woven fabrics, which are engineered to provide optimal thermal efficiencies while using a minimal quantity of textile materials.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "2bc08326-903d-4d1d-888f-79ba74c23c5a": {
+      "id": "2bc08326-903d-4d1d-888f-79ba74c23c5a",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 15,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "1.5.2 Harmful Face Masks for Health and Environment",
+      "description": "Analyze the environmental and health misuse implications associated with face masks, weighing their necessity against sustainability techniques.",
+      "content": "Metal particles, such as copper and silver, cannot be permanently fixed to fibers and fabric structures...Placing such particles in the path of our breath is dangerous...Readers, please do not wear the face masks made with any particles regardless of its kind. Inhaling the particles can pose more harm than any potential benefit.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-4": {
+      "id": "quiz-4",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "order": 17,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Other Important Textiles and Environmental Impacts",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is the main benefit of thermally insulated curtains?",
+            "options": [
+              "They are decorative.",
+              "They provide energy savings.",
+              "They are made from natural materials.",
+              "They are easy to clean."
+            ],
+            "answer": 1
+          },
+          {
+            "question": "Why are face masks with metal particles considered harmful?",
+            "options": [
+              "They are not effective at filtering viruses.",
+              "The metal particles can be inhaled.",
+              "They are too expensive.",
+              "They are bad for the environment."
+            ],
+            "answer": 1
+          }
+        ]
+      }
+    },
+    "eb862071-527d-49bc-be45-bfe5afed212d": {
+      "id": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "parentId": "3334e941-aea7-4a43-ba02-36f0191776fa",
+      "children": [
+        "e9d5f33f-0faf-4cb5-966e-2ebf059dbfd3",
+        "7c80b704-376f-4ce4-b4a0-224be77f1832",
+        "fcbb4f98-aa7b-413b-848a-a143ba3e970d",
+        "ec46b838-02de-4465-b583-50f2152eb01c",
+        "d239616f-7650-4b94-8ce1-31deff9889cf",
+        "quiz-1",
+        "b63d7f19-9401-4eed-b4b0-759457e286b1",
+        "1e27278a-6bf2-42d5-b57f-923351309846",
+        "quiz-2",
+        "6118ee45-7e7b-4f18-a535-3be0e638a28e",
+        "62905c65-59d5-4356-a6ea-04a66adc15aa",
+        "97f0696a-4000-4c1e-b1d7-7d2d57784d75",
+        "83bfcd95-363d-476c-ac88-8ce8aa153d81",
+        "quiz-3",
+        "9553ed5a-d319-491a-85fe-89a52f8c2efd",
+        "ec373cc1-dddf-4dcd-88b0-c20997b39171",
+        "2bc08326-903d-4d1d-888f-79ba74c23c5a",
+        "quiz-4"
+      ],
+      "order": 0,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Unfortunate Consumers",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769117094571,
+      "version": 2
+    },
+    "3c41f520-0604-4c6a-8891-ee3474d346e4": {
+      "id": "3c41f520-0604-4c6a-8891-ee3474d346e4",
+      "parentId": "14e22e9e-5a1c-41a9-9cd8-28c0baa660d6",
+      "children": [],
+      "order": 0,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "2.1 Ambiguity in Definition",
+      "description": "Deconstruct the various definitions and concepts surrounding 'fast fashion' and examine how it drives consumer behavior and environmental impacts.",
+      "content": "Consumers are often misguided into accepting misinformation as scientifically valid truth about 'fast fashion' due to oversimplified definitions and perceptions.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "f561f8aa-9edc-4fd7-bb11-405c1e327035": {
+      "id": "f561f8aa-9edc-4fd7-bb11-405c1e327035",
+      "parentId": "14e22e9e-5a1c-41a9-9cd8-28c0baa660d6",
+      "children": [],
+      "order": 2,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "2.2 Manufacturing Factors – Material, Quality and Cost",
+      "description": "Analyze the manufacturing aspects of fast fashion including materials, quality control, and cost-efficiency motivations that impact sustainability.",
+      "content": "Consumers perceptions of 'quality' in 'fast fashion' often conflict with scientific measures; synthetic fibers are generally stronger, implying contradictory perceptions.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "51a785b2-8705-4aab-b755-1e2646fde1da": {
+      "id": "51a785b2-8705-4aab-b755-1e2646fde1da",
+      "parentId": "14e22e9e-5a1c-41a9-9cd8-28c0baa660d6",
+      "children": [],
+      "order": 3,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "2.3 Retail Price Factors",
+      "description": "Examine how retail pricing affects fast fashion trends and influences the perceived value versus environmental cost dilemma.",
+      "content": "Retail prices are shaped by operational structures and marketing, leading to a disconnect between actual material costs and price, influencing perception of quality in 'fast fashion'.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "9d8f3748-a12b-43cb-bacd-67a8294e6c81": {
+      "id": "9d8f3748-a12b-43cb-bacd-67a8294e6c81",
+      "parentId": "14e22e9e-5a1c-41a9-9cd8-28c0baa660d6",
+      "children": [],
+      "order": 4,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "2.4 Misperceptions and Overconsumptions",
+      "description": "Assess consumer misunderstandings and the cultural trends that drive overconsumption in the fast fashion industry, together with environmental impacts.",
+      "content": "Labeling textiles as 'fast fashion' can lead to a perception of lower value and premature disposal, driving overconsumption, influenced by preconceived notions.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-5": {
+      "id": "quiz-5",
+      "parentId": "14e22e9e-5a1c-41a9-9cd8-28c0baa660d6",
+      "children": [],
+      "order": 5,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Fast Fashion",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is one of the main issues with the term 'fast fashion'?",
+            "options": [
+              "It is not a legally recognized term.",
+              "Its definition is ambiguous and often leads to consumer misperception.",
+              "It only applies to clothing, not accessories.",
+              "It is a term invented by marketers."
+            ],
+            "answer": 1
+          },
+          {
+            "question": "How do consumer perceptions of 'quality' in fast fashion often differ from scientific measures?",
+            "options": [
+              "Consumers often believe that natural fibers are always of higher quality, even though synthetic fibers can be stronger.",
+              "Consumers believe that higher price always means higher quality.",
+              "Consumers believe that items labeled 'fast fashion' are designed to be disposable.",
+              "All of the above."
+            ],
+            "answer": 3
+          }
+        ]
+      }
+    },
+    "14e22e9e-5a1c-41a9-9cd8-28c0baa660d6": {
+      "id": "14e22e9e-5a1c-41a9-9cd8-28c0baa660d6",
+      "parentId": "9887daaa-68b9-4406-a625-326851475989",
+      "children": [
+        "3c41f520-0604-4c6a-8891-ee3474d346e4",
+        "f561f8aa-9edc-4fd7-bb11-405c1e327035",
+        "51a785b2-8705-4aab-b755-1e2646fde1da",
+        "9d8f3748-a12b-43cb-bacd-67a8294e6c81",
+        "quiz-5"
+      ],
+      "order": 1,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Fast Fashion",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769117097365,
+      "version": 2
+    },
+    "c8153ec8-01b3-4f60-a0ec-82b2000f5e58": {
+      "id": "c8153ec8-01b3-4f60-a0ec-82b2000f5e58",
+      "parentId": "69a81304-d8f5-4f26-89c9-fe22f72549d9",
+      "children": [],
+      "order": 0,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "3.1 Microplastics and Synthetic Fibers",
+      "description": "Explore the ecological implications of synthetic fibers’ lifecycle, focusing on microplastic pollution and strategies for mitigation.",
+      "content": "Microplastics are generated from plastic sources, with synthetic fibers being a major source because they are weak during manufacturing.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "a1a90f3d-304e-4c0d-964d-bd54046a0f73": {
+      "id": "a1a90f3d-304e-4c0d-964d-bd54046a0f73",
+      "parentId": "69a81304-d8f5-4f26-89c9-fe22f72549d9",
+      "children": [],
+      "order": 1,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "3.2 Dust of Natural Fibers",
+      "description": "Evaluate natural fiber dust's environmental effects and compare them with synthetic microplastics. Discover the common misconceptions and actual impact.",
+      "content": "Natural fibers, despite being 'natural,' also degrade and create dust particles that are harmful to both human and environmental health.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "5a4a6253-aaed-43b8-9480-496bca87a458": {
+      "id": "5a4a6253-aaed-43b8-9480-496bca87a458",
+      "parentId": "69a81304-d8f5-4f26-89c9-fe22f72549d9",
+      "children": [],
+      "order": 2,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "3.2.1 Strength Factor and Dust Quantity",
+      "description": "Examine how the inherent strength of different fiber types affects dust production and impacts environmental health.",
+      "content": "Breaking energy analysis measures a fiber's resistance to physical forces; polyester has higher values, implying cotton generates more dust.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-6": {
+      "id": "quiz-6",
+      "parentId": "69a81304-d8f5-4f26-89c9-fe22f72549d9",
+      "children": [],
+      "order": 3,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Microplastic vs. Natural Fiber Dust",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is a significant source of microplastic pollution?",
+            "options": [
+              "Natural fibers",
+              "Synthetic fibers",
+              "Both natural and synthetic fibers",
+              "Neither"
+            ],
+            "answer": 1
+          },
+          {
+            "question": "What does the 'Strength Factor' refer to in the context of fiber dust?",
+            "options": [
+              "The strength of the fabric.",
+              "A measure of a fiber's resistance to physical forces.",
+              "The amount of dust a fiber produces.",
+              "The colorfastness of a fiber."
+            ],
+            "answer": 1
+          }
+        ]
+      }
+    },
+    "69a81304-d8f5-4f26-89c9-fe22f72549d9": {
+      "id": "69a81304-d8f5-4f26-89c9-fe22f72549d9",
+      "parentId": "3334e941-aea7-4a43-ba02-36f0191776fa",
+      "children": [
+        "c8153ec8-01b3-4f60-a0ec-82b2000f5e58",
+        "a1a90f3d-304e-4c0d-964d-bd54046a0f73",
+        "5a4a6253-aaed-43b8-9480-496bca87a458",
+        "quiz-6"
+      ],
+      "order": 1,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Microplastic vs. Natural Fiber Dust",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "61a8737a-ab55-4782-8697-369bb0433a6d": {
+      "id": "61a8737a-ab55-4782-8697-369bb0433a6d",
+      "parentId": "d32a9e95-9830-4fe1-9f3a-2d63a6a677c4",
+      "children": [],
+      "order": 0,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "4.1 Donation Myth",
+      "description": "Uncover the realities behind textile donation programs, understanding where donated clothing truly ends up and how it impacts the environment.",
+      "content": "Textile goods placed in recycling boxes or donated get shipped to underdeveloped countries for unethical practices, including burning or burying.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "b316a8f8-0a85-4cfe-925b-c65bfdf1c2c2": {
+      "id": "b316a8f8-0a85-4cfe-925b-c65bfdf1c2c2",
+      "parentId": "d32a9e95-9830-4fe1-9f3a-2d63a6a677c4",
+      "children": [],
+      "order": 1,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "4.2 Decomposition Myth",
+      "description": "Analyze common misconceptions about textile decomposition timelines and processes in landfills.",
+      "content": "Natural fibers may degrade quicker, but chemicals persist, leading to other harmful effects from farming to natural existence, so it is crucial for us to emphasize chemical persistency.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "8fdc2500-36b6-43ce-bb6d-db0d86a0b3e6": {
+      "id": "8fdc2500-36b6-43ce-bb6d-db0d86a0b3e6",
+      "parentId": "d32a9e95-9830-4fe1-9f3a-2d63a6a677c4",
+      "children": [],
+      "order": 2,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "4.2.1 Duration of Decomposition",
+      "description": "Explore the scientific and ecological aspects governing how long different materials take to decompose and the environmental impacts over time.",
+      "content": "Online sources state plastic can last 450 years in nature, though plastics do not undergo radioactive decay, so plastics are not chemically inert, and has the bacteria to degradate plastics.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "425912c8-5dc4-435b-a00a-4ff4cc83902d": {
+      "id": "425912c8-5dc4-435b-a00a-4ff4cc83902d",
+      "parentId": "d32a9e95-9830-4fe1-9f3a-2d63a6a677c4",
+      "children": [],
+      "order": 3,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "4.3 Biodegradability",
+      "description": "Evaluate what biodegradability means in textiles, its merits, limits, and repercussions for sustainability strategies.",
+      "content": "Some textiles are labeled as 'biodegradable', but that term can be misleading, as they may just require specialized conditions. However, it is scientifically proven, after significant research, all plastics are biodegradable; however, not as effective as many natural materials such as wood.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-7": {
+      "id": "quiz-7",
+      "parentId": "d32a9e95-9830-4fe1-9f3a-2d63a6a677c4",
+      "children": [],
+      "order": 4,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Unfortunate Disposal",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is the 'Donation Myth'?",
+            "options": [
+              "That all donated clothes are sold in thrift stores.",
+              "That donated clothes are always recycled.",
+              "That donated clothes are often shipped to underdeveloped countries and disposed of unethically.",
+              "That donating clothes is not helpful."
+            ],
+            "answer": 2
+          },
+          {
+            "question": "What is the issue with the decomposition of natural fibers?",
+            "options": [
+              "They do not decompose.",
+              "They decompose too quickly.",
+              "The chemicals used in their production can persist in the environment.",
+              "They release more microplastics than synthetic fibers."
+            ],
+            "answer": 2
+          }
+        ]
+      }
+    },
+    "d32a9e95-9830-4fe1-9f3a-2d63a6a677c4": {
+      "id": "d32a9e95-9830-4fe1-9f3a-2d63a6a677c4",
+      "parentId": "3334e941-aea7-4a43-ba02-36f0191776fa",
+      "children": [
+        "61a8737a-ab55-4782-8697-369bb0433a6d",
+        "b316a8f8-0a85-4cfe-925b-c65bfdf1c2c2",
+        "8fdc2500-36b6-43ce-bb6d-db0d86a0b3e6",
+        "425912c8-5dc4-435b-a00a-4ff4cc83902d",
+        "quiz-7"
+      ],
+      "order": 2,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Unfortunate Disposal",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "58283b70-2f38-4c2a-a0da-0660ff76bf0d": {
+      "id": "58283b70-2f38-4c2a-a0da-0660ff76bf0d",
+      "parentId": "c4c889e9-771e-4fb2-9eb4-fe97a1eccc77",
+      "children": [],
+      "order": 0,
+      "type": "learning",
+      "displayType": "Subsection",
+      "title": "5. Unfortunate Recycling",
+      "description": "Explore the challenges and inefficiencies in the current textile recycling systems, and consider innovations that could make a meaningful impact.",
+      "content": "The global perspective is that purchasing recycled is good, but there are many different forms of measurements to ensure we can recycle without future implications.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-8": {
+      "id": "quiz-8",
+      "parentId": "c4c889e9-771e-4fb2-9eb4-fe97a1eccc77",
+      "children": [],
+      "order": 1,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Unfortunate Recycling",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is a key challenge in textile recycling?",
+            "options": [
+              "A lack of consumer demand for recycled products.",
+              "The difficulty in separating different fiber types.",
+              "The high cost of recycling machinery.",
+              "The lack of government support."
+            ],
+            "answer": 1
+          }
+        ]
+      }
+    },
+    "c4c889e9-771e-4fb2-9eb4-fe97a1eccc77": {
+      "id": "c4c889e9-771e-4fb2-9eb4-fe97a1eccc77",
+      "parentId": "3334e941-aea7-4a43-ba02-36f0191776fa",
+      "children": [
+        "58283b70-2f38-4c2a-a0da-0660ff76bf0d",
+        "quiz-8"
+      ],
+      "order": 3,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Unfortunate Recycling",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "3334e941-aea7-4a43-ba02-36f0191776fa": {
+      "id": "3334e941-aea7-4a43-ba02-36f0191776fa",
+      "parentId": "9887daaa-68b9-4406-a625-326851475989",
+      "children": [
+        "eb862071-527d-49bc-be45-bfe5afed212d",
+        "69a81304-d8f5-4f26-89c9-fe22f72549d9",
+        "d32a9e95-9830-4fe1-9f3a-2d63a6a677c4",
+        "c4c889e9-771e-4fb2-9eb4-fe97a1eccc77"
+      ],
+      "order": 0,
+      "type": "section",
+      "displayType": "Chapter",
+      "title": "Consumers, Be Aware and Beware!",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2,
+      "description": "Some description about consumers to be aware of"
+    },
+    "f6c76051-ddb2-41c7-8488-7ca6146bf190": {
+      "id": "f6c76051-ddb2-41c7-8488-7ca6146bf190",
+      "parentId": "ae1379c1-f003-4f6a-a414-d75504b0965e",
+      "children": [],
+      "order": 0,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Overview - Fibers",
+      "description": "An introductory exploration of different fiber types, their origins, applications, and role in the textile industry.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "b25c3a23-2c10-4e16-b342-3a3b5dd72713": {
+      "id": "b25c3a23-2c10-4e16-b342-3a3b5dd72713",
+      "parentId": "ae1379c1-f003-4f6a-a414-d75504b0965e",
+      "children": [],
+      "order": 1,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Natural Fibers",
+      "description": "Detailed exploration of natural fibers, including their properties, cultivation impacts, and applications in textiles.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "665ad822-1fea-4cb6-ba0e-138b9edbfd7f": {
+      "id": "665ad822-1fea-4cb6-ba0e-138b9edbfd7f",
+      "parentId": "ae1379c1-f003-4f6a-a414-d75504b0965e",
+      "children": [],
+      "order": 2,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Synthetic fibers",
+      "description": "In-depth examination of synthetic fibers, including production methods, properties, and their significant role in the modern textile industry.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "602819c5-1c10-40fb-b2eb-c36c51c1979f": {
+      "id": "602819c5-1c10-40fb-b2eb-c36c51c1979f",
+      "parentId": "ae1379c1-f003-4f6a-a414-d75504b0965e",
+      "children": [],
+      "order": 3,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Semi-Synthetic (also known as Semi-Natural) Fibers",
+      "description": "Explore the hybrid category of semi-synthetic fibers, illustrating how they bridge natural and synthetic materials.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "51d52a7d-6733-44fe-8d6c-bbe490f8276a": {
+      "id": "51d52a7d-6733-44fe-8d6c-bbe490f8276a",
+      "parentId": "ae1379c1-f003-4f6a-a414-d75504b0965e",
+      "children": [],
+      "order": 4,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Manufacturing",
+      "description": "Learn about the different manufacturing techniques used for fibers, their environmental implications, and advancements in textile sustainability.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "ae1379c1-f003-4f6a-a414-d75504b0965e": {
+      "id": "ae1379c1-f003-4f6a-a414-d75504b0965e",
+      "parentId": "9887daaa-68b9-4406-a625-326851475989",
+      "children": [
+        "f6c76051-ddb2-41c7-8488-7ca6146bf190",
+        "b25c3a23-2c10-4e16-b342-3a3b5dd72713",
+        "665ad822-1fea-4cb6-ba0e-138b9edbfd7f",
+        "602819c5-1c10-40fb-b2eb-c36c51c1979f",
+        "51d52a7d-6733-44fe-8d6c-bbe490f8276a"
+      ],
+      "order": 2,
+      "type": "section",
+      "displayType": "Chapter",
+      "title": "Basics",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "89e80112-58a3-4a5d-b867-2dc316d6cc4d": {
+      "id": "89e80112-58a3-4a5d-b867-2dc316d6cc4d",
+      "parentId": "9502bae4-956b-4add-aa79-c0016d84266f",
+      "children": [],
+      "order": 0,
+      "type": "section",
+      "displayType": "Section",
+      "title": "LCA - Farming / Fiber Making",
+      "description": "Explore lifecycle assessment for natural and synthetic fiber manufacturing. Delve into initial production stages and their environmental effects.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "263e9803-2b53-40e2-9f6c-5de96beea581": {
+      "id": "263e9803-2b53-40e2-9f6c-5de96beea581",
+      "parentId": "9502bae4-956b-4add-aa79-c0016d84266f",
+      "children": [],
+      "order": 1,
+      "type": "section",
+      "displayType": "Section",
+      "title": "LCA – Manufacturing",
+      "description": "Investigate the ecological impacts of textile manufacturing processes and consider improvements for environmental sustainability.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "eda11401-d1c5-4908-b1ad-b9da02f7e5e8": {
+      "id": "eda11401-d1c5-4908-b1ad-b9da02f7e5e8",
+      "parentId": "9502bae4-956b-4add-aa79-c0016d84266f",
+      "children": [],
+      "order": 2,
+      "type": "section",
+      "displayType": "Section",
+      "title": "LCA - Consumption",
+      "description": "Analyze the environmental consequences related to textile consumption practices. Review informative data on consumer habits versus sustainability.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "74ad163e-1253-4d2c-9c7b-845ffbcbdd69": {
+      "id": "74ad163e-1253-4d2c-9c7b-845ffbcbdd69",
+      "parentId": "9502bae4-956b-4add-aa79-c0016d84266f",
+      "children": [],
+      "order": 3,
+      "type": "section",
+      "displayType": "Section",
+      "title": "LCA – Disposal",
+      "description": "Learn about the impact of textile disposal on the environment. Devise practices for minimizing waste and enhancing end-of-life sustainability.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "332b3c0f-fd58-4976-8109-1d2330a0599f": {
+      "id": "332b3c0f-fd58-4976-8109-1d2330a0599f",
+      "parentId": "9502bae4-956b-4add-aa79-c0016d84266f",
+      "children": [],
+      "order": 4,
+      "type": "section",
+      "displayType": "Section",
+      "title": "LCA – Total Impacts",
+      "description": "Understand comprehensive perspectives on textile lifecycle impacts and discover cross-stage solutions to influence better practices.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-10": {
+      "id": "quiz-10",
+      "parentId": "9502bae4-956b-4add-aa79-c0016d84266f",
+      "children": [],
+      "order": 5,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Lifecycle Assessment",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is the purpose of a Lifecycle Assessment (LCA)?",
+            "options": [
+              "To assess the financial cost of a product.",
+              "To evaluate the environmental impacts of a product throughout its life cycle.",
+              "To determine the market demand for a product.",
+              "To certify a product as 'eco-friendly'."
+            ],
+            "answer": 1
+          }
+        ]
+      }
+    },
+    "9502bae4-956b-4add-aa79-c0016d84266f": {
+      "id": "9502bae4-956b-4add-aa79-c0016d84266f",
+      "parentId": "9887daaa-68b9-4406-a625-326851475989",
+      "children": [
+        "89e80112-58a3-4a5d-b867-2dc316d6cc4d",
+        "263e9803-2b53-40e2-9f6c-5de96beea581",
+        "eda11401-d1c5-4908-b1ad-b9da02f7e5e8",
+        "74ad163e-1253-4d2c-9c7b-845ffbcbdd69",
+        "332b3c0f-fd58-4976-8109-1d2330a0599f",
+        "quiz-10"
+      ],
+      "order": 3,
+      "type": "section",
+      "displayType": "Chapter",
+      "title": "Lifecycle Assessment (LCA)",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "d702bc77-4052-4f96-9568-dee686a74853": {
+      "id": "d702bc77-4052-4f96-9568-dee686a74853",
+      "parentId": "a1332abd-6663-4816-82e2-37213230aa10",
+      "children": [],
+      "order": 0,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Greenwashing",
+      "description": "Identify, analyze, and overcome corporate greenwashing practices affecting public perception and sustainable consumer choices.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "43ec891c-3405-467f-b745-5f552731f59e": {
+      "id": "43ec891c-3405-467f-b745-5f552731f59e",
+      "parentId": "a1332abd-6663-4816-82e2-37213230aa10",
+      "children": [],
+      "order": 1,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Self-Proclaimed Expertise",
+      "description": "Critically assess the rise of self-proclaimed experts in sustainability discussions and comprehend their influences on factual discourse.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "a387f17d-560d-47a3-8e8c-5ff3fb229f08": {
+      "id": "a387f17d-560d-47a3-8e8c-5ff3fb229f08",
+      "parentId": "a1332abd-6663-4816-82e2-37213230aa10",
+      "children": [],
+      "order": 2,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Organisations Lacking Expertise",
+      "description": "Understand the implications of organizations operating without necessary expertise, impacting sustainability initiatives and regulations.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "12ad502a-6b3c-41e1-8c83-c338f695d493": {
+      "id": "12ad502a-6b3c-41e1-8c83-c338f695d493",
+      "parentId": "a1332abd-6663-4816-82e2-37213230aa10",
+      "children": [],
+      "order": 3,
+      "type": "section",
+      "displayType": "Section",
+      "title": "Loopholes in Certification Programs",
+      "description": "Explore how loopholes in certification affect consumer trust and sustainability in the global textile industry.",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "quiz-11": {
+      "id": "quiz-11",
+      "parentId": "a1332abd-6663-4816-82e2-37213230aa10",
+      "children": [],
+      "order": 4,
+      "type": "quiz",
+      "displayType": "Quiz",
+      "title": "Quiz on Misinformation Crisis",
+      "status": "draft",
+      "createdAt": 1769011784591,
+      "updatedAt": 1769011784591,
+      "version": 1,
+      "quiz": {
+        "questions": [
+          {
+            "question": "What is 'greenwashing'?",
+            "options": [
+              "A process for cleaning clothes with eco-friendly detergents.",
+              "A marketing tactic to make a product appear more environmentally friendly than it actually is.",
+              "A type of green dye used in the textile industry.",
+              "A government initiative to promote sustainability."
+            ],
+            "answer": 1
+          }
+        ]
+      }
+    },
+    "a1332abd-6663-4816-82e2-37213230aa10": {
+      "id": "a1332abd-6663-4816-82e2-37213230aa10",
+      "parentId": "9887daaa-68b9-4406-a625-326851475989",
+      "children": [
+        "d702bc77-4052-4f96-9568-dee686a74853",
+        "43ec891c-3405-467f-b745-5f552731f59e",
+        "a387f17d-560d-47a3-8e8c-5ff3fb229f08",
+        "12ad502a-6b3c-41e1-8c83-c338f695d493",
+        "quiz-11"
+      ],
+      "order": 4,
+      "type": "section",
+      "displayType": "Chapter",
+      "title": "Misinformation Crisis",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "9887daaa-68b9-4406-a625-326851475989": {
+      "id": "9887daaa-68b9-4406-a625-326851475989",
+      "parentId": null,
+      "children": [
+        "3334e941-aea7-4a43-ba02-36f0191776fa",
+        "14e22e9e-5a1c-41a9-9cd8-28c0baa660d6",
+        "ae1379c1-f003-4f6a-a414-d75504b0965e",
+        "9502bae4-956b-4add-aa79-c0016d84266f",
+        "a1332abd-6663-4816-82e2-37213230aa10"
+      ],
+      "order": 0,
+      "type": "section",
+      "displayType": "Book",
+      "title": "Green Heroes",
+      "status": "draft",
+      "createdAt": 1769011025200,
+      "updatedAt": 1769011784591,
+      "version": 2
+    },
+    "e9d5f33f-0faf-4cb5-966e-2ebf059dbfd3": {
+      "type": "section",
+      "displayType": "Section",
+      "title": "New Section",
+      "description": "",
+      "status": "draft",
+      "parentId": "eb862071-527d-49bc-be45-bfe5afed212d",
+      "children": [],
+      "createdAt": 1769111187758,
+      "updatedAt": 1769117117890,
+      "version": 1,
+      "id": "e9d5f33f-0faf-4cb5-966e-2ebf059dbfd3",
+      "order": 16
+    }
+  },
+  "rootNodeId": "9887daaa-68b9-4406-a625-326851475989"
+}

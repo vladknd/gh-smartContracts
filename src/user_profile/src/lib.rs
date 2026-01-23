@@ -1189,6 +1189,12 @@ fn get_user_stats(user: Principal) -> UserTimeStats {
     })
 }
 
+/// Deprecated alias for get_user_stats - kept for frontend compatibility
+#[query]
+fn get_user_daily_status(user: Principal) -> UserTimeStats {
+    get_user_stats(user)
+}
+
 #[query]
 fn is_quiz_completed(user: Principal, unit_id: String) -> bool {
     let key = UserQuizKey { user, unit_id };

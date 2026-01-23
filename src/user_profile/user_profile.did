@@ -139,6 +139,7 @@ service : (InitArgs) -> {
     // User Stats
     // =========================================================================
     get_user_stats : (principal) -> (UserTimeStats) query;
+    get_user_daily_status : (principal) -> (UserTimeStats) query;
     
     // =========================================================================
     // Economy Functions

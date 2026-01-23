@@ -87,6 +87,7 @@ service : (InitArgs) -> {
   get_profile : (principal) -> (opt UserProfile) query;
   get_transactions_page : (principal, nat32) -> (TransactionPage) query;
   get_user_count : () -> (nat64) query;
+  get_user_daily_status : (principal) -> (UserTimeStats) query;
   get_user_stats : (principal) -> (UserTimeStats) query;
   get_user_transactions : (principal) -> (vec TransactionRecord) query;
   is_quiz_completed : (principal, text) -> (bool) query;

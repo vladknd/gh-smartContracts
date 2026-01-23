@@ -98,6 +98,7 @@ export interface _SERVICE {
   'get_profile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'get_transactions_page' : ActorMethod<[Principal, number], TransactionPage>,
   'get_user_count' : ActorMethod<[], bigint>,
+  'get_user_daily_status' : ActorMethod<[Principal], UserTimeStats>,
   'get_user_stats' : ActorMethod<[Principal], UserTimeStats>,
   'get_user_transactions' : ActorMethod<[Principal], Array<TransactionRecord>>,
   'is_quiz_completed' : ActorMethod<[Principal, string], boolean>,

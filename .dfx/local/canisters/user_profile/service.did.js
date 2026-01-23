@@ -111,6 +111,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_user_count' : IDL.Func([], [IDL.Nat64], ['query']),
+    'get_user_daily_status' : IDL.Func(
+        [IDL.Principal],
+        [UserTimeStats],
+        ['query'],
+      ),
     'get_user_stats' : IDL.Func([IDL.Principal], [UserTimeStats], ['query']),
     'get_user_transactions' : IDL.Func(
         [IDL.Principal],
