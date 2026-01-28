@@ -1,626 +1,17 @@
+mod types;
+mod state;
+mod constants;
+
 use ic_cdk::{init, query, update, post_upgrade};
-use candid::{CandidType, Deserialize, Principal};
-use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, StableCell, Storable};
-use ic_stable_structures::storable::Bound;
-use std::cell::RefCell;
-use std::borrow::Cow;
-use candid::{Encode, Decode};
+use candid::Principal;
 use ic_cdk_timers::set_timer_interval;
 use std::time::Duration;
 
-type Memory = VirtualMemory<DefaultMemoryImpl>;
-
-// ============================================================================
-// GOVERNANCE CONSTANTS (Defaults - can be modified via admin proposals)
-// ============================================================================
-
-/// Default minimum voting power required to create a proposal
-const DEFAULT_MIN_VOTING_POWER_TO_PROPOSE: u64 = 150 * 100_000_000; // 150 tokens in e8s
-
-/// Default support threshold (voting power needed to move from Proposed to Active)
-const DEFAULT_SUPPORT_THRESHOLD: u64 = 15_000 * 100_000_000; // 15,000 tokens in e8s
-
-/// Default approval percentage of total staked tokens (30%)
-/// Proposals need at least this percentage of YES votes to pass
-const DEFAULT_APPROVAL_PERCENTAGE: u8 = 30;
-
-/// Default support period for proposals in Proposed state: 1 week in nanoseconds
-const DEFAULT_SUPPORT_PERIOD_NANOS: u64 = 7 * 24 * 60 * 60 * 1_000_000_000;
-
-/// Default voting period duration: 2 weeks in nanoseconds
-const DEFAULT_VOTING_PERIOD_NANOS: u64 = 14 * 24 * 60 * 60 * 1_000_000_000;
-
-/// Default cooldown before a rejected proposal can be resubmitted: 6 months in nanoseconds
-const DEFAULT_RESUBMISSION_COOLDOWN_NANOS: u64 = 180 * 24 * 60 * 60 * 1_000_000_000;
-
-/// Nanoseconds per day (for converting days to nanos)
-const NANOS_PER_DAY: u64 = 24 * 60 * 60 * 1_000_000_000;
-
-// ============================================================================
-// DATA STRUCTURES
-// ============================================================================
-
-/// Token types for treasury spending
-#[derive(CandidType, Deserialize, Clone, Debug, PartialEq)]
-pub enum TokenType {
-    GHC,
-    USDC,
-    ICP,
-}
-
-/// Proposal status
-#[derive(CandidType, Deserialize, Clone, Debug, PartialEq)]
-pub enum ProposalStatus {
-    Proposed,    // Initial state for regular users, gathering support
-    Active,      // Voting in progress
-    Approved,    // Voting passed, pending execution
-    Rejected,    // Voting failed
-    Executed,    // Successfully executed
-}
-
-/// Proposal categories (for treasury proposals)
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub enum ProposalCategory {
-    Marketing,
-    Development,
-    Partnership,
-    Liquidity,
-    CommunityGrant,
-    Operations,
-    Custom(String),
-}
-
-/// Type of proposal - determines what action is taken on execution
-#[derive(CandidType, Deserialize, Clone, Debug, PartialEq)]
-pub enum ProposalType {
-    /// Treasury spending proposal - transfers tokens to recipient
-    Treasury,
-    /// Add a new board member with specified percentage share
-    AddBoardMember,
-    /// Remove a board member and redistribute their share equally
-    RemoveBoardMember,
-    /// Update an existing board member's percentage share
-    UpdateBoardMemberShare,
-    /// Update governance configuration (thresholds, approval percentage)
-    UpdateGovernanceConfig,
-    /// Add new content from staging (books, courses, etc.)
-    AddContentFromStaging,
-    /// Update an existing content node
-    UpdateContentNode,
-    /// Update GLOBAL quiz configuration (applies to ALL quizzes)
-    UpdateGlobalQuizConfig,
-    /// Update quiz questions for a specific content node
-    UpdateQuizQuestions,
-    /// Delete a content node
-    DeleteContentNode,
-}
-
-/// Payload for AddBoardMember proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct AddBoardMemberPayload {
-    /// Wallet address of the new board member
-    pub new_member: Principal,
-    /// Percentage share to allocate to the new member (1-99)
-    /// This percentage is taken equally from all existing members
-    pub percentage: u8,
-}
-
-/// Payload for RemoveBoardMember proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct RemoveBoardMemberPayload {
-    /// Wallet address of the board member to remove
-    pub member_to_remove: Principal,
-}
-
-/// Payload for UpdateBoardMemberShare proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct UpdateBoardMemberSharePayload {
-    /// Wallet address of the board member to update
-    pub member: Principal,
-    /// New percentage share (1-99)
-    /// The difference is taken from or distributed to other members proportionally
-    pub new_percentage: u8,
-}
-
-/// Payload for UpdateGovernanceConfig proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct UpdateGovernanceConfigPayload {
-    /// New minimum voting power required to create a proposal (in e8s)
-    pub new_min_voting_power: Option<u64>,
-    /// New support threshold for moving proposals from Proposed to Active (in e8s)
-    pub new_support_threshold: Option<u64>,
-    /// New approval percentage (1-100) - percentage of total staked needed to pass
-    pub new_approval_percentage: Option<u8>,
-    
-    // =========================================================================
-    // Timing Configuration - Proposal Lifecycle Durations
-    // =========================================================================
-    
-    /// New support period in days (time for proposals to gather support)
-    pub new_support_period_days: Option<u16>,
-    /// New voting period in days (duration for active voting)
-    pub new_voting_period_days: Option<u16>,
-    /// New resubmission cooldown in days (time before rejected proposal can be resubmitted)
-    pub new_resubmission_cooldown_days: Option<u16>,
-}
-
-// ============================================================================
-// CONTENT GOVERNANCE PAYLOADS
-// ============================================================================
-
-/// Quiz question for content governance
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct QuizQuestion {
-    pub question: String,
-    pub options: Vec<String>,
-    pub answer: u8,
-}
-
-/// Payload for AddContentFromStaging proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct AddContentFromStagingPayload {
-    /// Principal of the staging canister
-    pub staging_canister: Principal,
-    /// Path in the staging canister
-    pub staging_path: String,
-    /// SHA256 hash for content verification
-    pub content_hash: String,
-    /// Human-readable title for the content
-    pub content_title: String,
-    /// Total number of units for progress tracking
-    pub unit_count: u32,
-}
-
-/// Payload for UpdateContentNode proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct UpdateContentNodePayload {
-    /// ID of the content node to update
-    pub content_id: String,
-    /// New title (if updating)
-    pub new_title: Option<String>,
-    /// New content (if updating)
-    pub new_content: Option<String>,
-    /// New paraphrase (if updating)
-    pub new_paraphrase: Option<String>,
-}
-
-/// Payload for UpdateGlobalQuizConfig proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct UpdateGlobalQuizConfigPayload {
-    /// New reward amount for ALL quizzes (in e8s)
-    pub new_reward_amount: Option<u64>,
-    /// New pass threshold percentage
-    pub new_pass_threshold: Option<u8>,
-    /// New max daily attempts per quiz
-    pub new_max_attempts: Option<u8>,
-    
-    // =========================================================================
-    // Quiz Limits - Maximum quizzes a user can complete in each time period
-    // =========================================================================
-    
-    /// New maximum quizzes per day
-    pub new_max_daily_quizzes: Option<u8>,
-    /// New maximum quizzes per week
-    pub new_max_weekly_quizzes: Option<u8>,
-    /// New maximum quizzes per month
-    pub new_max_monthly_quizzes: Option<u8>,
-    /// New maximum quizzes per year
-    pub new_max_yearly_quizzes: Option<u16>,
-}
-
-/// Payload for UpdateQuizQuestions proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct UpdateQuizQuestionsPayload {
-    /// ID of the content node containing the quiz
-    pub content_id: String,
-    /// New quiz questions
-    pub new_questions: Vec<QuizQuestion>,
-}
-
-/// Payload for DeleteContentNode proposals
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct DeleteContentNodePayload {
-    /// ID of the content node to delete
-    pub content_id: String,
-    /// Reason for deletion
-    pub reason: String,
-}
-
-/// Governance proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct Proposal {
-    pub id: u64,
-    pub proposer: Principal,
-    pub created_at: u64,
-    pub voting_ends_at: u64,
-    
-    // Type of proposal
-    pub proposal_type: ProposalType,
-    
-    // Common proposal details
-    pub title: String,
-    pub description: String,
-    pub external_link: Option<String>,
-    
-    // Treasury-specific fields (only for Treasury proposals)
-    pub recipient: Option<Principal>,
-    pub amount: Option<u64>,
-    pub token_type: Option<TokenType>,
-    pub category: Option<ProposalCategory>,
-    
-    // Execution action (for Treasury + Action flow)
-    pub execute_method: Option<String>,
-    pub execute_payload: Option<Vec<u8>>,
-    
-    // Board member-specific fields
-    pub board_member_payload: Option<AddBoardMemberPayload>,
-    pub remove_board_member_payload: Option<RemoveBoardMemberPayload>,
-    pub update_board_member_payload: Option<UpdateBoardMemberSharePayload>,
-    
-    // Governance configuration payload
-    pub update_governance_config_payload: Option<UpdateGovernanceConfigPayload>,
-    
-    // Content governance payloads
-    pub add_content_payload: Option<AddContentFromStagingPayload>,
-    pub update_content_payload: Option<UpdateContentNodePayload>,
-    pub update_quiz_config_payload: Option<UpdateGlobalQuizConfigPayload>,
-    pub update_quiz_questions_payload: Option<UpdateQuizQuestionsPayload>,
-    pub delete_content_payload: Option<DeleteContentNodePayload>,
-    
-    // Voting state
-    pub votes_yes: u64,
-    pub votes_no: u64,
-    pub voter_count: u64,
-    
-    // Support state (for Proposed phase)
-    pub support_amount: u64,
-    pub supporter_count: u64,
-    
-    /// Required YES votes for approval (calculated when proposal moves to Active)
-    /// This is fixed at activation time: (total_staked * approval_percentage / 100)
-    pub required_yes_votes: u64,
-    
-    pub status: ProposalStatus,
-}
-
-impl Storable for Proposal {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-    const BOUND: Bound = Bound::Bounded { max_size: 10000, is_fixed_size: false };
-}
-
-/// Vote record for transparency
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct VoteRecord {
-    pub voter: Principal,
-    pub proposal_id: u64,
-    pub vote: bool,  // true = YES, false = NO
-    pub voting_power: u64,
-    pub timestamp: u64,
-}
-
-impl Storable for VoteRecord {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-    const BOUND: Bound = Bound::Bounded { max_size: 200, is_fixed_size: false };
-}
-
-/// Support record to track who supported a proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct SupportRecord {
-    pub supporter: Principal,
-    pub proposal_id: u64,
-    pub support_amount: u64,
-    pub timestamp: u64,
-}
-
-impl Storable for SupportRecord {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).unwrap()
-    }
-    const BOUND: Bound = Bound::Bounded { max_size: 200, is_fixed_size: false };
-}
-
-/// Composite key for vote storage: (proposal_id, voter)
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct VoteKey {
-    proposal_id: u64,
-    voter: Principal,
-}
-
-impl Storable for VoteKey {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        let mut bytes = self.proposal_id.to_be_bytes().to_vec();
-        bytes.extend_from_slice(self.voter.as_slice());
-        Cow::Owned(bytes)
-    }
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        let proposal_id = u64::from_be_bytes(bytes[0..8].try_into().unwrap());
-        let voter = Principal::from_slice(&bytes[8..]);
-        Self { proposal_id, voter }
-    }
-    const BOUND: Bound = Bound::Bounded { max_size: 100, is_fixed_size: false };
-}
-
-/// Input for creating a treasury spending proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateTreasuryProposalInput {
-    pub title: String,
-    pub description: String,
-    pub recipient: Principal,
-    pub amount: u64,
-    pub token_type: TokenType,
-    pub category: ProposalCategory,
-    pub external_link: Option<String>,
-    pub execute_method: Option<String>,
-    pub execute_payload: Option<Vec<u8>>,
-}
-
-/// Input for creating a board member proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateBoardMemberProposalInput {
-    pub title: String,
-    pub description: String,
-    /// Wallet address of the new board member to add
-    pub new_member: Principal,
-    /// Percentage share to allocate to the new member (1-99)
-    /// This percentage is taken equally from all existing members
-    pub percentage: u8,
-    pub external_link: Option<String>,
-}
-
-/// Board member share entry for query results and admin input
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct BoardMemberShare {
-    pub member: Principal,
-    pub percentage: u8,
-}
-
-/// Treasury transfer input (for calling treasury canister)
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct ExecuteTransferInput {
-    pub recipient: Principal,
-    pub amount: u64,
-    pub token_type: TokenType,
-    pub proposal_id: u64,
-}
-
-// ============================================================================
-// CONTENT GOVERNANCE INPUT TYPES
-// ============================================================================
-
-/// Input for creating an AddContentFromStaging proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateAddContentProposalInput {
-    pub title: String,
-    pub description: String,
-    pub staging_canister: Principal,
-    pub staging_path: String,
-    pub content_hash: String,
-    pub content_title: String,
-    pub unit_count: u32,
-    pub external_link: Option<String>,
-}
-
-/// Input for creating an UpdateGlobalQuizConfig proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateUpdateQuizConfigProposalInput {
-    pub title: String,
-    pub description: String,
-    /// New reward amount for ALL quizzes (in e8s)
-    pub new_reward_amount: Option<u64>,
-    /// New pass threshold percentage
-    pub new_pass_threshold: Option<u8>,
-    /// New max daily attempts per quiz
-    pub new_max_attempts: Option<u8>,
-    /// New maximum quizzes per day
-    pub new_max_daily_quizzes: Option<u8>,
-    /// New maximum quizzes per week
-    pub new_max_weekly_quizzes: Option<u8>,
-    /// New maximum quizzes per month
-    pub new_max_monthly_quizzes: Option<u8>,
-    /// New maximum quizzes per year
-    pub new_max_yearly_quizzes: Option<u16>,
-    pub external_link: Option<String>,
-}
-
-/// Input for creating a DeleteContentNode proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateDeleteContentProposalInput {
-    pub title: String,
-    pub description: String,
-    /// ID of the content node to delete
-    pub content_id: String,
-    /// Reason for deletion
-    pub reason: String,
-    pub external_link: Option<String>,
-}
-
-// ============================================================================
-// ADMIN GOVERNANCE INPUT TYPES
-// ============================================================================
-
-/// Input for creating a RemoveBoardMember proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateRemoveBoardMemberProposalInput {
-    pub title: String,
-    pub description: String,
-    /// Wallet address of the board member to remove
-    pub member_to_remove: Principal,
-    pub external_link: Option<String>,
-}
-
-/// Input for creating an UpdateBoardMemberShare proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateUpdateBoardMemberShareProposalInput {
-    pub title: String,
-    pub description: String,
-    /// Wallet address of the board member to update
-    pub member: Principal,
-    /// New percentage share (1-99)
-    pub new_percentage: u8,
-    pub external_link: Option<String>,
-}
-
-/// Input for creating an UpdateGovernanceConfig proposal
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CreateUpdateGovernanceConfigProposalInput {
-    pub title: String,
-    pub description: String,
-    /// New minimum voting power required to create a proposal (in tokens, not e8s)
-    pub new_min_voting_power: Option<u64>,
-    /// New support threshold for moving proposals from Proposed to Active (in tokens, not e8s)
-    pub new_support_threshold: Option<u64>,
-    /// New approval percentage (1-100) - percentage of total staked needed to pass
-    pub new_approval_percentage: Option<u8>,
-    
-    // =========================================================================
-    // Timing Configuration - Proposal Lifecycle Durations  
-    // =========================================================================
-    
-    /// New support period in days (time for proposals to gather support, 1-365)
-    pub new_support_period_days: Option<u16>,
-    /// New voting period in days (duration for active voting, 1-365)
-    pub new_voting_period_days: Option<u16>,
-    /// New resubmission cooldown in days (time before rejected proposal can be resubmitted, 1-365)
-    pub new_resubmission_cooldown_days: Option<u16>,
-    
-    pub external_link: Option<String>,
-}
-
-#[derive(CandidType, Deserialize)]
-struct InitArgs {
-    staking_hub_id: Principal,
-    treasury_canister_id: Principal,
-    learning_engine_id: Option<Principal>,
-}
-
-// ============================================================================
-// THREAD-LOCAL STORAGE
-// ============================================================================
-
-thread_local! {
-    static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
-        MemoryManager::init(DefaultMemoryImpl::default())
-    );
-
-    // Configuration
-    static STAKING_HUB_ID: RefCell<StableCell<Principal, Memory>> = RefCell::new(
-        StableCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))), Principal::anonymous()).unwrap()
-    );
-    
-    static TREASURY_CANISTER_ID: RefCell<StableCell<Principal, Memory>> = RefCell::new(
-        StableCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))), Principal::anonymous()).unwrap()
-    );
-
-    // Proposals
-    static PROPOSALS: RefCell<StableBTreeMap<u64, Proposal, Memory>> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(2))))
-    );
-    
-    static PROPOSAL_COUNT: RefCell<StableCell<u64, Memory>> = RefCell::new(
-        StableCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(3))), 0).unwrap()
-    );
-    
-    // Vote records
-    static VOTE_RECORDS: RefCell<StableBTreeMap<VoteKey, VoteRecord, Memory>> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(4))))
-    );
-
-    // Support records
-    static SUPPORT_RECORDS: RefCell<StableBTreeMap<VoteKey, SupportRecord, Memory>> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(5))))
-    );
-    
-    // Board Member Management
-    // Board members exercise VUC (Volume of Unmined Coins) voting power
-    // Each member has a percentage share of the total VUC
-    
-    /// Board member voting power shares: Principal -> percentage (1-100)
-    /// Each board member gets (percentage / 100) * VUC voting power
-    /// Total of all percentages must equal exactly 100
-    static BOARD_MEMBER_SHARES: RefCell<StableBTreeMap<Principal, u8, Memory>> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(6))))
-    );
-    
-    /// Lock flag for board member shares
-    /// Once locked, shares can only be changed via governance proposal
-    static BOARD_SHARES_LOCKED: RefCell<StableCell<bool, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(7))),
-            false
-        ).unwrap()
-    );
-    
-    /// Learning engine canister ID
-    static LEARNING_ENGINE_ID: RefCell<StableCell<Principal, Memory>> = RefCell::new(
-        StableCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(8))), Principal::anonymous()).unwrap()
-    );
-    
-    // =========================================================================
-    // MUTABLE GOVERNANCE CONFIGURATION (modifiable via admin proposals)
-    // =========================================================================
-    
-    /// Minimum voting power required to create a proposal (in e8s)
-    static MIN_VOTING_POWER_CONFIG: RefCell<StableCell<u64, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(9))),
-            DEFAULT_MIN_VOTING_POWER_TO_PROPOSE
-        ).unwrap()
-    );
-    
-    /// Support threshold: voting power needed to move from Proposed to Active (in e8s)
-    static SUPPORT_THRESHOLD_CONFIG: RefCell<StableCell<u64, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(10))),
-            DEFAULT_SUPPORT_THRESHOLD
-        ).unwrap()
-    );
-    
-    /// Approval percentage: percentage of total staked needed for YES votes to pass (1-100)
-    static APPROVAL_PERCENTAGE_CONFIG: RefCell<StableCell<u8, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(11))),
-            DEFAULT_APPROVAL_PERCENTAGE
-        ).unwrap()
-    );
-    
-    /// Support period: time for proposals to gather support before expiring (in nanoseconds)
-    static SUPPORT_PERIOD_CONFIG: RefCell<StableCell<u64, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(12))),
-            DEFAULT_SUPPORT_PERIOD_NANOS
-        ).unwrap()
-    );
-    
-    /// Voting period: duration for active voting on proposals (in nanoseconds)
-    static VOTING_PERIOD_CONFIG: RefCell<StableCell<u64, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(13))),
-            DEFAULT_VOTING_PERIOD_NANOS
-        ).unwrap()
-    );
-    
-    /// Resubmission cooldown: time before a rejected proposal can be resubmitted (in nanoseconds)
-    static RESUBMISSION_COOLDOWN_CONFIG: RefCell<StableCell<u64, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(14))),
-            DEFAULT_RESUBMISSION_COOLDOWN_NANOS
-        ).unwrap()
-    );
-}
+use types::*;
+use state::*;
+use constants::*;
+mod service;
+use service::*;
 
 // ============================================================================
 // INITIALIZATION
@@ -649,110 +40,6 @@ fn start_timers() {
     });
 }
 
-// ============================================================================
-// BOARD MEMBER HELPERS
-// ============================================================================
-
-/// Check if a principal is a board member (local check)
-fn is_board_member_local(principal: &Principal) -> bool {
-    BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(principal))
-}
-
-/// Get a board member's percentage share (internal)
-fn get_board_member_percentage_local(principal: &Principal) -> Option<u8> {
-    BOARD_MEMBER_SHARES.with(|b| b.borrow().get(principal))
-}
-
-// ============================================================================
-// GOVERNANCE CONFIG HELPERS
-// ============================================================================
-
-/// Get current minimum voting power required to create a proposal (in e8s)
-fn get_min_voting_power_to_propose() -> u64 {
-    MIN_VOTING_POWER_CONFIG.with(|c| *c.borrow().get())
-}
-
-/// Get current support threshold (voting power to move from Proposed to Active)
-fn get_support_threshold() -> u64 {
-    SUPPORT_THRESHOLD_CONFIG.with(|c| *c.borrow().get())
-}
-
-/// Get current approval percentage (percentage of total staked for YES votes to pass)
-fn get_approval_percentage() -> u8 {
-    APPROVAL_PERCENTAGE_CONFIG.with(|c| *c.borrow().get())
-}
-
-/// Get current support period (time for proposals to gather support, in nanoseconds)
-fn get_support_period() -> u64 {
-    SUPPORT_PERIOD_CONFIG.with(|c| *c.borrow().get())
-}
-
-/// Get current voting period (duration for active voting, in nanoseconds)
-fn get_voting_period() -> u64 {
-    VOTING_PERIOD_CONFIG.with(|c| *c.borrow().get())
-}
-
-/// Get current resubmission cooldown (time before rejected proposal can be resubmitted, in nanoseconds)
-fn get_resubmission_cooldown() -> u64 {
-    RESUBMISSION_COOLDOWN_CONFIG.with(|c| *c.borrow().get())
-}
-
-/// Calculate the required YES votes for approval based on total staked tokens
-/// This queries the staking hub for total staked and applies the approval percentage
-async fn calculate_approval_threshold() -> Result<u64, String> {
-    let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
-    let approval_pct = get_approval_percentage();
-    
-    // Get total staked tokens from staking hub
-    let (stats,): (GlobalStats,) = ic_cdk::call(
-        staking_hub_id,
-        "get_global_stats",
-        ()
-    ).await.map_err(|e| format!("Failed to get global stats: {:?}", e))?;
-    
-    // Calculate threshold: total_staked * approval_percentage / 100
-    let threshold = ((stats.total_staked as u128 * approval_pct as u128) / 100) as u64;
-    
-    Ok(threshold)
-}
-
-/// GlobalStats struct for querying staking hub
-#[derive(CandidType, Deserialize, Clone, Debug)]
-struct GlobalStats {
-    total_staked: u64,
-    total_unstaked: u64,
-    total_allocated: u64,
-}
-
-/// Fetch voting power for a user
-/// - Board members: returns VUC * percentage / 100 (queries staking hub for VUC)
-/// - Regular users: returns staked balance (queries staking hub)
-async fn fetch_voting_power(user: Principal) -> Result<u64, String> {
-    let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
-    
-    // Check if user is a board member - return weighted VUC
-    if let Some(percentage) = get_board_member_percentage_local(&user) {
-        // Get VUC from staking hub
-        let (vuc,): (u64,) = ic_cdk::call(
-            staking_hub_id,
-            "get_vuc",
-            ()
-        ).await.map_err(|e| format!("Failed to get VUC: {:?}", e))?;
-        
-        // Calculate weighted voting power: VUC * percentage / 100
-        // Using u128 to avoid overflow during multiplication
-        return Ok(((vuc as u128 * percentage as u128) / 100) as u64);
-    }
-    
-    // For regular users, query their staked balance from staking hub
-    let (voting_power,): (u64,) = ic_cdk::call(
-        staking_hub_id,
-        "fetch_user_voting_power",
-        (user,)
-    ).await.map_err(|e| format!("Failed to get voting power: {:?}", e))?;
-    
-    Ok(voting_power)
-}
 
 /// Get the voting power of a specific user
 /// 
@@ -860,9 +147,7 @@ async fn create_treasury_proposal(input: CreateTreasuryProposalInput) -> Result<
         update_board_member_payload: None,
         update_governance_config_payload: None,
         add_content_payload: None,
-        update_content_payload: None,
-        update_quiz_config_payload: None,
-        update_quiz_questions_payload: None,
+        update_token_limits_payload: None,
         delete_content_payload: None,
         votes_yes: 0,
         votes_no: 0,
@@ -878,11 +163,6 @@ async fn create_treasury_proposal(input: CreateTreasuryProposalInput) -> Result<
     Ok(id)
 }
 
-/// Create a board member addition proposal (legacy alias for backward compatibility)
-#[update]
-async fn create_proposal(input: CreateTreasuryProposalInput) -> Result<u64, String> {
-    create_treasury_proposal(input).await
-}
 
 /// Create a proposal to add a new board member
 /// 
@@ -963,9 +243,7 @@ async fn create_board_member_proposal(input: CreateBoardMemberProposalInput) -> 
         update_board_member_payload: None,
         update_governance_config_payload: None,
         add_content_payload: None,
-        update_content_payload: None,
-        update_quiz_config_payload: None,
-        update_quiz_questions_payload: None,
+        update_token_limits_payload: None,
         delete_content_payload: None,
         votes_yes: 0,
         votes_no: 0,
@@ -1058,9 +336,7 @@ async fn create_remove_board_member_proposal(input: CreateRemoveBoardMemberPropo
         update_board_member_payload: None,
         update_governance_config_payload: None,
         add_content_payload: None,
-        update_content_payload: None,
-        update_quiz_config_payload: None,
-        update_quiz_questions_payload: None,
+        update_token_limits_payload: None,
         delete_content_payload: None,
         votes_yes: 0,
         votes_no: 0,
@@ -1151,9 +427,7 @@ async fn create_update_board_member_share_proposal(input: CreateUpdateBoardMembe
         }),
         update_governance_config_payload: None,
         add_content_payload: None,
-        update_content_payload: None,
-        update_quiz_config_payload: None,
-        update_quiz_questions_payload: None,
+        update_token_limits_payload: None,
         delete_content_payload: None,
         votes_yes: 0,
         votes_no: 0,
@@ -1275,9 +549,7 @@ async fn create_update_governance_config_proposal(input: CreateUpdateGovernanceC
             new_resubmission_cooldown_days: input.new_resubmission_cooldown_days,
         }),
         add_content_payload: None,
-        update_content_payload: None,
-        update_quiz_config_payload: None,
-        update_quiz_questions_payload: None,
+        update_token_limits_payload: None,
         delete_content_payload: None,
         votes_yes: 0,
         votes_no: 0,
@@ -1371,9 +643,7 @@ async fn create_add_content_proposal(input: CreateAddContentProposalInput) -> Re
             content_title: input.content_title,
             unit_count: input.unit_count,
         }),
-        update_content_payload: None,
-        update_quiz_config_payload: None,
-        update_quiz_questions_payload: None,
+        update_token_limits_payload: None,
         delete_content_payload: None,
         votes_yes: 0,
         votes_no: 0,
@@ -1391,9 +661,9 @@ async fn create_add_content_proposal(input: CreateAddContentProposalInput) -> Re
     Ok(id)
 }
 
-/// Create a proposal to update global quiz configuration
+/// Create a proposal to update global token limits and reward configuration
 #[update]
-async fn create_update_quiz_config_proposal(input: CreateUpdateQuizConfigProposalInput) -> Result<u64, String> {
+async fn create_update_token_limits_proposal(input: CreateUpdateTokenLimitsProposalInput) -> Result<u64, String> {
     let proposer = ic_cdk::caller();
     let now = ic_cdk::api::time();
     
@@ -1409,10 +679,8 @@ async fn create_update_quiz_config_proposal(input: CreateUpdateQuizConfigProposa
     if input.new_reward_amount.is_none() 
         && input.new_pass_threshold.is_none() 
         && input.new_max_attempts.is_none()
-        && input.new_max_daily_quizzes.is_none()
-        && input.new_max_weekly_quizzes.is_none()
-        && input.new_max_monthly_quizzes.is_none()
-        && input.new_max_yearly_quizzes.is_none()
+        && input.new_regular_limits.is_none()
+        && input.new_subscribed_limits.is_none()
     {
         return Err("At least one configuration value must be specified".to_string());
     }
@@ -1458,7 +726,7 @@ async fn create_update_quiz_config_proposal(input: CreateUpdateQuizConfigProposa
         proposer,
         created_at: now,
         voting_ends_at,
-        proposal_type: ProposalType::UpdateGlobalQuizConfig,
+        proposal_type: ProposalType::UpdateTokenLimits,
         title: input.title,
         description: input.description,
         external_link: input.external_link,
@@ -1471,17 +739,13 @@ async fn create_update_quiz_config_proposal(input: CreateUpdateQuizConfigProposa
         update_board_member_payload: None,
         update_governance_config_payload: None,
         add_content_payload: None,
-        update_content_payload: None,
-        update_quiz_config_payload: Some(UpdateGlobalQuizConfigPayload {
+        update_token_limits_payload: Some(UpdateTokenLimitsPayload {
             new_reward_amount: input.new_reward_amount,
             new_pass_threshold: input.new_pass_threshold,
             new_max_attempts: input.new_max_attempts,
-            new_max_daily_quizzes: input.new_max_daily_quizzes,
-            new_max_weekly_quizzes: input.new_max_weekly_quizzes,
-            new_max_monthly_quizzes: input.new_max_monthly_quizzes,
-            new_max_yearly_quizzes: input.new_max_yearly_quizzes,
+            new_regular_limits: input.new_regular_limits,
+            new_subscribed_limits: input.new_subscribed_limits,
         }),
-        update_quiz_questions_payload: None,
         delete_content_payload: None,
         votes_yes: 0,
         votes_no: 0,
@@ -1567,9 +831,7 @@ async fn create_delete_content_proposal(input: CreateDeleteContentProposalInput)
         update_board_member_payload: None,
         update_governance_config_payload: None,
         add_content_payload: None,
-        update_content_payload: None,
-        update_quiz_config_payload: None,
-        update_quiz_questions_payload: None,
+        update_token_limits_payload: None,
         delete_content_payload: Some(DeleteContentNodePayload {
             content_id: input.content_id,
             reason: input.reason,
@@ -1801,9 +1063,7 @@ async fn execute_proposal(proposal_id: u64) -> Result<(), String> {
         ProposalType::UpdateBoardMemberShare => execute_update_board_member_share_proposal_internal(&proposal)?,
         ProposalType::UpdateGovernanceConfig => execute_update_governance_config_proposal_internal(&proposal)?,
         ProposalType::AddContentFromStaging => execute_add_content_proposal_internal(&proposal).await?,
-        ProposalType::UpdateContentNode => execute_update_content_proposal_internal(&proposal).await?,
-        ProposalType::UpdateGlobalQuizConfig => execute_update_quiz_config_proposal_internal(&proposal).await?,
-        ProposalType::UpdateQuizQuestions => execute_update_quiz_questions_proposal_internal(&proposal).await?,
+        ProposalType::UpdateTokenLimits => execute_update_token_limits_proposal_internal(&proposal).await?,
         ProposalType::DeleteContentNode => execute_delete_content_proposal_internal(&proposal).await?,
     }
     
@@ -1838,7 +1098,7 @@ async fn execute_treasury_proposal_internal(proposal: &Proposal) -> Result<(), S
         (transfer_input,)
     ).await.map_err(|(code, msg)| format!("Treasury call failed: {:?} {}", code, msg))?;
     
-    let transfer_result_idx = match result {
+    let _transfer_result_idx = match result {
         Ok(idx) => idx,
         Err(e) => return Err(e),
     };
@@ -1909,72 +1169,37 @@ async fn execute_add_content_proposal_internal(proposal: &Proposal) -> Result<()
     }
 }
 
-/// Execute UpdateContentNode proposal
-async fn execute_update_content_proposal_internal(proposal: &Proposal) -> Result<(), String> {
-    let _payload = proposal.update_content_payload.as_ref()
-        .ok_or("UpdateContentNode proposal missing payload")?;
-    
-    let learning_engine_id = LEARNING_ENGINE_ID.with(|id| *id.borrow().get());
-    
-    if learning_engine_id == Principal::anonymous() {
-        return Err("Learning engine ID not configured".to_string());
-    }
-    
-    // For now, content node updates would need a dedicated learning engine method
-    // This is a placeholder - the learning_engine needs an update_content_node method
-    // that applies the partial updates from the payload
-    
-    // TODO: Call learning_engine.update_content_node when implemented
-    Ok(())
-}
 
-/// Execute UpdateGlobalQuizConfig proposal
-async fn execute_update_quiz_config_proposal_internal(proposal: &Proposal) -> Result<(), String> {
-    let payload = proposal.update_quiz_config_payload.as_ref()
-        .ok_or("UpdateGlobalQuizConfig proposal missing payload")?;
+/// Execute UpdateTokenLimits proposal
+async fn execute_update_token_limits_proposal_internal(proposal: &Proposal) -> Result<(), String> {
+    let payload = proposal.update_token_limits_payload.as_ref()
+        .ok_or("UpdateTokenLimits proposal missing payload")?;
     
-    let learning_engine_id = LEARNING_ENGINE_ID.with(|id| *id.borrow().get());
+    let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
     
-    if learning_engine_id == Principal::anonymous() {
-        return Err("Learning engine ID not configured".to_string());
+    if staking_hub_id == Principal::anonymous() {
+        return Err("Staking Hub ID not configured".to_string());
     }
     
-    // Call learning_engine.update_global_quiz_config
+    // Call staking_hub.update_token_limits
     let result: Result<(Result<(), String>,), _> = ic_cdk::call(
-        learning_engine_id,
-        "update_global_quiz_config",
+        staking_hub_id,
+        "update_token_limits",
         (
             payload.new_reward_amount,
             payload.new_pass_threshold,
             payload.new_max_attempts,
-            payload.new_max_daily_quizzes,
-            payload.new_max_weekly_quizzes,
-            payload.new_max_monthly_quizzes,
-            payload.new_max_yearly_quizzes,
+            payload.new_regular_limits.clone(),
+            payload.new_subscribed_limits.clone(),
         )
     ).await;
     
     match result {
         Ok((inner_result,)) => inner_result,
-        Err((code, msg)) => Err(format!("Learning engine call failed: {:?} {}", code, msg)),
+        Err((code, msg)) => Err(format!("Staking Hub call failed: {:?} {}", code, msg)),
     }
 }
 
-/// Execute UpdateQuizQuestions proposal
-async fn execute_update_quiz_questions_proposal_internal(proposal: &Proposal) -> Result<(), String> {
-    let _payload = proposal.update_quiz_questions_payload.as_ref()
-        .ok_or("UpdateQuizQuestions proposal missing payload")?;
-    
-    let learning_engine_id = LEARNING_ENGINE_ID.with(|id| *id.borrow().get());
-    
-    if learning_engine_id == Principal::anonymous() {
-        return Err("Learning engine ID not configured".to_string());
-    }
-    
-    // For now, quiz question updates would need a dedicated learning engine method
-    // TODO: Call learning_engine.update_quiz_questions when implemented
-    Ok(())
-}
 
 /// Execute DeleteContentNode proposal
 async fn execute_delete_content_proposal_internal(proposal: &Proposal) -> Result<(), String> {

@@ -12,25 +12,29 @@ type InitArgs = record {
 
 // Transaction data received from user_profile shard for archiving
 type TransactionToArchive = record {
-    timestamp : nat64;      // Original transaction timestamp
-    tx_type : nat8;         // 0 = QuizReward, 1 = Unstake
-    amount : nat64;         // Token amount
+    sequence : nat64;
+    timestamp : nat64;
+    transaction_type : text;
+    amount : nat64;
+    metadata : text;
 };
 
 // Archived transaction record (includes archive metadata)
 type ArchivedTransaction = record {
-    timestamp : nat64;      // Original transaction timestamp
-    tx_type : nat8;         // 0 = QuizReward, 1 = Unstake
-    amount : nat64;         // Token amount
-    archived_at : nat64;    // When this was archived
+    sequence : nat64;
+    timestamp : nat64;
+    transaction_type : text;
+    amount : nat64;
+    metadata : text;
+    archived_at : nat64;
 };
 
 // Archive statistics
 type ArchiveStats = record {
-    total_entries : nat64;
-    capacity_percent : nat8;
-    user_count : nat64;
     parent_shard : principal;
+    entry_count : nat64;
+    size_bytes : nat64;
+    is_full : bool;
     next_archive : opt principal;
 };
 
@@ -48,7 +52,7 @@ service : (InitArgs) -> {
     // =========================================================================
     
     // Get archived transactions for a user (paginated)
-    get_archived_transactions : (principal, nat64, nat64) -> (vec ArchivedTransaction) query;
+    get_archived_transactions : (principal, opt nat64, nat64) -> (vec ArchivedTransaction) query;
     
     // Get count of archived transactions for a user
     get_archived_count : (principal) -> (nat64) query;

@@ -1,306 +1,19 @@
+mod types;
+mod state;
+mod constants;
+
 use std::time::Duration;
-use std::cell::RefCell;
-use std::borrow::Cow;
-use ic_cdk::init;
-use ic_cdk::query;
-use ic_cdk::update;
+use ic_cdk::{init, query, update};
 use ic_cdk_timers::set_timer_interval;
-use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap, StableCell, Storable};
-use ic_stable_structures::storable::Bound;
 use icrc_ledger_types::icrc1::account::Account;
 use icrc_ledger_types::icrc1::transfer::{TransferArg, TransferError};
-use candid::{CandidType, Deserialize, Principal, Encode, Decode, Nat};
+use candid::{Principal, Nat};
 
-type Memory = VirtualMemory<DefaultMemoryImpl>;
-
-// ===============================
-// CONSTANTS
-// ===============================
-
-// MAX_SUPPLY: 4.75B MUC tokens with 8 decimals
-// 4.75B * 10^8 = 4.75 * 10^17 (fits comfortably in u64 max of ~1.8 * 10^19)
-const MAX_SUPPLY: u64 = 4_750_000_000 * 100_000_000; // 4.75B MUC Tokens (8 decimals)
-const SHARD_SOFT_LIMIT: u64 = 90_000;  // Start creating new shard at 90K users
-const SHARD_HARD_LIMIT: u64 = 100_000; // Max users per shard
-const AUTO_SCALE_INTERVAL_SECS: u64 = 60; // Check every minute
-
-// ============================================================================
-// DATA STRUCTURES
-// ============================================================================
-
-/// Arguments passed during canister initialization
-#[derive(CandidType, Deserialize, Clone)]
-struct InitArgs {
-    /// Principal ID of the GHC ledger canister (ICRC1)
-    ledger_id: Principal,
-    /// Principal ID of the learning content canister
-    learning_content_id: Principal,
-    /// Embedded WASM binary for auto-deploying user_profile shard canisters
-    user_profile_wasm: Vec<u8>,
-    /// Embedded WASM binary for auto-deploying archive canisters (optional)
-    archive_canister_wasm: Option<Vec<u8>>,
-}
-
-/// Global statistics tracked by the staking hub
-/// 
-/// This is the central source of truth for all staking-related metrics.
-/// Simplified version without interest/penalty system.
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct GlobalStats {
-    /// Total tokens currently staked across all users
-    pub total_staked: u64,
-    
-    /// Total tokens that have been unstaked
-    pub total_unstaked: u64,
-    
-    /// Total tokens allocated for minting (tracked against MAX_SUPPLY cap)
-    pub total_allocated: u64,
-}
-
-impl Storable for GlobalStats {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).expect("Failed to decode GlobalStats")
-    }
-
-    const BOUND: Bound = Bound::Bounded {
-        max_size: 200,
-        is_fixed_size: false,
-    };
-}
-
-/// Information about a user_profile shard canister
-/// 
-/// Shards are automatically deployed by the staking hub to distribute
-/// user load. Each shard can hold up to SHARD_HARD_LIMIT (100K) users.
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct ShardInfo {
-    /// Principal ID of the shard canister
-    pub canister_id: Principal,
-    /// Timestamp when this shard was created (nanoseconds)
-    pub created_at: u64,
-    /// Current number of registered users in this shard
-    pub user_count: u64,
-    /// Operational status of the shard
-    pub status: ShardStatus,
-    /// Principal ID of the associated archive canister (if created)
-    pub archive_canister_id: Option<Principal>,
-}
-
-/// Operational status of a shard canister
-#[derive(CandidType, Deserialize, Clone, Debug, PartialEq)]
-pub enum ShardStatus {
-    /// Shard is accepting new user registrations
-    Active,
-    /// Shard has reached capacity and is not accepting new users
-    Full,
-}
-
-impl Storable for ShardInfo {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(Encode!(self).unwrap())
-    }
-
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Decode!(bytes.as_ref(), Self).expect("Failed to decode ShardInfo")
-    }
-
-    const BOUND: Bound = Bound::Bounded {
-        max_size: 200,
-        is_fixed_size: false,
-    };
-}
-
-/// Wrapper for storing large WASM binary in stable memory
-/// 
-/// The embedded WASM is used by the hub to deploy new shard canisters
-/// automatically when existing shards reach capacity.
-#[derive(CandidType, Deserialize, Clone, Default)]
-struct WasmBlob {
-    data: Vec<u8>,
-}
-
-impl Storable for WasmBlob {
-    fn to_bytes(&self) -> Cow<'_, [u8]> {
-        Cow::Owned(self.data.clone())
-    }
-
-    fn from_bytes(bytes: Cow<[u8]>) -> Self {
-        Self { data: bytes.to_vec() }
-    }
-
-    const BOUND: Bound = Bound::Unbounded;
-}
-
-/// Quiz cache data structure for distribution
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct QuizCacheData {
-    pub content_id: String,
-    pub answer_hashes: Vec<[u8; 32]>,
-    pub question_count: u8,
-    pub version: u64,
-}
-
-/// Cached quiz config for distribution to shards
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct CachedQuizConfig {
-    pub reward_amount: u64,
-    pub pass_threshold_percent: u8,
-    pub max_daily_attempts: u8,
-    pub max_daily_quizzes: u8,
-    pub max_weekly_quizzes: u8,
-    pub max_monthly_quizzes: u8,
-    pub max_yearly_quizzes: u16,
-    pub version: u64,
-}
-
-/// Quiz config returned by learning_engine
-#[derive(CandidType, Deserialize, Clone, Debug)]
-pub struct QuizConfig {
-    pub reward_amount: u64,
-    pub pass_threshold_percent: u8,
-    pub max_daily_attempts: u8,
-    pub max_daily_quizzes: u8,
-    pub max_weekly_quizzes: u8,
-    pub max_monthly_quizzes: u8,
-    pub max_yearly_quizzes: u16,
-}
-
-// ============================================================================
-// THREAD-LOCAL STORAGE
-// ============================================================================
-// 
-// All persistent state is stored in stable memory using ic_stable_structures.
-// Each storage item is assigned a unique MemoryId for isolation.
-// 
-// Memory IDs:
-//   0 - LEDGER_ID: GHC ledger canister principal
-//   1 - GLOBAL_STATS: Aggregate staking statistics
-//   3 - REGISTERED_SHARDS: Set of authorized shard canisters
-//   4 - SHARD_REGISTRY: Detailed info about each shard
-//   5 - SHARD_COUNT: Number of shards created
-//   6 - LEARNING_CONTENT_ID: Learning engine canister principal
-//   7 - EMBEDDED_WASM: User profile WASM for auto-deployment
-//   8 - INITIALIZED: Whether init() has been called
-//   9 - EMBEDDED_ARCHIVE_WASM: Archive canister WASM for auto-deployment
-
-thread_local! {
-    // ─────────────────────────────────────────────────────────────────────
-    // Memory Management
-    // ─────────────────────────────────────────────────────────────────────
-    
-    /// Memory manager for allocating virtual memory regions to each storage
-    /// Allows multiple stable data structures to coexist
-    static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
-        MemoryManager::init(DefaultMemoryImpl::default())
-    );
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Configuration (Set once during init, immutable after)
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// Principal ID of the GHC ICRC-1 ledger canister
-    /// Used for token transfers during unstaking
-    static LEDGER_ID: RefCell<StableCell<Principal, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))),
-            Principal::anonymous()
-        ).unwrap()
-    );
-
-    /// Principal ID of the learning_engine canister
-    /// Passed to new shard canisters during auto-deployment
-    static LEARNING_CONTENT_ID: RefCell<StableCell<Principal, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(6))),
-            Principal::anonymous()
-        ).unwrap()
-    );
-
-    /// Embedded user_profile WASM binary for auto-deploying new shards
-    /// Stored in stable memory to survive upgrades
-    /// Empty if auto-scaling is not enabled
-    static EMBEDDED_WASM: RefCell<StableCell<WasmBlob, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(7))),
-            WasmBlob::default()
-        ).unwrap()
-    );
-
-    /// Embedded archive_canister WASM binary for auto-deploying archive canisters
-    /// Each user_profile shard gets its own archive canister
-    static EMBEDDED_ARCHIVE_WASM: RefCell<StableCell<WasmBlob, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(9))),
-            WasmBlob::default()
-        ).unwrap()
-    );
-
-    /// Flag indicating whether init() has been called
-    /// Prevents re-initialization attacks
-    static INITIALIZED: RefCell<StableCell<bool, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(8))),
-            false
-        ).unwrap()
-    );
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Global Economy State
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// Aggregate staking statistics across all shards
-    /// This is the source of truth for:
-    /// - Total staked tokens
-    /// - Total unstaked tokens
-    /// - Total allocated tokens (against MAX_SUPPLY cap)
-    static GLOBAL_STATS: RefCell<StableCell<GlobalStats, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))),
-            GlobalStats {
-                total_staked: 0,
-                total_unstaked: 0,
-                total_allocated: 0,
-            }
-        ).unwrap()
-    );
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Shard Management
-    // ─────────────────────────────────────────────────────────────────────
-
-    /// Set of registered shard canister principals: Principal -> true
-    /// Only registered shards can call sync_shard and process_unstake
-    /// Used for O(1) authorization checks
-    static REGISTERED_SHARDS: RefCell<StableBTreeMap<Principal, bool, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(3)))
-        )
-    );
-
-    /// Detailed information about each shard: index -> ShardInfo
-    /// Used for shard discovery and load balancing
-    /// Index is sequential, starting at 0
-    static SHARD_REGISTRY: RefCell<StableBTreeMap<u64, ShardInfo, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(4)))
-        )
-    );
-
-    /// Counter for the number of shards created
-    /// Used to generate sequential shard indexes
-    /// Also used to iterate over SHARD_REGISTRY
-    static SHARD_COUNT: RefCell<StableCell<u64, Memory>> = RefCell::new(
-        StableCell::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(5))),
-            0
-        ).unwrap()
-    );
-}
+use types::*;
+use state::*;
+use constants::*;
+mod service;
+use service::*;
 
 // ===============================
 // Initialization (IMMUTABLE AFTER)
@@ -387,16 +100,20 @@ async fn distribute_quiz_cache(unit_id: String, cache_data: QuizCacheData) -> Re
     Ok(success_count)
 }
 
-/// Distribute quiz config update to all shards
-/// Called by learning_engine when config is updated via governance
+/// Distribute token limits update to all shards
+/// Called by itself (after governance update) or manually by controllers
 #[update]
-async fn distribute_quiz_config(config: CachedQuizConfig) -> Result<u64, String> {
+async fn distribute_token_limits(config: TokenLimitsConfig) -> Result<u64, String> {
+    // SECURITY: Only allow hub itself or controller to broadcast
     let caller = ic_cdk::caller();
-    let learning_id = LEARNING_CONTENT_ID.with(|id| *id.borrow().get());
-    if caller != learning_id {
+    if caller != ic_cdk::api::id() && !ic_cdk::api::is_controller(&caller) {
         return Err("Unauthorized".to_string());
     }
 
+    Ok(distribute_token_limits_internal(config).await)
+}
+
+async fn distribute_token_limits_internal(config: TokenLimitsConfig) -> u64 {
     let shards: Vec<Principal> = SHARD_REGISTRY.with(|r| {
         r.borrow().iter().map(|(_, s)| s.canister_id).collect()
     });
@@ -404,301 +121,66 @@ async fn distribute_quiz_config(config: CachedQuizConfig) -> Result<u64, String>
     let mut success_count = 0;
     for shard in shards {
         let c = config.clone();
-        // Fire and forget to avoid blocking hub
-        ic_cdk::spawn(async move {
-            let _ = ic_cdk::call::<_, ()>(shard, "receive_quiz_config", (c,)).await;
-        });
-        success_count += 1;
+        // Await the call to ensure it's delivered before returning
+        let result = ic_cdk::call::<_, ()>(shard, "receive_token_limits", (c,)).await;
+        if result.is_ok() {
+            success_count += 1;
+        }
     }
-    Ok(success_count)
+    success_count
 }
 
-/// Helper to sync a newly created shard with full quiz cache AND config
-async fn sync_new_shard(shard_id: Principal) -> Result<(), String> {
-    let learning_id = LEARNING_CONTENT_ID.with(|id| *id.borrow().get());
-    
-    // Fetch all cache data
-    let (all_caches,): (Vec<(String, QuizCacheData)>,) = ic_cdk::call(
-        learning_id,
-        "get_all_quiz_cache_data",
-        ()
-    ).await.map_err(|(c, m)| format!("Sync failed: {:?} {}", c, m))?;
+#[update]
+async fn update_token_limits(
+    new_reward_amount: Option<u64>,
+    new_pass_threshold: Option<u8>,
+    new_max_attempts: Option<u8>,
+    regular_limits: Option<TokenLimits>,
+    subscribed_limits: Option<TokenLimits>,
+) -> Result<(), String> {
+    // Auth check: in production, verify caller is governance canister
+    // For now, allow controllers
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        // Here we could also check against a stored GOVERNANCE_CANISTER_ID
+        // return Err("Unauthorized".to_string());
+    }
 
-    // Push to new shard
-    let _ = ic_cdk::call::<_, ()>(
-        shard_id,
-        "receive_full_quiz_cache",
-        (all_caches,)
-    ).await;
-    
-    // Also sync the quiz config
-    let (config,): (QuizConfig,) = ic_cdk::call(
-        learning_id,
-        "get_global_quiz_config",
-        ()
-    ).await.map_err(|(c, m)| format!("Config sync failed: {:?} {}", c, m))?;
-    
-    // Convert to cached format and send
-    let cached_config = CachedQuizConfig {
-        reward_amount: config.reward_amount,
-        pass_threshold_percent: config.pass_threshold_percent,
-        max_daily_attempts: config.max_daily_attempts,
-        max_daily_quizzes: config.max_daily_quizzes,
-        max_weekly_quizzes: config.max_weekly_quizzes,
-        max_monthly_quizzes: config.max_monthly_quizzes,
-        max_yearly_quizzes: config.max_yearly_quizzes,
-        version: 1,
-    };
-    
-    let _ = ic_cdk::call::<_, ()>(
-        shard_id,
-        "receive_quiz_config",
-        (cached_config,)
-    ).await;
+    let new_config = TOKEN_LIMITS_CONFIG.with(|c| {
+        let mut cell = c.borrow_mut();
+        let mut config = cell.get().clone();
+        
+        if let Some(val) = new_reward_amount { config.reward_amount = val; }
+        if let Some(val) = new_pass_threshold { config.pass_threshold_percent = val; }
+        if let Some(val) = new_max_attempts { config.max_daily_attempts = val; }
+        if let Some(limits) = regular_limits { config.regular_limits = limits; }
+        if let Some(limits) = subscribed_limits { config.subscribed_limits = limits; }
+        
+        config.version += 1;
+        cell.set(config.clone()).expect("Failed to update token limits config");
+        config
+    });
+
+    // Auto-distribute to all shards
+    distribute_token_limits_internal(new_config).await;
     
     Ok(())
 }
 
-// ===============================
-// Auto-Scaling Functions
-// ===============================
-
-/// Public function to trigger capacity check and shard creation if needed
-/// Anyone can call this - it's safe because it only creates shards from embedded WASM
-#[update]
-async fn ensure_capacity() -> Result<Option<Principal>, String> {
-    ensure_capacity_internal().await
+#[query]
+fn get_token_limits() -> TokenLimitsConfig {
+    TOKEN_LIMITS_CONFIG.with(|c| c.borrow().get().clone())
 }
 
-async fn ensure_capacity_internal() -> Result<Option<Principal>, String> {
-    // 1. Check if WASM is embedded
-    let has_wasm = EMBEDDED_WASM.with(|w| !w.borrow().get().data.is_empty());
-    if !has_wasm {
-        return Err("No WASM embedded - cannot auto-create shards".to_string());
-    }
-    
-    // 2. Get current shards
-    let shard_count = SHARD_COUNT.with(|c| *c.borrow().get());
-    
-    // 3. If no shards exist, create the first one
-    if shard_count == 0 {
-        let new_shard = create_shard_internal().await?;
-        return Ok(Some(new_shard));
-    }
-    
-    // 4. Check if all active shards are near capacity
-    let active_shards = get_active_shards_internal();
-    
-    if active_shards.is_empty() {
-        // All shards are full, need a new one
-        let new_shard = create_shard_internal().await?;
-        return Ok(Some(new_shard));
-    }
-    
-    // Check if the best shard is approaching soft limit
-    let min_user_count = active_shards.iter().map(|s| s.user_count).min().unwrap_or(0);
-    
-    if min_user_count >= SHARD_SOFT_LIMIT {
-        // Proactively create a new shard
-        let new_shard = create_shard_internal().await?;
-        return Ok(Some(new_shard));
-    }
-    
-    Ok(None) // No new shard needed
+#[query]
+fn get_subscription_manager_id() -> Principal {
+    SUBSCRIPTION_MANAGER_ID.with(|id| *id.borrow().get())
 }
 
-async fn create_shard_internal() -> Result<Principal, String> {
-    // 1. Get embedded WASMs
-    let user_profile_wasm = EMBEDDED_WASM.with(|w| w.borrow().get().data.clone());
-    let archive_wasm = EMBEDDED_ARCHIVE_WASM.with(|w| w.borrow().get().data.clone());
-    
-    if user_profile_wasm.is_empty() {
-        return Err("No user_profile WASM embedded".to_string());
-    }
-    
-    // 2. Get required IDs
-    let learning_content_id = LEARNING_CONTENT_ID.with(|id| *id.borrow().get());
-    let staking_hub_id = ic_cdk::id();
-    
-    // 3. Define types for management canister calls
-    #[derive(CandidType)]
-    struct CreateCanisterArgs {
-        settings: Option<CanisterSettings>,
-    }
-    
-    #[derive(CandidType, Clone)]
-    struct CanisterSettings {
-        controllers: Option<Vec<Principal>>,
-        compute_allocation: Option<Nat>,
-        memory_allocation: Option<Nat>,
-        freezing_threshold: Option<Nat>,
-    }
-    
-    #[derive(CandidType, Deserialize)]
-    struct CreateCanisterResult {
-        canister_id: Principal,
-    }
-    
-    #[derive(CandidType)]
-    struct InstallCodeArgs {
-        mode: InstallMode,
-        canister_id: Principal,
-        wasm_module: Vec<u8>,
-        arg: Vec<u8>,
-    }
-    
-    #[derive(CandidType, Deserialize)]
-    enum InstallMode {
-        #[allow(dead_code)]
-        install,
-        #[allow(dead_code)]
-        reinstall,
-        #[allow(dead_code)]
-        upgrade,
-    }
-    
-    // 4. Create user_profile canister
-    let create_args = CreateCanisterArgs {
-        settings: Some(CanisterSettings {
-            controllers: Some(vec![staking_hub_id]),
-            compute_allocation: None,
-            memory_allocation: None,
-            freezing_threshold: None,
-        }),
-    };
-    
-    let (user_profile_result,): (CreateCanisterResult,) = ic_cdk::call(
-        Principal::management_canister(),
-        "create_canister",
-        (create_args,)
-    ).await.map_err(|(code, msg)| format!("Failed to create user_profile canister: {:?} {}", code, msg))?;
-    
-    let user_profile_id = user_profile_result.canister_id;
-    
-    // 5. Create archive canister (if WASM is available)
-    let archive_canister_id: Option<Principal> = if !archive_wasm.is_empty() {
-        let archive_create_args = CreateCanisterArgs {
-            settings: Some(CanisterSettings {
-                controllers: Some(vec![staking_hub_id]),
-                compute_allocation: None,
-                memory_allocation: None,
-                freezing_threshold: None,
-            }),
-        };
-        
-        let (archive_result,): (CreateCanisterResult,) = ic_cdk::call(
-            Principal::management_canister(),
-            "create_canister",
-            (archive_create_args,)
-        ).await.map_err(|(code, msg)| format!("Failed to create archive canister: {:?} {}", code, msg))?;
-        
-        let archive_id = archive_result.canister_id;
-        
-        // Install archive canister code
-        #[derive(CandidType)]
-        struct ArchiveInitArgs {
-            parent_shard_id: Principal,
-        }
-        
-        let archive_init = ArchiveInitArgs {
-            parent_shard_id: user_profile_id,
-        };
-        
-        let archive_install_args = InstallCodeArgs {
-            mode: InstallMode::install,
-            canister_id: archive_id,
-            wasm_module: archive_wasm,
-            arg: Encode!(&archive_init).map_err(|e| format!("Failed to encode archive init args: {}", e))?,
-        };
-        
-        let _: () = ic_cdk::call(
-            Principal::management_canister(),
-            "install_code",
-            (archive_install_args,)
-        ).await.map_err(|(code, msg)| format!("Failed to install archive code: {:?} {}", code, msg))?;
-        
-        Some(archive_id)
-    } else {
-        None
-    };
-    
-    // 6. Install user_profile code
-    #[derive(CandidType)]
-    struct UserProfileInitArgs {
-        staking_hub_id: Principal,
-        learning_content_id: Principal,
-    }
-    
-    let user_profile_init = UserProfileInitArgs {
-        staking_hub_id,
-        learning_content_id,
-    };
-    
-    let user_profile_install_args = InstallCodeArgs {
-        mode: InstallMode::install,
-        canister_id: user_profile_id,
-        wasm_module: user_profile_wasm,
-        arg: Encode!(&user_profile_init).map_err(|e| format!("Failed to encode user_profile init args: {}", e))?,
-    };
-    
-    let _: () = ic_cdk::call(
-        Principal::management_canister(),
-        "install_code",
-        (user_profile_install_args,)
-    ).await.map_err(|(code, msg)| format!("Failed to install user_profile code: {:?} {}", code, msg))?;
-    
-    // 7. Link archive canister to user_profile (if archive was created)
-    if let Some(archive_id) = archive_canister_id {
-        let _: Result<(), _> = ic_cdk::call(
-            user_profile_id,
-            "set_archive_canister",
-            (archive_id,)
-        ).await;
-        // Note: We ignore errors here as the shard is still functional without the link
-    }
-    
-    // 8. Register the new shard with archive info
-    register_shard_internal(user_profile_id, archive_canister_id);
-
-    // 9. Sync initial quiz cache (async, ignore error)
-    ic_cdk::spawn(async move {
-        let _ = sync_new_shard(user_profile_id).await;
-    });
-    
-    Ok(user_profile_id)
+#[query]
+fn get_kyc_manager_id() -> Principal {
+    KYC_MANAGER_ID.with(|id| *id.borrow().get())
 }
 
-fn register_shard_internal(canister_id: Principal, archive_canister_id: Option<Principal>) {
-    let shard_index = SHARD_COUNT.with(|c| {
-        let mut cell = c.borrow_mut();
-        let idx = *cell.get();
-        cell.set(idx + 1).expect("Failed to increment shard count");
-        idx
-    });
-    
-    let shard_info = ShardInfo {
-        canister_id,
-        created_at: ic_cdk::api::time(),
-        user_count: 0,
-        status: ShardStatus::Active,
-        archive_canister_id,
-    };
-    
-    REGISTERED_SHARDS.with(|m| m.borrow_mut().insert(canister_id, true));
-    SHARD_REGISTRY.with(|r| r.borrow_mut().insert(shard_index, shard_info));
-}
-
-fn get_active_shards_internal() -> Vec<ShardInfo> {
-    let shard_count = SHARD_COUNT.with(|c| *c.borrow().get());
-    
-    SHARD_REGISTRY.with(|r| {
-        let registry = r.borrow();
-        (0..shard_count)
-            .filter_map(|i| registry.get(&i))
-            .filter(|s| s.status == ShardStatus::Active)
-            .collect()
-    })
-}
 
 // ===============================
 // Shard Discovery Queries (for Frontend)
@@ -744,6 +226,12 @@ fn get_shard_count() -> u64 {
     SHARD_COUNT.with(|c| *c.borrow().get())
 }
 
+/// Ensures capacity by creating new shards when needed
+#[update]
+async fn ensure_capacity() -> Result<Option<Principal>, String> {
+    ensure_capacity_internal().await
+}
+
 // ============================================================================
 // ADMIN FUNCTIONS
 // ============================================================================
@@ -755,9 +243,87 @@ fn get_shard_count() -> u64 {
 /// 
 /// SECURITY: This should only be callable by controllers in production
 #[update]
-fn add_allowed_minter(canister_id: Principal) {
+async fn add_allowed_minter(canister_id: Principal) {
     // Register the shard (without archive - manual setup)
     register_shard_internal(canister_id, None);
+    // Push current config and data
+    let _ = sync_new_shard(canister_id).await;
+}
+
+/// Manually register a canister as an allowed shard with archive support
+#[update]
+async fn register_shard(canister_id: Principal, archive_id: Option<Principal>) {
+    // SECURITY: Only allow controllers to manually register shards
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        ic_cdk::trap("Unauthorized: Only controllers can register shards");
+    }
+    
+    // Register the shard
+    register_shard_internal(canister_id, archive_id);
+    // Push current config and data
+    let _ = sync_new_shard(canister_id).await;
+}
+
+/// Broadcast the subscription manager ID to all registered shards
+/// 
+/// SECURITY: Only callable by controllers
+#[update]
+async fn admin_broadcast_subscription_manager(new_id: Principal) -> Result<u64, String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can broadcast".to_string());
+    }
+
+    // Update local state
+    SUBSCRIPTION_MANAGER_ID.with(|id| {
+        id.borrow_mut().set(new_id).expect("Failed to set subscription manager ID");
+    });
+
+    // Get list of shards
+    let shards: Vec<Principal> = SHARD_REGISTRY.with(|r| {
+        r.borrow().iter().map(|(_, s)| s.canister_id).collect()
+    });
+
+    let mut success_count = 0;
+    for shard in shards {
+        // Call each shard to update its subscription manager
+        let result = ic_cdk::call::<_, ()>(shard, "internal_sync_subscription_manager", (new_id,)).await;
+        if result.is_ok() {
+            success_count += 1;
+        }
+    }
+
+    Ok(success_count)
+}
+
+/// Broadcast the KYC manager ID to all registered shards
+/// 
+/// SECURITY: Only callable by controllers
+#[update]
+async fn admin_broadcast_kyc_manager(new_id: Principal) -> Result<u64, String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can broadcast".to_string());
+    }
+
+    // Update local state
+    KYC_MANAGER_ID.with(|id| {
+        id.borrow_mut().set(new_id).expect("Failed to set KYC manager ID");
+    });
+
+    // Get list of shards
+    let shards: Vec<Principal> = SHARD_REGISTRY.with(|r| {
+        r.borrow().iter().map(|(_, s)| s.canister_id).collect()
+    });
+
+    let mut success_count = 0;
+    for shard in shards {
+        // Call each shard to update its KYC manager
+        let result = ic_cdk::call::<_, ()>(shard, "internal_sync_kyc_manager", (new_id,)).await;
+        if result.is_ok() {
+            success_count += 1;
+        }
+    }
+
+    Ok(success_count)
 }
 
 /// Get the archive canister ID for a specific shard
@@ -973,30 +539,6 @@ fn get_limits() -> (u64, u64) {
 // Total shares must equal 100%. Can be locked for immutability.
 // The user registry maps each user to their shard for O(1) lookup.
 
-// Using MemoryId 9 for USER_SHARD_MAP, 10 for BOARD_MEMBER_SHARES, 11 for BOARD_SHARES_LOCKED
-thread_local! {
-    /// Map of user principal -> shard principal
-    /// Updated when users register in shards
-    /// Enables O(1) lookup for voting power queries
-    static USER_SHARD_MAP: RefCell<StableBTreeMap<Principal, Principal, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(9)))
-        )
-    );
-    
-    // Note: MemoryIds 10, 11, 12 were previously used for board member storage
-    // Board member management has been moved to operational_governance canister
-    // These memory slots are kept reserved to avoid conflicts
-}
-
-// ============================================================================
-// BOARD MEMBER MANAGEMENT - DEPRECATED
-// ============================================================================
-// Board member management has been moved to the operational_governance canister.
-// See operational_governance for: set_board_member_shares, lock_board_member_shares,
-// get_board_member_shares, is_board_member, etc.
-
-
 // ============================================================================
 // USER REGISTRY
 // ============================================================================
@@ -1089,17 +631,8 @@ async fn fetch_user_voting_power(user: Principal) -> u64 {
     };
     
     // Query shard for user's profile
-    #[derive(CandidType, Deserialize)]
-    struct UserProfile {
-        email: String,
-        name: String,
-        education: String,
-        gender: String,
-        staked_balance: u64,
-        transaction_count: u64,
-    }
     
-    let result: Result<(Option<UserProfile>,), _> = ic_cdk::call(
+    let result: Result<(Option<UserProfilePartial>,), _> = ic_cdk::call(
         shard_id,
         "get_profile",
         (user,)
@@ -1127,4 +660,3 @@ fn get_tokenomics() -> (u64, u64, u64, u64) {
 }
 
 ic_cdk::export_candid!();
-

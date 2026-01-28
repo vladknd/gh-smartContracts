@@ -1,9 +1,5 @@
 export const idlFactory = ({ IDL }) => {
-  const InitArgs = IDL.Record({
-    'founder1' : IDL.Principal,
-    'founder2' : IDL.Principal,
-    'ledger_id' : IDL.Principal,
-  });
+  const InitArgs = IDL.Record({ 'ledger_id' : IDL.Principal });
   const VestingStatus = IDL.Record({
     'years_elapsed' : IDL.Nat64,
     'claimed' : IDL.Nat64,
@@ -14,6 +10,17 @@ export const idlFactory = ({ IDL }) => {
     'unlock_percentage' : IDL.Nat64,
   });
   return IDL.Service({
+    'admin_claim_vested_at' : IDL.Func(
+        [IDL.Nat64],
+        [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
+        [],
+      ),
+    'admin_register_founder' : IDL.Func(
+        [IDL.Principal, IDL.Nat64],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
+        [],
+      ),
+    'admin_set_genesis_timestamp' : IDL.Func([IDL.Nat64], [], []),
     'claim_vested' : IDL.Func(
         [],
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
@@ -35,10 +42,6 @@ export const idlFactory = ({ IDL }) => {
   });
 };
 export const init = ({ IDL }) => {
-  const InitArgs = IDL.Record({
-    'founder1' : IDL.Principal,
-    'founder2' : IDL.Principal,
-    'ledger_id' : IDL.Principal,
-  });
+  const InitArgs = IDL.Record({ 'ledger_id' : IDL.Principal });
   return [InitArgs];
 };

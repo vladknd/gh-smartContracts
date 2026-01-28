@@ -83,15 +83,6 @@ export interface QuizCacheData {
   'version' : bigint,
   'answer_hashes' : Array<Uint8Array | number[]>,
 }
-export interface QuizConfig {
-  'max_daily_quizzes' : number,
-  'reward_amount' : bigint,
-  'max_monthly_quizzes' : number,
-  'pass_threshold_percent' : number,
-  'max_daily_attempts' : number,
-  'max_weekly_quizzes' : number,
-  'max_yearly_quizzes' : number,
-}
 export interface QuizData { 'questions' : Array<QuizQuestion> }
 export interface QuizQuestion {
   'question' : string,
@@ -120,6 +111,7 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'get_all_loading_jobs' : ActorMethod<[], Array<LoadingJob>>,
+  'get_all_quiz_cache_data' : ActorMethod<[], Array<[string, QuizCacheData]>>,
   'get_changes_by_proposal' : ActorMethod<
     [bigint],
     Array<[string, ChangeType]>
@@ -134,7 +126,6 @@ export interface _SERVICE {
     [string],
     Array<[bigint, ContentSnapshot]>
   >,
-  'get_global_quiz_config' : ActorMethod<[], QuizConfig>,
   'get_loading_status' : ActorMethod<[bigint], [] | [LoadingJob]>,
   'get_quiz_data' : ActorMethod<[string], [] | [QuizCacheData]>,
   'get_root_nodes' : ActorMethod<[], Array<PublicContentNode>>,
@@ -145,19 +136,6 @@ export interface _SERVICE {
   >,
   'start_content_load' : ActorMethod<
     [bigint, Principal, string, string, number],
-    { 'Ok' : null } |
-      { 'Err' : string }
-  >,
-  'update_global_quiz_config' : ActorMethod<
-    [
-      [] | [bigint],
-      [] | [number],
-      [] | [number],
-      [] | [number],
-      [] | [number],
-      [] | [number],
-      [] | [number],
-    ],
     { 'Ok' : null } |
       { 'Err' : string }
   >,

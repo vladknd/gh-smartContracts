@@ -3,8 +3,6 @@
 
 type InitArgs = record {
     ledger_id : principal;   // GHC Ledger canister ID
-    founder1 : principal;    // Founder 1 principal (0.35B allocation)
-    founder2 : principal;    // Founder 2 principal (0.15B allocation)
 };
 
 // Internal vesting schedule (not exposed directly)
@@ -34,6 +32,13 @@ service : (InitArgs) -> {
     // Claim vested tokens (only callable by registered founders)
     // Returns the amount claimed on success
     "claim_vested": () -> (variant { Ok: nat64; Err: text });
+    
+    // Registration (Controller only)
+    "admin_register_founder": (principal, nat64) -> (variant { Ok; Err: text });
+    
+    // Testing functions
+    "admin_claim_vested_at": (nat64) -> (variant { Ok: nat64; Err: text });
+    "admin_set_genesis_timestamp": (nat64) -> ();
     
     // =========================================================================
     // QUERY FUNCTIONS

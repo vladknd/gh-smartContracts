@@ -2,11 +2,7 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
-export interface InitArgs {
-  'founder1' : Principal,
-  'founder2' : Principal,
-  'ledger_id' : Principal,
-}
+export interface InitArgs { 'ledger_id' : Principal }
 export interface VestingSchedule {
   'claimed' : bigint,
   'vesting_start' : bigint,
@@ -23,6 +19,17 @@ export interface VestingStatus {
   'unlock_percentage' : bigint,
 }
 export interface _SERVICE {
+  'admin_claim_vested_at' : ActorMethod<
+    [bigint],
+    { 'Ok' : bigint } |
+      { 'Err' : string }
+  >,
+  'admin_register_founder' : ActorMethod<
+    [Principal, bigint],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
+  'admin_set_genesis_timestamp' : ActorMethod<[bigint], undefined>,
   'claim_vested' : ActorMethod<[], { 'Ok' : bigint } | { 'Err' : string }>,
   'get_all_vesting_schedules' : ActorMethod<[], Array<VestingStatus>>,
   'get_genesis_timestamp' : ActorMethod<[], bigint>,

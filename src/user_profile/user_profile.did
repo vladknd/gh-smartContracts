@@ -12,10 +12,14 @@ type UserProfile = record {
     name : text;
     education : text;
     gender : text;
+    // Verification
+    verification_tier : VerificationTier;
     
     // Economy State
     staked_balance : nat64;
     transaction_count : nat64;
+    archived_transaction_count : nat64;
+    is_subscribed : bool;
 };
 
 type UserTimeStats = record {
@@ -67,8 +71,11 @@ type TransactionPage = record {
     total_count : nat64;
     local_count : nat64;
     archived_count : nat64;
-    archive_canister_id : principal;
+    archive_canister_id : opt principal;
     source : text;  // "local" or "archive"
+    current_page : nat32;
+    total_pages : nat32;
+    has_archive_data : bool;
 };
 
 // Archive configuration info
@@ -76,19 +83,31 @@ type ArchiveConfig = record {
     retention_limit : nat64;       // Transactions kept locally per user
     trigger_threshold : nat64;     // Threshold for immediate archive
     check_interval_secs : nat64;   // Periodic archive check interval
-    archive_canister_id : principal;
+    archive_canister_id : opt principal;
     is_configured : bool;
 };
 
-// Cached quiz configuration (stored locally, updated via staking_hub)
-type CachedQuizConfig = record {
+type TokenLimits = record {
+    max_daily_tokens : nat64;
+    max_weekly_tokens : nat64;
+    max_monthly_tokens : nat64;
+    max_yearly_tokens : nat64;
+};
+
+// Token limits and reward configuration
+type TokenLimitsConfig = record {
     reward_amount : nat64;
     pass_threshold_percent : nat8;
     max_daily_attempts : nat8;
-    max_daily_quizzes : nat8;
-    max_weekly_quizzes : nat8;
-    max_monthly_quizzes : nat8;
-    max_yearly_quizzes : nat16;
+    regular_limits : TokenLimits;
+    subscribed_limits : TokenLimits;
+    version : nat64;
+};
+
+type QuizCacheData = record {
+    content_id : text;
+    answer_hashes : vec vec nat8;
+    question_count : nat8;
     version : nat64;
 };
 
@@ -106,6 +125,7 @@ type UserSummary = record {
     email : text;
     staked_balance : nat64;
     verification_tier : VerificationTier;
+    is_subscribed : bool;
 };
 
 // Result of admin user listing with pagination info
@@ -115,6 +135,7 @@ type UserListResult = record {
     page : nat32;
     page_size : nat32;
     has_more : bool;
+    total_pages : nat32;
 };
 
 service : (InitArgs) -> {
@@ -131,15 +152,26 @@ service : (InitArgs) -> {
     submit_quiz : (text, vec nat8) -> (variant { Ok : nat64; Err : text });
     is_quiz_completed : (principal, text) -> (bool) query;
     
-    // Quiz config caching (updated by staking_hub when governance proposals pass)
-    receive_quiz_config : (CachedQuizConfig) -> ();
-    get_cached_quiz_config : () -> (CachedQuizConfig) query;
+    // Token limits distribution (updated by staking_hub)
+    receive_token_limits : (TokenLimitsConfig) -> ();
+    get_token_limits : () -> (TokenLimitsConfig) query;
+    receive_quiz_cache : (text, QuizCacheData) -> ();
+    receive_full_quiz_cache : (vec record { text; QuizCacheData }) -> ();
+
+    // Subscription management 
+    internal_sync_subscription_manager : (principal) -> ();
+    internal_set_subscription : (principal, bool) -> (variant { Ok : null; Err : text });
+    get_subscription_manager_id : () -> (principal) query;
+
+    // KYC management
+    internal_sync_kyc_manager : (principal) -> ();
+    internal_set_kyc_status : (principal, VerificationTier) -> (variant { Ok : null; Err : text });
+    get_kyc_manager_id : () -> (principal) query;
     
     // =========================================================================
     // User Stats
     // =========================================================================
     get_user_stats : (principal) -> (UserTimeStats) query;
-    get_user_daily_status : (principal) -> (UserTimeStats) query;
     
     // =========================================================================
     // Economy Functions
@@ -159,7 +191,7 @@ service : (InitArgs) -> {
     set_archive_canister : (principal) -> (variant { Ok : null; Err : text });
     get_archive_canister : () -> (principal) query;
     get_archive_config : () -> (ArchiveConfig) query;
-    trigger_archive : () -> (variant { Ok : nat64; Err : text });
+    debug_trigger_archive : () -> (variant { Ok : nat64; Err : text });
     
     // =========================================================================
     // Shard Metrics
@@ -177,6 +209,9 @@ service : (InitArgs) -> {
     // For debugging authentication issues
     admin_list_all_users : (nat32, nat32) -> (variant { Ok : UserListResult; Err : text }) query;
     admin_get_user_details : (principal) -> (variant { Ok : opt UserProfile; Err : text }) query;
+    admin_set_user_stats : (principal, UserTimeStats) -> (variant { Ok : null; Err : text });
+    admin_set_subscription : (principal, bool) -> (variant { Ok : null; Err : text });
+    admin_set_kyc_status : (principal, VerificationTier) -> (variant { Ok : null; Err : text });
     
     // Public debug helpers
     whoami : () -> (principal) query;

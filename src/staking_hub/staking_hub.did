@@ -40,15 +40,20 @@ type BoardMemberShare = record {
     percentage : nat8;
 };
 
-// Cached quiz config for distribution to shards
-type CachedQuizConfig = record {
+type TokenLimits = record {
+    max_daily_tokens : nat64;
+    max_weekly_tokens : nat64;
+    max_monthly_tokens : nat64;
+    max_yearly_tokens : nat64;
+};
+
+// Token limits and reward configuration
+type TokenLimitsConfig = record {
     reward_amount : nat64;
     pass_threshold_percent : nat8;
     max_daily_attempts : nat8;
-    max_daily_quizzes : nat8;
-    max_weekly_quizzes : nat8;
-    max_monthly_quizzes : nat8;
-    max_yearly_quizzes : nat16;
+    regular_limits : TokenLimits;
+    subscribed_limits : TokenLimits;
     version : nat64;
 };
 
@@ -96,6 +101,13 @@ service : (InitArgs) -> {
     // Admin Operations
     // =========================================================================
     "add_allowed_minter": (principal) -> ();
+    "register_shard": (principal, opt principal) -> ();
+
+    // Broadcast the subscription manager ID to all shards (controller only)
+    "admin_broadcast_subscription_manager": (principal) -> (variant { Ok: nat64; Err: text });
+
+    // Broadcast the KYC manager ID to all shards (controller only)
+    "admin_broadcast_kyc_manager": (principal) -> (variant { Ok: nat64; Err: text });
     
     // =========================================================================
     // Quiz Cache & Config Distribution (called by learning_engine)
@@ -104,8 +116,20 @@ service : (InitArgs) -> {
     // Distribute quiz cache data to all shards
     "distribute_quiz_cache": (text, QuizCacheData) -> (variant { Ok: nat64; Err: text });
     
-    // Distribute quiz config update to all shards
-    "distribute_quiz_config": (CachedQuizConfig) -> (variant { Ok: nat64; Err: text });
+    // Distribute token limits update to all shards
+    "distribute_token_limits": (TokenLimitsConfig) -> (variant { Ok: nat64; Err: text });
+    
+    // Update global token limits (called by governance)
+    "update_token_limits": (opt nat64, opt nat8, opt nat8, opt TokenLimits, opt TokenLimits) -> (variant { Ok: null; Err: text });
+    
+    // Get current global token limits
+    "get_token_limits": () -> (TokenLimitsConfig) query;
+
+    // Get the current subscription manager ID
+    "get_subscription_manager_id": () -> (principal) query;
+
+    // Get the current KYC manager ID
+    "get_kyc_manager_id": () -> (principal) query;
     
     // =========================================================================
     // Query Functions
@@ -168,7 +192,7 @@ service : (InitArgs) -> {
     // Fetch voting power for any principal (async - queries shards)
     // For board members: returns VUC * (percentage / 100)
     // For users: returns staked_balance
-    "fetch_voting_power": (principal) -> (nat64);
+    "fetch_user_voting_power": (principal) -> (nat64);
     
     // Get tokenomics: (max_supply, total_allocated, vuc, total_voting_power)
     "get_tokenomics": () -> (nat64, nat64, nat64, nat64) query;

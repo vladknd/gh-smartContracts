@@ -11,6 +11,8 @@ members = [
     "src/sonic_adapter",
     "src/ico_canister",
     "src/archive_canister",
+    "src/subscription_canister",
+    "src/kyc_canister",
 ]
 resolver = "2"
 

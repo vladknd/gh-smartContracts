@@ -68,15 +68,6 @@ type QuizCacheData = record {
   version : nat64;
   answer_hashes : vec blob;
 };
-type QuizConfig = record {
-  max_daily_quizzes : nat8;
-  reward_amount : nat64;
-  max_monthly_quizzes : nat8;
-  pass_threshold_percent : nat8;
-  max_daily_attempts : nat8;
-  max_weekly_quizzes : nat8;
-  max_yearly_quizzes : nat16;
-};
 type QuizData = record { questions : vec QuizQuestion };
 type QuizQuestion = record {
   question : text;
@@ -89,6 +80,7 @@ service : (InitArgs) -> {
   continue_loading : (nat64) -> (variant { Ok; Err : text });
   delete_content_node : (text, nat64) -> (variant { Ok; Err : text });
   get_all_loading_jobs : () -> (vec LoadingJob) query;
+  get_all_quiz_cache_data : () -> (vec record { text; QuizCacheData }) query;
   get_changes_by_proposal : (nat64) -> (vec record { text; ChangeType }) query;
   get_children : (text) -> (vec PublicContentNode) query;
   get_content_at_version : (text, nat64) -> (opt ContentNode) query;
@@ -99,7 +91,6 @@ service : (InitArgs) -> {
   get_content_version_history : (text) -> (
       vec record { nat64; ContentSnapshot },
     ) query;
-  get_global_quiz_config : () -> (QuizConfig) query;
   get_loading_status : (nat64) -> (opt LoadingJob) query;
   get_quiz_data : (text) -> (opt QuizCacheData) query;
   get_root_nodes : () -> (vec PublicContentNode) query;
@@ -107,14 +98,5 @@ service : (InitArgs) -> {
   start_content_load : (nat64, principal, text, text, nat32) -> (
       variant { Ok; Err : text },
     );
-  update_global_quiz_config : (
-      opt nat64,
-      opt nat8,
-      opt nat8,
-      opt nat8,
-      opt nat8,
-      opt nat8,
-      opt nat16,
-    ) -> (variant { Ok; Err : text });
-  verify_quiz : (text, blob) -> (bool, nat64, nat64) query;
+  verify_quiz : (text, blob) -> (bool, nat64, nat64);
 }

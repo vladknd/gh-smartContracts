@@ -1,1749 +1,536 @@
 
-============================================================================
-GreenHero Coin - Full Deployment
-============================================================================
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34mPHASE 1: Building Canisters[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;33m[INFO][0m Building all canisters...
+   Compiling archive_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/archive_canister)
+   Compiling staging_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staging_assets)
+   Compiling learning_engine v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/learning_engine)
+   Compiling media_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/media_assets)
+   Compiling user_profile v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/user_profile)
+   Compiling founder_vesting v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/founder_vesting)
+   Compiling treasury_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/treasury_canister)
+   Compiling subscription_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/subscription_canister)
+   Compiling staking_hub v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staking_hub)
+   Compiling governance_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/governance_canister)
+   Compiling kyc_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/kyc_canister)
+    Finished `release` profile [optimized] target(s) in 16.10s
+[0;32m[SUCCESS][0m All canisters built successfully
+[1;33m[INFO][0m WASM sizes:
+-rwxrwxrwx 2 vozni vozni 537K Jan 28 12:50 target/wasm32-unknown-unknown/release/archive_canister.wasm
+-rwxrwxrwx 2 vozni vozni 830K Jan 28 12:50 target/wasm32-unknown-unknown/release/user_profile.wasm
 
-Creating identities...
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
-Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
-Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34mPHASE 2: Network Setup[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;33m[INFO][0m Checking if dfx is running...
+[0;32m[SUCCESS][0m Local network is running
 
-Creating canisters...
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34mPHASE 3: Deploying Core Infrastructure[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;33m[INFO][0m Creating canisters...
 Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
-founder_vesting canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
-ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
-governance_canister canister created with canister id: uzt4z-lp777-77774-qaabq-cai
-icrc1_index_canister canister created with canister id: umunu-kh777-77774-qaaca-cai
-internet_identity canister created with canister id: ulvla-h7777-77774-qaacq-cai
-learning_engine canister created with canister id: ucwa4-rx777-77774-qaada-cai
-media_assets canister created with canister id: ufxgi-4p777-77774-qaadq-cai
-staging_assets canister created with canister id: vizcg-th777-77774-qaaea-cai
-staking_hub canister created with canister id: vpyes-67777-77774-qaaeq-cai
-treasury_canister canister created with canister id: vg3po-ix777-77774-qaafa-cai
-user_profile canister created with canister id: vb2j2-fp777-77774-qaafq-cai
-
-============================================================================
-Canister IDs
-============================================================================
-  Ledger:              u6s2n-gx777-77774-qaaba-cai
-  Treasury:            vg3po-ix777-77774-qaafa-cai
-  Governance:          uzt4z-lp777-77774-qaabq-cai
-  Staking Hub:         vpyes-67777-77774-qaaeq-cai
-  Learning Engine:     ucwa4-rx777-77774-qaada-cai
-  Media Assets:        ufxgi-4p777-77774-qaadq-cai
-  Staging Assets:      vizcg-th777-77774-qaaea-cai
-  User Profile:        vb2j2-fp777-77774-qaafq-cai
-  Founder Vesting:     uxrrr-q7777-77774-qaaaq-cai
-  Internet Identity:   ulvla-h7777-77774-qaacq-cai
-
-Deploying Internet Identity...
-Deploying: internet_identity
-All canisters have already been created.
-Building canister 'internet_identity'.
-Installed code for canister internet_identity, with canister ID ulvla-h7777-77774-qaacq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Ledger...
+archive_canister canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
+founder_vesting canister created with canister id: u6s2n-gx777-77774-qaaba-cai
+ghc_ledger canister created with canister id: uzt4z-lp777-77774-qaabq-cai
+governance_canister canister created with canister id: umunu-kh777-77774-qaaca-cai
+ico_canister canister created with canister id: ulvla-h7777-77774-qaacq-cai
+icrc1_index_canister canister created with canister id: ucwa4-rx777-77774-qaada-cai
+internet_identity canister created with canister id: ufxgi-4p777-77774-qaadq-cai
+kyc_canister canister created with canister id: vizcg-th777-77774-qaaea-cai
+learning_engine canister created with canister id: vpyes-67777-77774-qaaeq-cai
+media_assets canister created with canister id: vg3po-ix777-77774-qaafa-cai
+sonic_adapter canister created with canister id: vb2j2-fp777-77774-qaafq-cai
+staging_assets canister created with canister id: vu5yx-eh777-77774-qaaga-cai
+staking_hub canister created with canister id: vt46d-j7777-77774-qaagq-cai
+subscription_canister canister created with canister id: v27v7-7x777-77774-qaaha-cai
+treasury_canister canister created with canister id: v56tl-sp777-77774-qaahq-cai
+user_profile canister created with canister id: xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Canister IDs:
+[1;33m[INFO][0m   Ledger: uzt4z-lp777-77774-qaabq-cai
+[1;33m[INFO][0m   Staking Hub: vt46d-j7777-77774-qaagq-cai
+[1;33m[INFO][0m   Treasury: v56tl-sp777-77774-qaahq-cai
+[1;33m[INFO][0m   Learning Engine: vpyes-67777-77774-qaaeq-cai
+[1;33m[INFO][0m Deploying GHC Ledger...
 Deploying: ghc_ledger
 All canisters have already been created.
 Building canister 'ghc_ledger'.
-Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
+Installed code for canister ghc_ledger, with canister ID uzt4z-lp777-77774-qaabq-cai
 Deployed canisters.
 URLs:
   Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying ICRC-1 Indexer...
-Deploying: icrc1_index_canister
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[0;32m[SUCCESS][0m GHC Ledger deployed
+[1;33m[INFO][0m Deploying Internet Identity...
+Deploying: internet_identity
 All canisters have already been created.
-Building canister 'icrc1_index_canister'.
-Installed code for canister icrc1_index_canister, with canister ID umunu-kh777-77774-qaaca-cai
+Building canister 'internet_identity'.
+Installed code for canister internet_identity, with canister ID ufxgi-4p777-77774-qaadq-cai
 Deployed canisters.
 URLs:
   Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staking Hub...
-Deploying: staking_hub
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staking_hub'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
-   Compiling staking_hub v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staking_hub)
-warning: variant `install` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:411:9
-    |
-411 |         install,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Install`
-    |
-    = note: `#[warn(non_camel_case_types)]` (part of `#[warn(nonstandard_style)]`) on by default
-
-warning: variant `reinstall` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:413:9
-    |
-413 |         reinstall,
-    |         ^^^^^^^^^ help: convert the identifier to upper camel case: `Reinstall`
-
-warning: variant `upgrade` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:415:9
-    |
-415 |         upgrade,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Upgrade`
-
-warning: `staking_hub` (lib) generated 3 warnings
-    Finished `release` profile [optimized] target(s) in 8.94s
-Installed code for canister staking_hub, with canister ID vpyes-67777-77774-qaaeq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Treasury Canister...
-Deploying: treasury_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'treasury_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p treasury_canister --locked
-   Compiling treasury_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/treasury_canister)
-    Finished `release` profile [optimized] target(s) in 7.10s
-Installed code for canister treasury_canister, with canister ID vg3po-ix777-77774-qaafa-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Governance Canister...
-Deploying: governance_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'governance_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p governance_canister --locked
-   Compiling governance_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/governance_canister)
-    Finished `release` profile [optimized] target(s) in 10.03s
-Installed code for canister governance_canister, with canister ID uzt4z-lp777-77774-qaabq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Linking Treasury and Governance canisters...
-(variant { Ok })
-(variant { Ok })
-Deploying Media Assets (permanent media storage)...
-Deploying: media_assets
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'media_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p media_assets --locked
-   Compiling syn v1.0.109
-   Compiling binread_derive v2.1.0
-   Compiling binread v2.2.0
-   Compiling candid v0.10.20
-   Compiling ic-cdk-macros v0.17.2
-   Compiling ic-cdk v0.17.2
-   Compiling media_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/media_assets)
-    Finished `release` profile [optimized] target(s) in 15.63s
-Installed code for canister media_assets, with canister ID ufxgi-4p777-77774-qaadq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staging Assets (temporary content storage)...
-Deploying: staging_assets
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staging_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staging_assets --locked
-   Compiling staging_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staging_assets)
-    Finished `release` profile [optimized] target(s) in 6.91s
-Installed code for canister staging_assets, with canister ID vizcg-th777-77774-qaaea-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Learning Engine...
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Deploying Learning Engine...
 Deploying: learning_engine
 All canisters have already been created.
 WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
 Building canister 'learning_engine'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
    Compiling learning_engine v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/learning_engine)
-    Finished `release` profile [optimized] target(s) in 8.48s
-Installed code for canister learning_engine, with canister ID ucwa4-rx777-77774-qaada-cai
+    Finished `release` profile [optimized] target(s) in 9.19s
+Installed code for canister learning_engine, with canister ID vpyes-67777-77774-qaaeq-cai
 Deployed canisters.
 URLs:
   Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Setting Learning Engine ID in Governance Canister...
-(variant { Ok })
-Deploying User Profile...
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[0;32m[SUCCESS][0m Core infrastructure deployed
+
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34mPHASE 4: Deploying Staking Hub with Embedded WASMs[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;33m[INFO][0m Converting WASM files to blob format...
+[1;33m[INFO][0m Deploying staking_hub with embedded WASMs...
+Deploying: staking_hub
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staking_hub'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
+   Compiling staking_hub v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staking_hub)
+    Finished `release` profile [optimized] target(s) in 9.77s
+Installed code for canister staking_hub, with canister ID vt46d-j7777-77774-qaagq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[0;32m[SUCCESS][0m Staking Hub deployed with embedded WASMs
+
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34mPHASE 5: Deploying User Profile Shard with Archive[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;33m[INFO][0m Deploying user_profile shard...
 Deploying: user_profile
 All canisters have already been created.
 WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
 Building canister 'user_profile'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
    Compiling user_profile v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/user_profile)
-    Finished `release` profile [optimized] target(s) in 7.17s
-Installed code for canister user_profile, with canister ID vb2j2-fp777-77774-qaafq-cai
+    Finished `release` profile [optimized] target(s) in 9.25s
+Installed code for canister user_profile, with canister ID xad5d-bh777-77774-qaaia-cai
 Deployed canisters.
 URLs:
   Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Registering User Profile as Allowed Minter...
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m User Profile ID: xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Deploying archive_canister...
+Deploying: archive_canister
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'archive_canister'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p archive_canister --locked
+   Compiling archive_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/archive_canister)
+    Finished `release` profile [optimized] target(s) in 5.75s
+Installed code for canister archive_canister, with canister ID uxrrr-q7777-77774-qaaaq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Archive ID: uxrrr-q7777-77774-qaaaq-cai
+[1;33m[INFO][0m Registering user_profile as a shard in staking_hub...
 ()
-Deploying Founder Vesting...
+[1;33m[INFO][0m Linking archive to user_profile...
+[1;33m[INFO][0m Current identity (controller): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+(variant { Ok })
+[0;32m[SUCCESS][0m User Profile and Archive deployed
+
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34mPHASE 6: Deploying Governance and Treasury[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;33m[INFO][0m Deploying Treasury...
+Deploying: treasury_canister
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'treasury_canister'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p treasury_canister --locked
+   Compiling treasury_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/treasury_canister)
+    Finished `release` profile [optimized] target(s) in 7.49s
+Installed code for canister treasury_canister, with canister ID v56tl-sp777-77774-qaahq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Treasury ID: v56tl-sp777-77774-qaahq-cai
+[1;33m[INFO][0m Deploying Governance...
+Deploying: governance_canister
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'governance_canister'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p governance_canister --locked
+   Compiling governance_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/governance_canister)
+    Finished `release` profile [optimized] target(s) in 11.77s
+Installed code for canister governance_canister, with canister ID umunu-kh777-77774-qaaca-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Governance ID: umunu-kh777-77774-qaaca-cai
+[1;33m[INFO][0m Linking Treasury and Governance canisters...
+(variant { Ok })
+(variant { Ok })
+[1;33m[INFO][0m Deploying ICO Canister...
+Deploying: ico_canister
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'ico_canister'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p ico_canister --locked
+    Finished `release` profile [optimized] target(s) in 2.79s
+Installed code for canister ico_canister, with canister ID ulvla-h7777-77774-qaacq-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Setting Learning Engine ID in Governance Canister...
+(variant { Ok })
+[1;33m[INFO][0m Deploying Assets...
+Deploying: staging_assets
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'staging_assets'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p staging_assets --locked
+   Compiling staging_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staging_assets)
+    Finished `release` profile [optimized] target(s) in 7.14s
+Installed code for canister staging_assets, with canister ID vu5yx-eh777-77774-qaaga-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+Deploying: media_assets
+All canisters have already been created.
+WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
+Building canister 'media_assets'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p media_assets --locked
+   Compiling media_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/media_assets)
+    Finished `release` profile [optimized] target(s) in 6.80s
+Installed code for canister media_assets, with canister ID vg3po-ix777-77774-qaafa-cai
+Deployed canisters.
+URLs:
+  Backend canister via Candid interface:
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Deploying Founder Vesting...
+[31mError: (B[mIdentity already exists.
+[31mError: (B[mIdentity already exists.
 Deploying: founder_vesting
 All canisters have already been created.
 WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
 Building canister 'founder_vesting'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p founder_vesting --locked
    Compiling founder_vesting v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/founder_vesting)
-    Finished `release` profile [optimized] target(s) in 6.57s
-Installed code for canister founder_vesting, with canister ID uxrrr-q7777-77774-qaaaq-cai
+    Finished `release` profile [optimized] target(s) in 6.91s
+Installed code for canister founder_vesting, with canister ID u6s2n-gx777-77774-qaaba-cai
 Deployed canisters.
 URLs:
   Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-
-Generating frontend configuration...
-Generated ic.config.json
-Running update_frontend.sh...
-Copying DID files...
-cp: cannot stat 'src/operational_governance/operational_governance.did': No such file or directory
-cp: cannot stat 'src/content_governance/content_governance.did': No such file or directory
-DID files copied to /mnt/c/LIB/CODE/gh-dashboard/dids
-Copying IC configuration...
-IC configuration copied to /mnt/c/LIB/CODE/gh-dashboard/ic.config.json
-Copying integration documentation...
-Integration documentation copied to /mnt/c/LIB/CODE/gh-dashboard/docs
-Done!
-
-============================================================================
-Deployment Complete!
-============================================================================
-
-Token Distribution (9.5B Total):
-  - Treasury:        4.25B MC
-  - Staking Hub:     4.75B MUC
-  - Founder Vesting: 0.5B MC (time-locked)
-    - Founder 1: 0.35B MC
-    - Founder 2: 0.15B MC
-
-Canister Architecture:
-  ┌─────────────────────────────────────────────────────────────┐
-  │                     CORE SYSTEM                             │
-  ├─────────────────────────────────────────────────────────────┤
-  │  treasury_canister  ◄──► governance_canister                │
-  │         │                        │                          │
-  │         │                        ▼                          │
-  │         │                 learning_engine ◄── staging_assets│
-  │         │                        │                          │
-  │         ▼                        ▼                          │
-  │    ghc_ledger              user_profile                     │
-  │         │                        │                          │
-  │         └───────► staking_hub ◄──┘                          │
-  │                                                             │
-  │  media_assets (permanent storage)                           │
-  │  founder_vesting (time-locked tokens)                       │
-  └─────────────────────────────────────────────────────────────┘
-
-Canister IDs saved to: ic.config.json
-
-
-============================================================================
-GreenHero Coin - Full Deployment
-============================================================================
-
-Creating identities...
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
-Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
-Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
-
-Creating canisters...
-Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
-founder_vesting canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
-ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
-governance_canister canister created with canister id: uzt4z-lp777-77774-qaabq-cai
-icrc1_index_canister canister created with canister id: umunu-kh777-77774-qaaca-cai
-internet_identity canister created with canister id: ulvla-h7777-77774-qaacq-cai
-learning_engine canister created with canister id: ucwa4-rx777-77774-qaada-cai
-media_assets canister created with canister id: ufxgi-4p777-77774-qaadq-cai
-staging_assets canister created with canister id: vizcg-th777-77774-qaaea-cai
-staking_hub canister created with canister id: vpyes-67777-77774-qaaeq-cai
-treasury_canister canister created with canister id: vg3po-ix777-77774-qaafa-cai
-user_profile canister created with canister id: vb2j2-fp777-77774-qaafq-cai
-
-============================================================================
-Canister IDs
-============================================================================
-  Ledger:              u6s2n-gx777-77774-qaaba-cai
-  Treasury:            vg3po-ix777-77774-qaafa-cai
-  Governance:          uzt4z-lp777-77774-qaabq-cai
-  Staking Hub:         vpyes-67777-77774-qaaeq-cai
-  Learning Engine:     ucwa4-rx777-77774-qaada-cai
-  Media Assets:        ufxgi-4p777-77774-qaadq-cai
-  Staging Assets:      vizcg-th777-77774-qaaea-cai
-  User Profile:        vb2j2-fp777-77774-qaafq-cai
-  Founder Vesting:     uxrrr-q7777-77774-qaaaq-cai
-  Internet Identity:   ulvla-h7777-77774-qaacq-cai
-
-Deploying Internet Identity...
-Deploying: internet_identity
-All canisters have already been created.
-Building canister 'internet_identity'.
-Installed code for canister internet_identity, with canister ID ulvla-h7777-77774-qaacq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Ledger...
-Deploying: ghc_ledger
-All canisters have already been created.
-Building canister 'ghc_ledger'.
-Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying ICRC-1 Indexer...
-Deploying: icrc1_index_canister
-All canisters have already been created.
-Building canister 'icrc1_index_canister'.
-Installed code for canister icrc1_index_canister, with canister ID umunu-kh777-77774-qaaca-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staking Hub...
-Deploying: staking_hub
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staking_hub'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
-warning: variant `install` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:411:9
-    |
-411 |         install,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Install`
-    |
-    = note: `#[warn(non_camel_case_types)]` (part of `#[warn(nonstandard_style)]`) on by default
-
-warning: variant `reinstall` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:413:9
-    |
-413 |         reinstall,
-    |         ^^^^^^^^^ help: convert the identifier to upper camel case: `Reinstall`
-
-warning: variant `upgrade` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:415:9
-    |
-415 |         upgrade,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Upgrade`
-
-warning: `staking_hub` (lib) generated 3 warnings
-    Finished `release` profile [optimized] target(s) in 2.46s
-Installed code for canister staking_hub, with canister ID vpyes-67777-77774-qaaeq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Treasury Canister...
-Deploying: treasury_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'treasury_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p treasury_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.48s
-Installed code for canister treasury_canister, with canister ID vg3po-ix777-77774-qaafa-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Governance Canister...
-Deploying: governance_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'governance_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p governance_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.53s
-Installed code for canister governance_canister, with canister ID uzt4z-lp777-77774-qaabq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Linking Treasury and Governance canisters...
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Registering founders in Founder Vesting...
 (variant { Ok })
 (variant { Ok })
-Deploying Media Assets (permanent media storage)...
-Deploying: media_assets
+[1;33m[INFO][0m Deploying Subscription Canister...
+Deploying: subscription_canister
 All canisters have already been created.
 WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'media_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p media_assets --locked
-    Finished `release` profile [optimized] target(s) in 1.96s
-Installed code for canister media_assets, with canister ID ufxgi-4p777-77774-qaadq-cai
+Building canister 'subscription_canister'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p subscription_canister --locked
+   Compiling subscription_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/subscription_canister)
+    Finished `release` profile [optimized] target(s) in 6.11s
+Installed code for canister subscription_canister, with canister ID v27v7-7x777-77774-qaaha-cai
 Deployed canisters.
 URLs:
   Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staging Assets (temporary content storage)...
-Deploying: staging_assets
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Broadcasting Subscription Canister ID to Shards...
+(variant { Ok = 1 : nat64 })
+[1;33m[INFO][0m Deploying KYC Canister...
+Deploying: kyc_canister
 All canisters have already been created.
 WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staging_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staging_assets --locked
-    Finished `release` profile [optimized] target(s) in 1.99s
-Installed code for canister staging_assets, with canister ID vizcg-th777-77774-qaaea-cai
+Building canister 'kyc_canister'.
+Executing: cargo build --target wasm32-unknown-unknown --release -p kyc_canister --locked
+   Compiling kyc_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/kyc_canister)
+    Finished `release` profile [optimized] target(s) in 5.65s
+Installed code for canister kyc_canister, with canister ID vizcg-th777-77774-qaaea-cai
 Deployed canisters.
 URLs:
   Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Learning Engine...
-Deploying: learning_engine
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'learning_engine'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
-    Finished `release` profile [optimized] target(s) in 2.14s
-Installed code for canister learning_engine, with canister ID ucwa4-rx777-77774-qaada-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Setting Learning Engine ID in Governance Canister...
-(variant { Ok })
-Deploying User Profile...
-Deploying: user_profile
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'user_profile'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
-    Finished `release` profile [optimized] target(s) in 2.21s
-Installed code for canister user_profile, with canister ID vb2j2-fp777-77774-qaafq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Registering User Profile as Allowed Minter...
-()
-Deploying Founder Vesting...
-Deploying: founder_vesting
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'founder_vesting'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p founder_vesting --locked
-    Finished `release` profile [optimized] target(s) in 2.31s
-Installed code for canister founder_vesting, with canister ID uxrrr-q7777-77774-qaaaq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
+    archive_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uxrrr-q7777-77774-qaaaq-cai
+    founder_vesting: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=u6s2n-gx777-77774-qaaba-cai
+    ghc_ledger: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=uzt4z-lp777-77774-qaabq-cai
+    governance_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=umunu-kh777-77774-qaaca-cai
+    ico_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ulvla-h7777-77774-qaacq-cai
+    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ucwa4-rx777-77774-qaada-cai
+    internet_identity: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=ufxgi-4p777-77774-qaadq-cai
+    kyc_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vizcg-th777-77774-qaaea-cai
+    learning_engine: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vpyes-67777-77774-qaaeq-cai
+    media_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vg3po-ix777-77774-qaafa-cai
+    sonic_adapter: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vb2j2-fp777-77774-qaafq-cai
+    staging_assets: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vu5yx-eh777-77774-qaaga-cai
+    staking_hub: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=vt46d-j7777-77774-qaagq-cai
+    subscription_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v27v7-7x777-77774-qaaha-cai
+    treasury_canister: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=v56tl-sp777-77774-qaahq-cai
+    user_profile: http://127.0.0.1:4943/?canisterId=xhc3x-m7777-77774-qaaiq-cai&id=xad5d-bh777-77774-qaaia-cai
+[1;33m[INFO][0m Broadcasting KYC Canister ID to Shards...
+(variant { Ok = 1 : nat64 })
+[0;32m[SUCCESS][0m All canisters deployed and linked
 
-Generating frontend configuration...
-Generated ic.config.json
-Running update_frontend.sh...
-Copying DID files...
-cp: cannot stat 'src/operational_governance/operational_governance.did': No such file or directory
-cp: cannot stat 'src/content_governance/content_governance.did': No such file or directory
-DID files copied to /mnt/c/LIB/CODE/gh-dashboard/dids
-Copying IC configuration...
-IC configuration copied to /mnt/c/LIB/CODE/gh-dashboard/ic.config.json
-Copying integration documentation...
-Integration documentation copied to /mnt/c/LIB/CODE/gh-dashboard/docs
-Done!
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34mPHASE 7: Verification[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;33m[INFO][0m Checking archive stats...
+(
+  record {
+    is_full = false;
+    size_bytes = 0 : nat64;
+    parent_shard = principal "xad5d-bh777-77774-qaaia-cai";
+    entry_count = 0 : nat64;
+    next_archive = null;
+  },
+)
+[1;33m[INFO][0m Checking staking_hub shards...
+(
+  vec {
+    record {
+      user_count = 0 : nat64;
+      status = variant { Active };
+      canister_id = principal "xad5d-bh777-77774-qaaia-cai";
+      created_at = 1_769_622_754_063_913_282 : nat64;
+      archive_canister_id = opt principal "uxrrr-q7777-77774-qaaaq-cai";
+    };
+  },
+)
+[1;33m[INFO][0m Checking user_profile archive link...
+(principal "uxrrr-q7777-77774-qaaaq-cai")
 
-============================================================================
-Deployment Complete!
-============================================================================
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;34mDEPLOYMENT COMPLETE[0m
+[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
 
-Token Distribution (9.5B Total):
-  - Treasury:        4.25B MC
-  - Staking Hub:     4.75B MUC
-  - Founder Vesting: 0.5B MC (time-locked)
-    - Founder 1: 0.35B MC
-    - Founder 2: 0.15B MC
+Deployed Canisters:
+  ┌─────────────────────┬──────────────────────────────────────────┐
+  │ Canister            │ ID                                       │
+  ├─────────────────────┼──────────────────────────────────────────┤
+  │ GHC Ledger          │ uzt4z-lp777-77774-qaabq-cai
+  │ Learning Engine     │ vpyes-67777-77774-qaaeq-cai
+  │ Staking Hub         │ vt46d-j7777-77774-qaagq-cai
+  │ User Profile        │ xad5d-bh777-77774-qaaia-cai
+  │ Archive             │ uxrrr-q7777-77774-qaaaq-cai
+  │ Treasury            │ v56tl-sp777-77774-qaahq-cai
+  │ Governance          │ umunu-kh777-77774-qaaca-cai
+  │ Subscription        │ v27v7-7x777-77774-qaaha-cai
+  │ KYC                 │ vizcg-th777-77774-qaaea-cai
+  └─────────────────────┴──────────────────────────────────────────┘
 
-Canister Architecture:
-  ┌─────────────────────────────────────────────────────────────┐
-  │                     CORE SYSTEM                             │
-  ├─────────────────────────────────────────────────────────────┤
-  │  treasury_canister  ◄──► governance_canister                │
-  │         │                        │                          │
-  │         │                        ▼                          │
-  │         │                 learning_engine ◄── staging_assets│
-  │         │                        │                          │
-  │         ▼                        ▼                          │
-  │    ghc_ledger              user_profile                     │
-  │         │                        │                          │
-  │         └───────► staking_hub ◄──┘                          │
-  │                                                             │
-  │  media_assets (permanent storage)                           │
-  │  founder_vesting (time-locked tokens)                       │
-  └─────────────────────────────────────────────────────────────┘
+Archive Configuration:
+  • Retention Limit: 100 transactions per user (kept locally)
+  • Trigger Threshold: 150 transactions (immediate archive)
+  • Periodic Check: Every 6 hours
 
-Canister IDs saved to: ic.config.json
+Notes:
+  • For auto-scaling with embedded WASMs, use the IC management canister
+    to update staking_hub with compiled WASM blobs
+  • Archive linking may require running as staking_hub principal
 
-
-============================================================================
-GreenHero Coin - Full Deployment
-============================================================================
-
-Creating identities...
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
-Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
-Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
-
-Creating canisters...
-Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
-founder_vesting canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
-ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
-governance_canister canister created with canister id: uzt4z-lp777-77774-qaabq-cai
-icrc1_index_canister canister created with canister id: umunu-kh777-77774-qaaca-cai
-internet_identity canister created with canister id: ulvla-h7777-77774-qaacq-cai
-learning_engine canister created with canister id: ucwa4-rx777-77774-qaada-cai
-media_assets canister created with canister id: ufxgi-4p777-77774-qaadq-cai
-staging_assets canister created with canister id: vizcg-th777-77774-qaaea-cai
-staking_hub canister created with canister id: vpyes-67777-77774-qaaeq-cai
-treasury_canister canister created with canister id: vg3po-ix777-77774-qaafa-cai
-user_profile canister created with canister id: vb2j2-fp777-77774-qaafq-cai
-
-============================================================================
-Canister IDs
-============================================================================
-  Ledger:              u6s2n-gx777-77774-qaaba-cai
-  Treasury:            vg3po-ix777-77774-qaafa-cai
-  Governance:          uzt4z-lp777-77774-qaabq-cai
-  Staking Hub:         vpyes-67777-77774-qaaeq-cai
-  Learning Engine:     ucwa4-rx777-77774-qaada-cai
-  Media Assets:        ufxgi-4p777-77774-qaadq-cai
-  Staging Assets:      vizcg-th777-77774-qaaea-cai
-  User Profile:        vb2j2-fp777-77774-qaafq-cai
-  Founder Vesting:     uxrrr-q7777-77774-qaaaq-cai
-  Internet Identity:   ulvla-h7777-77774-qaacq-cai
-
-Deploying Internet Identity...
-Deploying: internet_identity
-All canisters have already been created.
-Building canister 'internet_identity'.
-Installed code for canister internet_identity, with canister ID ulvla-h7777-77774-qaacq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Ledger...
-Deploying: ghc_ledger
-All canisters have already been created.
-Building canister 'ghc_ledger'.
-Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying ICRC-1 Indexer...
-Deploying: icrc1_index_canister
-All canisters have already been created.
-Building canister 'icrc1_index_canister'.
-Installed code for canister icrc1_index_canister, with canister ID umunu-kh777-77774-qaaca-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staking Hub...
-Deploying: staking_hub
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staking_hub'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
-warning: variant `install` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:411:9
-    |
-411 |         install,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Install`
-    |
-    = note: `#[warn(non_camel_case_types)]` (part of `#[warn(nonstandard_style)]`) on by default
-
-warning: variant `reinstall` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:413:9
-    |
-413 |         reinstall,
-    |         ^^^^^^^^^ help: convert the identifier to upper camel case: `Reinstall`
-
-warning: variant `upgrade` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:415:9
-    |
-415 |         upgrade,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Upgrade`
-
-warning: `staking_hub` (lib) generated 3 warnings
-    Finished `release` profile [optimized] target(s) in 2.59s
-Installed code for canister staking_hub, with canister ID vpyes-67777-77774-qaaeq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Treasury Canister...
-Deploying: treasury_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'treasury_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p treasury_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.55s
-Installed code for canister treasury_canister, with canister ID vg3po-ix777-77774-qaafa-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Governance Canister...
-Deploying: governance_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'governance_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p governance_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.45s
-Installed code for canister governance_canister, with canister ID uzt4z-lp777-77774-qaabq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Linking Treasury and Governance canisters...
-(variant { Ok })
-(variant { Ok })
-Deploying Media Assets (permanent media storage)...
-Deploying: media_assets
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'media_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p media_assets --locked
-    Finished `release` profile [optimized] target(s) in 1.94s
-Installed code for canister media_assets, with canister ID ufxgi-4p777-77774-qaadq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staging Assets (temporary content storage)...
-Deploying: staging_assets
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staging_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staging_assets --locked
-    Finished `release` profile [optimized] target(s) in 1.97s
-Installed code for canister staging_assets, with canister ID vizcg-th777-77774-qaaea-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Learning Engine...
-Deploying: learning_engine
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'learning_engine'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
-    Finished `release` profile [optimized] target(s) in 2.22s
-Installed code for canister learning_engine, with canister ID ucwa4-rx777-77774-qaada-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Setting Learning Engine ID in Governance Canister...
-(variant { Ok })
-Deploying User Profile...
-Deploying: user_profile
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'user_profile'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
-    Finished `release` profile [optimized] target(s) in 2.25s
-Installed code for canister user_profile, with canister ID vb2j2-fp777-77774-qaafq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Registering User Profile as Allowed Minter...
-()
-Deploying Founder Vesting...
-Deploying: founder_vesting
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'founder_vesting'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p founder_vesting --locked
-    Finished `release` profile [optimized] target(s) in 2.21s
-Installed code for canister founder_vesting, with canister ID uxrrr-q7777-77774-qaaaq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-
-Generating frontend configuration...
-Generated ic.config.json
-Running update_frontend.sh...
-Copying DID files...
-cp: cannot stat 'src/operational_governance/operational_governance.did': No such file or directory
-cp: cannot stat 'src/content_governance/content_governance.did': No such file or directory
-DID files copied to /mnt/c/LIB/CODE/gh-dashboard/dids
-Copying IC configuration...
-IC configuration copied to /mnt/c/LIB/CODE/gh-dashboard/ic.config.json
-Copying integration documentation...
-Integration documentation copied to /mnt/c/LIB/CODE/gh-dashboard/docs
-Done!
-
-============================================================================
-Deployment Complete!
-============================================================================
-
-Token Distribution (9.5B Total):
-  - Treasury:        4.25B MC
-  - Staking Hub:     4.75B MUC
-  - Founder Vesting: 0.5B MC (time-locked)
-    - Founder 1: 0.35B MC
-    - Founder 2: 0.15B MC
-
-Canister Architecture:
-  ┌─────────────────────────────────────────────────────────────┐
-  │                     CORE SYSTEM                             │
-  ├─────────────────────────────────────────────────────────────┤
-  │  treasury_canister  ◄──► governance_canister                │
-  │         │                        │                          │
-  │         │                        ▼                          │
-  │         │                 learning_engine ◄── staging_assets│
-  │         │                        │                          │
-  │         ▼                        ▼                          │
-  │    ghc_ledger              user_profile                     │
-  │         │                        │                          │
-  │         └───────► staking_hub ◄──┘                          │
-  │                                                             │
-  │  media_assets (permanent storage)                           │
-  │  founder_vesting (time-locked tokens)                       │
-  └─────────────────────────────────────────────────────────────┘
-
-Canister IDs saved to: ic.config.json
-
-
-============================================================================
-GreenHero Coin - Full Deployment
-============================================================================
-
-Creating identities...
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
-Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
-Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
-
-Creating canisters...
-Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
-founder_vesting canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
-ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
-governance_canister canister created with canister id: uzt4z-lp777-77774-qaabq-cai
-icrc1_index_canister canister created with canister id: umunu-kh777-77774-qaaca-cai
-internet_identity canister created with canister id: ulvla-h7777-77774-qaacq-cai
-learning_engine canister created with canister id: ucwa4-rx777-77774-qaada-cai
-media_assets canister created with canister id: ufxgi-4p777-77774-qaadq-cai
-staging_assets canister created with canister id: vizcg-th777-77774-qaaea-cai
-staking_hub canister created with canister id: vpyes-67777-77774-qaaeq-cai
-treasury_canister canister created with canister id: vg3po-ix777-77774-qaafa-cai
-user_profile canister created with canister id: vb2j2-fp777-77774-qaafq-cai
-
-============================================================================
-Canister IDs
-============================================================================
-  Ledger:              u6s2n-gx777-77774-qaaba-cai
-  Treasury:            vg3po-ix777-77774-qaafa-cai
-  Governance:          uzt4z-lp777-77774-qaabq-cai
-  Staking Hub:         vpyes-67777-77774-qaaeq-cai
-  Learning Engine:     ucwa4-rx777-77774-qaada-cai
-  Media Assets:        ufxgi-4p777-77774-qaadq-cai
-  Staging Assets:      vizcg-th777-77774-qaaea-cai
-  User Profile:        vb2j2-fp777-77774-qaafq-cai
-  Founder Vesting:     uxrrr-q7777-77774-qaaaq-cai
-  Internet Identity:   ulvla-h7777-77774-qaacq-cai
-
-Deploying Internet Identity...
-Deploying: internet_identity
-All canisters have already been created.
-Building canister 'internet_identity'.
-Installed code for canister internet_identity, with canister ID ulvla-h7777-77774-qaacq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Ledger...
-Deploying: ghc_ledger
-All canisters have already been created.
-Building canister 'ghc_ledger'.
-Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying ICRC-1 Indexer...
-Deploying: icrc1_index_canister
-All canisters have already been created.
-Building canister 'icrc1_index_canister'.
-Installed code for canister icrc1_index_canister, with canister ID umunu-kh777-77774-qaaca-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staking Hub...
-Deploying: staking_hub
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staking_hub'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
-warning: variant `install` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:411:9
-    |
-411 |         install,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Install`
-    |
-    = note: `#[warn(non_camel_case_types)]` (part of `#[warn(nonstandard_style)]`) on by default
-
-warning: variant `reinstall` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:413:9
-    |
-413 |         reinstall,
-    |         ^^^^^^^^^ help: convert the identifier to upper camel case: `Reinstall`
-
-warning: variant `upgrade` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:415:9
-    |
-415 |         upgrade,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Upgrade`
-
-warning: `staking_hub` (lib) generated 3 warnings
-    Finished `release` profile [optimized] target(s) in 2.51s
-Installed code for canister staking_hub, with canister ID vpyes-67777-77774-qaaeq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Treasury Canister...
-Deploying: treasury_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'treasury_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p treasury_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.55s
-Installed code for canister treasury_canister, with canister ID vg3po-ix777-77774-qaafa-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Governance Canister...
-Deploying: governance_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'governance_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p governance_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.65s
-Installed code for canister governance_canister, with canister ID uzt4z-lp777-77774-qaabq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Linking Treasury and Governance canisters...
-(variant { Ok })
-(variant { Ok })
-Deploying Media Assets (permanent media storage)...
-Deploying: media_assets
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'media_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p media_assets --locked
-    Finished `release` profile [optimized] target(s) in 1.99s
-Installed code for canister media_assets, with canister ID ufxgi-4p777-77774-qaadq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staging Assets (temporary content storage)...
-Deploying: staging_assets
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staging_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staging_assets --locked
-    Finished `release` profile [optimized] target(s) in 1.99s
-Installed code for canister staging_assets, with canister ID vizcg-th777-77774-qaaea-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Learning Engine...
-Deploying: learning_engine
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'learning_engine'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
-    Finished `release` profile [optimized] target(s) in 2.17s
-Installed code for canister learning_engine, with canister ID ucwa4-rx777-77774-qaada-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Setting Learning Engine ID in Governance Canister...
-(variant { Ok })
-Deploying User Profile...
-Deploying: user_profile
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'user_profile'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
-    Finished `release` profile [optimized] target(s) in 2.27s
-Installed code for canister user_profile, with canister ID vb2j2-fp777-77774-qaafq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Registering User Profile as Allowed Minter...
-()
-Deploying Founder Vesting...
-Deploying: founder_vesting
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'founder_vesting'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p founder_vesting --locked
-    Finished `release` profile [optimized] target(s) in 2.31s
-Installed code for canister founder_vesting, with canister ID uxrrr-q7777-77774-qaaaq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-
-Generating frontend configuration...
-Generated ic.config.json
-Running update_frontend.sh...
-Copying DID files...
-cp: cannot stat 'src/operational_governance/operational_governance.did': No such file or directory
-cp: cannot stat 'src/content_governance/content_governance.did': No such file or directory
-DID files copied to /mnt/c/LIB/CODE/gh-dashboard/dids
-Copying IC configuration...
-IC configuration copied to /mnt/c/LIB/CODE/gh-dashboard/ic.config.json
-Copying integration documentation...
-Integration documentation copied to /mnt/c/LIB/CODE/gh-dashboard/docs
-Done!
-
-============================================================================
-Deployment Complete!
-============================================================================
-
-Token Distribution (9.5B Total):
-  - Treasury:        4.25B MC
-  - Staking Hub:     4.75B MUC
-  - Founder Vesting: 0.5B MC (time-locked)
-    - Founder 1: 0.35B MC
-    - Founder 2: 0.15B MC
-
-Canister Architecture:
-  ┌─────────────────────────────────────────────────────────────┐
-  │                     CORE SYSTEM                             │
-  ├─────────────────────────────────────────────────────────────┤
-  │  treasury_canister  ◄──► governance_canister                │
-  │         │                        │                          │
-  │         │                        ▼                          │
-  │         │                 learning_engine ◄── staging_assets│
-  │         │                        │                          │
-  │         ▼                        ▼                          │
-  │    ghc_ledger              user_profile                     │
-  │         │                        │                          │
-  │         └───────► staking_hub ◄──┘                          │
-  │                                                             │
-  │  media_assets (permanent storage)                           │
-  │  founder_vesting (time-locked tokens)                       │
-  └─────────────────────────────────────────────────────────────┘
-
-Canister IDs saved to: ic.config.json
-
-
-============================================================================
-GreenHero Coin - Full Deployment
-============================================================================
-
-Creating identities...
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-[31mError: (B[mIdentity already exists.
-Founder 1: jndeg-zboud-bihwm-cx5mt-jncc2-twfdt-tfnjk-3ioad-ojriz-uthkn-5ae
-Founder 2: ztbbd-ro5zf-qaeoa-vyo3x-qgenp-dz6cn-tzqv2-6yxcv-c5lht-voyod-7ae
-Default (Deployer): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
-
-Creating canisters...
-Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
-founder_vesting canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
-ghc_ledger canister created with canister id: u6s2n-gx777-77774-qaaba-cai
-governance_canister canister created with canister id: uzt4z-lp777-77774-qaabq-cai
-icrc1_index_canister canister created with canister id: umunu-kh777-77774-qaaca-cai
-internet_identity canister created with canister id: ulvla-h7777-77774-qaacq-cai
-learning_engine canister created with canister id: ucwa4-rx777-77774-qaada-cai
-media_assets canister created with canister id: ufxgi-4p777-77774-qaadq-cai
-staging_assets canister created with canister id: vizcg-th777-77774-qaaea-cai
-staking_hub canister created with canister id: vpyes-67777-77774-qaaeq-cai
-treasury_canister canister created with canister id: vg3po-ix777-77774-qaafa-cai
-user_profile canister created with canister id: vb2j2-fp777-77774-qaafq-cai
-
-============================================================================
-Canister IDs
-============================================================================
-  Ledger:              u6s2n-gx777-77774-qaaba-cai
-  Treasury:            vg3po-ix777-77774-qaafa-cai
-  Governance:          uzt4z-lp777-77774-qaabq-cai
-  Staking Hub:         vpyes-67777-77774-qaaeq-cai
-  Learning Engine:     ucwa4-rx777-77774-qaada-cai
-  Media Assets:        ufxgi-4p777-77774-qaadq-cai
-  Staging Assets:      vizcg-th777-77774-qaaea-cai
-  User Profile:        vb2j2-fp777-77774-qaafq-cai
-  Founder Vesting:     uxrrr-q7777-77774-qaaaq-cai
-  Internet Identity:   ulvla-h7777-77774-qaacq-cai
-
-Deploying Internet Identity...
-Deploying: internet_identity
-All canisters have already been created.
-Building canister 'internet_identity'.
-Installed code for canister internet_identity, with canister ID ulvla-h7777-77774-qaacq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Ledger...
-Deploying: ghc_ledger
-All canisters have already been created.
-Building canister 'ghc_ledger'.
-Installed code for canister ghc_ledger, with canister ID u6s2n-gx777-77774-qaaba-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying ICRC-1 Indexer...
-Deploying: icrc1_index_canister
-All canisters have already been created.
-Building canister 'icrc1_index_canister'.
-Installed code for canister icrc1_index_canister, with canister ID umunu-kh777-77774-qaaca-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staking Hub...
-Deploying: staking_hub
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staking_hub'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
-warning: variant `install` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:411:9
-    |
-411 |         install,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Install`
-    |
-    = note: `#[warn(non_camel_case_types)]` (part of `#[warn(nonstandard_style)]`) on by default
-
-warning: variant `reinstall` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:413:9
-    |
-413 |         reinstall,
-    |         ^^^^^^^^^ help: convert the identifier to upper camel case: `Reinstall`
-
-warning: variant `upgrade` should have an upper camel case name
-   --> src/staking_hub/src/lib.rs:415:9
-    |
-415 |         upgrade,
-    |         ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Upgrade`
-
-warning: `staking_hub` (lib) generated 3 warnings
-    Finished `release` profile [optimized] target(s) in 2.47s
-Installed code for canister staking_hub, with canister ID vpyes-67777-77774-qaaeq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Treasury Canister...
-Deploying: treasury_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'treasury_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p treasury_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.62s
-Installed code for canister treasury_canister, with canister ID vg3po-ix777-77774-qaafa-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Governance Canister...
-Deploying: governance_canister
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'governance_canister'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p governance_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.57s
-Installed code for canister governance_canister, with canister ID uzt4z-lp777-77774-qaabq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Linking Treasury and Governance canisters...
-(variant { Ok })
-(variant { Ok })
-Deploying Media Assets (permanent media storage)...
-Deploying: media_assets
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'media_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p media_assets --locked
-    Finished `release` profile [optimized] target(s) in 1.96s
-Installed code for canister media_assets, with canister ID ufxgi-4p777-77774-qaadq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Staging Assets (temporary content storage)...
-Deploying: staging_assets
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'staging_assets'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p staging_assets --locked
-    Finished `release` profile [optimized] target(s) in 1.91s
-Installed code for canister staging_assets, with canister ID vizcg-th777-77774-qaaea-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Deploying Learning Engine...
-Deploying: learning_engine
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'learning_engine'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
-    Finished `release` profile [optimized] target(s) in 2.16s
-Installed code for canister learning_engine, with canister ID ucwa4-rx777-77774-qaada-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Setting Learning Engine ID in Governance Canister...
-(variant { Ok })
-Deploying User Profile...
-Deploying: user_profile
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'user_profile'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
-    Finished `release` profile [optimized] target(s) in 2.30s
-Installed code for canister user_profile, with canister ID vb2j2-fp777-77774-qaafq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-Registering User Profile as Allowed Minter...
-()
-Deploying Founder Vesting...
-Deploying: founder_vesting
-All canisters have already been created.
-WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
-Building canister 'founder_vesting'.
-Executing: cargo build --target wasm32-unknown-unknown --release -p founder_vesting --locked
-    Finished `release` profile [optimized] target(s) in 2.23s
-Installed code for canister founder_vesting, with canister ID uxrrr-q7777-77774-qaaaq-cai
-Deployed canisters.
-URLs:
-  Backend canister via Candid interface:
-    founder_vesting: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uxrrr-q7777-77774-qaaaq-cai
-    ghc_ledger: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=u6s2n-gx777-77774-qaaba-cai
-    governance_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=uzt4z-lp777-77774-qaabq-cai
-    icrc1_index_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=umunu-kh777-77774-qaaca-cai
-    internet_identity: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ulvla-h7777-77774-qaacq-cai
-    learning_engine: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ucwa4-rx777-77774-qaada-cai
-    media_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=ufxgi-4p777-77774-qaadq-cai
-    staging_assets: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vizcg-th777-77774-qaaea-cai
-    staking_hub: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vpyes-67777-77774-qaaeq-cai
-    treasury_canister: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vg3po-ix777-77774-qaafa-cai
-    user_profile: http://127.0.0.1:4943/?canisterId=vu5yx-eh777-77774-qaaga-cai&id=vb2j2-fp777-77774-qaafq-cai
-
-Generating frontend configuration...
-Generated ic.config.json
-Running update_frontend.sh...
-Copying DID files...
-cp: cannot stat 'src/operational_governance/operational_governance.did': No such file or directory
-cp: cannot stat 'src/content_governance/content_governance.did': No such file or directory
-DID files copied to /mnt/c/LIB/CODE/gh-dashboard/dids
-Copying IC configuration...
-IC configuration copied to /mnt/c/LIB/CODE/gh-dashboard/ic.config.json
-Copying integration documentation...
-Integration documentation copied to /mnt/c/LIB/CODE/gh-dashboard/docs
-Done!
-
-============================================================================
-Deployment Complete!
-============================================================================
-
-Token Distribution (9.5B Total):
-  - Treasury:        4.25B MC
-  - Staking Hub:     4.75B MUC
-  - Founder Vesting: 0.5B MC (time-locked)
-    - Founder 1: 0.35B MC
-    - Founder 2: 0.15B MC
-
-Canister Architecture:
-  ┌─────────────────────────────────────────────────────────────┐
-  │                     CORE SYSTEM                             │
-  ├─────────────────────────────────────────────────────────────┤
-  │  treasury_canister  ◄──► governance_canister                │
-  │         │                        │                          │
-  │         │                        ▼                          │
-  │         │                 learning_engine ◄── staging_assets│
-  │         │                        │                          │
-  │         ▼                        ▼                          │
-  │    ghc_ledger              user_profile                     │
-  │         │                        │                          │
-  │         └───────► staking_hub ◄──┘                          │
-  │                                                             │
-  │  media_assets (permanent storage)                           │
-  │  founder_vesting (time-locked tokens)                       │
-  └─────────────────────────────────────────────────────────────┘
-
-Canister IDs saved to: ic.config.json
-
+[0;32m[SUCCESS][0m Deployment completed successfully!

@@ -1,14 +1,4 @@
 type BoardMemberShare = record { member : principal; percentage : nat8 };
-type CachedQuizConfig = record {
-  max_daily_quizzes : nat8;
-  reward_amount : nat64;
-  max_monthly_quizzes : nat8;
-  pass_threshold_percent : nat8;
-  max_daily_attempts : nat8;
-  version : nat64;
-  max_weekly_quizzes : nat8;
-  max_yearly_quizzes : nat16;
-};
 type GlobalStats = record {
   total_staked : nat64;
   total_allocated : nat64;
@@ -34,18 +24,38 @@ type ShardInfo = record {
   archive_canister_id : opt principal;
 };
 type ShardStatus = variant { Full; Active };
+type TokenLimits = record {
+  max_monthly_tokens : nat64;
+  max_yearly_tokens : nat64;
+  max_daily_tokens : nat64;
+  max_weekly_tokens : nat64;
+};
+type TokenLimitsConfig = record {
+  reward_amount : nat64;
+  pass_threshold_percent : nat8;
+  max_daily_attempts : nat8;
+  regular_limits : TokenLimits;
+  version : nat64;
+  subscribed_limits : TokenLimits;
+};
 service : (InitArgs) -> {
   add_allowed_minter : (principal) -> ();
+  admin_broadcast_kyc_manager : (principal) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  admin_broadcast_subscription_manager : (principal) -> (
+      variant { Ok : nat64; Err : text },
+    );
   admin_set_user_shard : (principal, principal) -> (variant { Ok; Err : text });
   are_board_shares_locked : () -> (bool) query;
   distribute_quiz_cache : (text, QuizCacheData) -> (
       variant { Ok : nat64; Err : text },
     );
-  distribute_quiz_config : (CachedQuizConfig) -> (
+  distribute_token_limits : (TokenLimitsConfig) -> (
       variant { Ok : nat64; Err : text },
     );
   ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
-  fetch_voting_power : (principal) -> (nat64);
+  fetch_user_voting_power : (principal) -> (nat64);
   get_active_shards : () -> (vec ShardInfo) query;
   get_archive_for_shard : (principal) -> (opt principal) query;
   get_board_member_count : () -> (nat64) query;
@@ -53,10 +63,13 @@ service : (InitArgs) -> {
   get_board_member_shares : () -> (vec BoardMemberShare) query;
   get_config : () -> (principal, principal, bool) query;
   get_global_stats : () -> (GlobalStats) query;
+  get_kyc_manager_id : () -> (principal) query;
   get_limits : () -> (nat64, nat64) query;
   get_shard_count : () -> (nat64) query;
   get_shard_for_new_user : () -> (opt principal) query;
   get_shards : () -> (vec ShardInfo) query;
+  get_subscription_manager_id : () -> (principal) query;
+  get_token_limits : () -> (TokenLimitsConfig) query;
   get_tokenomics : () -> (nat64, nat64, nat64, nat64) query;
   get_total_voting_power : () -> (nat64) query;
   get_user_shard : (principal) -> (opt principal) query;
@@ -65,10 +78,18 @@ service : (InitArgs) -> {
   is_registered_shard : (principal) -> (bool) query;
   lock_board_member_shares : () -> (variant { Ok; Err : text });
   process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
+  register_shard : (principal, opt principal) -> ();
   register_user_location : (principal) -> (variant { Ok; Err : text });
   set_board_member_shares : (vec BoardMemberShare) -> (
       variant { Ok; Err : text },
     );
   sync_shard : (int64, nat64, nat64) -> (variant { Ok : nat64; Err : text });
   update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
+  update_token_limits : (
+      opt nat64,
+      opt nat8,
+      opt nat8,
+      opt TokenLimits,
+      opt TokenLimits,
+    ) -> (variant { Ok; Err : text });
 }

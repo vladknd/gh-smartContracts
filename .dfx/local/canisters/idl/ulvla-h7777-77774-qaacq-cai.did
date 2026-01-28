@@ -1,5 +1,6 @@
 type InitArgs = record {
   admin_principal : principal;
+  treasury_principal : principal;
   ghc_ledger_id : principal;
   ckusdc_ledger_id : principal;
   price_per_token_e6 : nat;

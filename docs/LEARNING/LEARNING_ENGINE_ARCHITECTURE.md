@@ -1,8 +1,8 @@
 # Learning Engine Architecture
 
 **Last Updated**: January 2026  
-**Status**: Planning Phase  
-**Priority**: High - Foundation for Scalable Content System
+**Status**: Implemented / Production Ready  
+**Priority**: High - Core Content and Verification System
 
 ---
 
@@ -22,24 +22,24 @@
 ## Executive Summary
 
 ### Key Design Principles
-1. **Flexible content structure** - Generic tree of content nodes supporting any hierarchy depth
-2. **Direct shard-to-engine communication** - User profile shards query learning engine directly (no staking_hub intermediary for quiz data)
-3. **Pull-based caching** - Shards fetch quiz data on-demand, cache locally with TTL
-4. **Separate asset canisters** - Media files in asset canister, metadata in regular canister
-5. **Resilient loading** - Content loading survives crashes and upgrades
+1. **Flexible content structure** - Generic tree of content nodes supporting any hierarchy depth.
+2. **Push-based distribution** - Learning Engine pushes quiz cache updates to the `staking_hub`.
+3. **Staking Hub orchestration** - The Hub fans out updates to all `user_profile` shards.
+4. **Local verification** - Shards verify quizzes using local cache to avoid inter-canister calls.
+5. **Separate asset canisters** - Media files in asset canisters, metadata in the learning engine.
+6. **Resilient loading** - Content loading from staging survives canister upgrades and crashes.
 
 ### Canister Overview
 
 | Canister | Type | Purpose |
 |----------|------|---------|
-| `frontend_assets` | Asset | Web app files (React, etc.) |
-| `media_assets` | Asset | Videos, audio, images for courses |
-| `staging_assets` | Asset | Temporary storage for content awaiting approval |
-| `learning_engine` | Regular | Content metadata, quiz logic, quiz index |
-| `governance_canister` | Regular | Proposals, voting |
-| `treasury_canister` | Regular | Token management |
-| `staking_hub` | Regular | Shard management (NOT involved in quiz flow) |
-| `user_profile_*` | Regular | User data, quiz cache, local verification |
+| `frontend_assets` | Asset | Web app files (React, tailwind, etc.). |
+| `media_assets` | Asset | Persistent storage for videos, audio, and images. |
+| `staging_assets` | Asset | Temporary storage for content awaiting governance approval. |
+| `learning_engine` | Regular | Source of truth for content, quiz hashes, and versions. |
+| `governance_canister` | Regular | Handles content proposals and loading triggers. |
+| `staking_hub` | Regular | Orchardtrator: Manages shards and distributes quiz/config data. |
+| `user_profile_*` | Regular | User data, local quiz cache, and instant verification. |
 
 ---
 
@@ -50,30 +50,10 @@
 │                    COMPLETE CANISTER ARCHITECTURE                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   ASSET CANISTERS (3):                                                       │
-│   ════════════════════                                                       │
-│                                                                              │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │  1. frontend_assets                                                  │   │
-│   │     • Your React/web app                                            │   │
-│   │     • Served at: https://your-app.icp0.io/                          │   │
-│   │     • Permanent, updated on deploys                                 │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │  2. media_assets                                                     │   │
-│   │     • Approved videos, audio, images                                │   │
-│   │     • Served at: https://media-xxx.icp0.io/videos/lesson1.mp4      │   │
-│   │     • Permanent storage for approved content                        │   │
-│   │     • learning_engine stores URLs pointing here                     │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │  3. staging_assets                                                   │   │
-│   │     • Content metadata awaiting approval (JSON)                     │   │
-│   │     • Temporary - deleted after loading to learning_engine         │   │
-│   │     • Authors upload here before creating proposal                  │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
+│   ┌──────────────────┐      ┌───────────────┐      ┌──────────────────┐      │
+│   │ learning_engine  │─────►│  staking_hub  │─────►│ user_profile (N) │      │
+│   │ (Content/Quizzes)│ push │ (Orchestrator)│ fan  │ (User Data/Cache)│      │
+│   └──────────────────┘      └───────────────┘ out  └──────────────────┘      │
 │                                                                              │
 │   REGULAR CANISTERS:                                                        │
 │   ══════════════════                                                        │
@@ -81,16 +61,22 @@
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
 │   │  learning_engine                                                     │   │
 │   │     • Content nodes (tree structure)                                │   │
-│   │     • Quiz index (for O(1) lookup)                                  │   │
-│   │     • Content version tracking                                      │   │
-│   │     • Directly queried by user_profile shards                       │   │
+│   │     • Quiz index (hashes & question counts)                         │   │
+│   │     • Distribution: Pushes updates to Staking Hub                   │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │  staking_hub                                                         │   │
+│   │     • Single endpoint for the Engine to send updates                │   │
+│   │     • Tracks all active user_profile shards                         │   │
+│   │     • Performs fan-out distribution to all shards                   │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
 │   │  user_profile shards                                                 │   │
-│   │     • User data, balances                                           │   │
-│   │     • Local quiz cache (pulled from learning_engine)               │   │
-│   │     • Local verification (no inter-canister call for verification) │   │
+│   │     • User rewards, balances, and history                           │   │
+│   │     • Local quiz cache (pushed from Hub)                            │   │
+│   │     • Instant verification (no inter-canister calls)                │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -345,142 +331,66 @@ fn add_content_node_internal(node: ContentNode) -> Result<(), String> {
 
 ## Quiz Caching in User Profile Shards
 
-### Architecture: Direct Communication (No Staking Hub)
+### Architecture: Push-based Distribution (via Staking Hub)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    QUIZ DATA FLOW: DIRECT CONNECTION                         │
+│                    QUIZ DATA FLOW: PUSH DISTRIBUTION                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │                      learning_engine                                 │   │
-│   │                   (Single Source of Truth)                           │   │
-│   │                                                                      │   │
-│   │   CONTENT_NODES: Map<ContentId, ContentNode>                        │   │
-│   │   QUIZ_INDEX: Map<ContentId, QuizCacheData>                         │   │
-│   │                                                                      │   │
-│   │   Queries (FREE):                                                    │   │
-│   │   • get_quiz_data(id) → answer_hashes + config                      │   │
-│   │   • get_content_version() → u64                                     │   │
-│   └──────────────────────────────▲──────────────────────────────────────┘   │
-│                                  │                                          │
-│                    Query (FREE!) │                                          │
-│             ┌────────────────────┼────────────────────┐                     │
-│             │                    │                    │                     │
-│             ▼                    ▼                    ▼                     │
-│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
-│   │  user_profile   │  │  user_profile   │  │  user_profile   │            │
-│   │    shard 1      │  │    shard 2      │  │    shard N      │            │
-│   │                 │  │                 │  │                 │            │
-│   │ LOCAL_CACHE     │  │ LOCAL_CACHE     │  │ LOCAL_CACHE     │            │
-│   │ (pull on demand)│  │ (pull on demand)│  │ (pull on demand)│            │
-│   └─────────────────┘  └─────────────────┘  └─────────────────┘            │
+│   ┌────────────────────────┐      ┌──────────────┐      ┌────────────────┐   │
+│   │    learning_engine     │─────►│ staking_hub  │─────►│  user_profile  │   │
+│   │ (Source of Truth)      │ push │(Orchestrator)│ fan  │    shards      │   │
+│   └────────────────────────┘      └──────────────┘ out  └────────────────┘   │
 │                                                                              │
-│   staking_hub is NOT involved in quiz data flow!                            │
-│   It only handles: shard management, minting allowance, stats               │
+│   1. Content Update Trigger:                                                 │
+│      A node is added/updated in learning_engine.                             │
+│                                                                              │
+│   2. Single Push (Engine → Hub):                                             │
+│      Engine calls distribute_quiz_cache(unit_id, data) on the Staking Hub.   │
+│                                                                              │
+│   3. Fan-out (Hub → All Shards):                                             │
+│      Hub looks up all registered shards and spawns async calls to:           │
+│      shard.receive_quiz_cache(unit_id, data).                                │
+│                                                                              │
+│   4. Local Persistence:                                                      │
+│      Each shard stores the quiz data in its StableBTreeMap quiz cache.       │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Why Direct Connection is Better
+### Why Push via Hub is Better
 
-| Aspect | Via Staking Hub (Old) | Direct Connection (New) |
-|--------|----------------------|------------------------|
-| **Complexity** | High - extra hop | Low - direct query |
-| **Load on staking_hub** | Unnecessary load | Zero quiz-related load |
-| **Reward changes** | Must push to all shards | Instant - fetch current config |
-| **New shards** | Must sync manually | Auto-fetch on first request |
+| Aspect | Direct connection | Push via Staking Hub |
+|--------|-------------------|----------------------|
+| **Coupling** | High - Engine must know shards | Low - Engine only knows the Hub |
+| **Scaling** | Difficult - manual registry | Automatic - Hub manages all shards |
+| **Security** | Many sources of truth | Single source: Hub authorized updates |
+| **New Shards** | "Empty" until first query | Hub syncs full cache on creation |
 
-### User Profile Shard: Pull-on-Demand Quiz Cache
+### User Profile Shard: Local Quiz Verification
+
+By having the quiz answer hashes stored locally, the user profile shard can verify results instantly without any inter-canister calls.
 
 ```rust
 // In user_profile shard
 
 #[update]
 async fn submit_quiz(content_id: String, answers: Vec<u8>) -> Result<QuizResult, String> {
-    let user = ic_cdk::caller();
+    // 1. Get quiz data from LOCAL StableBTreeMap cache
+    let cache = QUIZ_CACHE.with(|c| c.borrow().get(&content_id))
+        .ok_or("Quiz not found in local cache")?;
     
-    // 1. Get quiz cache (answer hashes) from learning_engine
-    let cache = get_or_fetch_cache(&content_id).await?;
-    
-    // 2. Get GLOBAL config (same for all quizzes)
-    let config = get_or_fetch_global_config().await?;
-    
-    // 3. Verify answers locally (no inter-canister call!)
-    let correct_count = verify_answers(&answers, &cache.answer_hashes);
-    
-    // 4. Check pass (using GLOBAL config)
-    let passed = (correct_count * 100) / cache.question_count as u64 
-                 >= config.pass_threshold_percent as u64;
-    
-    // 5. Apply reward (GLOBAL config.reward_amount - same for all quizzes!)
-    let reward = if passed && !is_completed(&content_id) {
-        mark_completed(&content_id);
-        add_balance(config.reward_amount);
-        config.reward_amount
-    } else {
-        0
-    };
-    
-    Ok(QuizResult { passed, correct_count, reward_earned: reward, .. })
-}
-
-async fn get_or_fetch_cache(content_id: &str) -> Result<QuizCacheData, String> {
-    // Check local cache with TTL
-    if let Some(cached) = LOCAL_QUIZ_CACHE.with(|c| c.borrow().get(content_id)) {
-        if is_cache_fresh(&cached) {
-            return Ok(cached.data);
+    // 2. Hash user answers locally
+    let mut correct_count = 0;
+    for (i, ans) in answers.iter().enumerate() {
+        if stable_hash(&ans.to_le_bytes()) == cache.answer_hashes[i] {
+            correct_count += 1;
         }
     }
     
-    // Cache miss or stale: fetch from learning_engine (QUERY = FREE!)
-    let cache: QuizCacheData = ic_cdk::call(
-        LEARNING_ENGINE_ID,
-        "get_quiz_data",
-        (content_id.to_string(),)
-    ).await.map_err(|e| format!("Failed to fetch: {:?}", e))?;
-    
-    // Store locally with timestamp
-    LOCAL_QUIZ_CACHE.with(|c| {
-        c.borrow_mut().insert(content_id.to_string(), CachedQuiz {
-            data: cache.clone(),
-            fetched_at: ic_cdk::api::time(),
-        });
-    });
-    
-    Ok(cache)
-}
-
-async fn get_or_fetch_global_config() -> Result<QuizConfig, String> {
-    // Check local cache
-    if let Some(cached) = CACHED_GLOBAL_CONFIG.with(|c| c.borrow().clone()) {
-        if is_config_fresh(&cached) {
-            return Ok(cached.config);
-        }
-    }
-    
-    // Fetch global config (QUERY = FREE!)
-    let config: QuizConfig = ic_cdk::call(
-        LEARNING_ENGINE_ID,
-        "get_global_quiz_config",
-        ()
-    ).await.map_err(|e| format!("Failed to fetch config: {:?}", e))?;
-    
-    // Cache locally
-    CACHED_GLOBAL_CONFIG.with(|c| {
-        *c.borrow_mut() = Some(CachedConfig {
-            config: config.clone(),
-            fetched_at: ic_cdk::api::time(),
-        });
-    });
-    
-    Ok(config)
-}
-
-const CACHE_TTL_NS: u64 = 3600_000_000_000; // 1 hour
-
-fn is_cache_fresh(cached: &CachedQuiz) -> bool {
-    ic_cdk::api::time() - cached.fetched_at < CACHE_TTL_NS
+    // 3. Apply rewards/limits based on LOCAL verification
+    // ... logic for minting and progress tracking ...
 }
 ```
 

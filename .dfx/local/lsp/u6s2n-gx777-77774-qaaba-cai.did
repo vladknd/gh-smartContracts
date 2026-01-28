@@ -1,8 +1,4 @@
-type InitArgs = record {
-  founder1 : principal;
-  founder2 : principal;
-  ledger_id : principal;
-};
+type InitArgs = record { ledger_id : principal };
 type VestingSchedule = record {
   claimed : nat64;
   vesting_start : nat64;
@@ -19,6 +15,9 @@ type VestingStatus = record {
   unlock_percentage : nat64;
 };
 service : {
+  admin_claim_vested_at : (nat64) -> (variant { Ok : nat64; Err : text });
+  admin_register_founder : (principal, nat64) -> (variant { Ok; Err : text });
+  admin_set_genesis_timestamp : (nat64) -> ();
   claim_vested : () -> (variant { Ok : nat64; Err : text });
   get_all_vesting_schedules : () -> (vec VestingStatus) query;
   get_genesis_timestamp : () -> (nat64) query;

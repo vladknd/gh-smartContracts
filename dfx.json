@@ -79,6 +79,16 @@
       "type": "rust",
       "candid": "src/archive_canister/archive_canister.did",
       "package": "archive_canister"
+    },
+    "subscription_canister": {
+      "type": "rust",
+      "candid": "src/subscription_canister/subscription_canister.did",
+      "package": "subscription_canister"
+    },
+    "kyc_canister": {
+      "type": "rust",
+      "candid": "src/kyc_canister/kyc_canister.did",
+      "package": "kyc_canister"
     }
   },
   "defaults": {

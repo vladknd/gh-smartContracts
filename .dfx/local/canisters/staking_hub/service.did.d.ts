@@ -6,16 +6,6 @@ export interface BoardMemberShare {
   'member' : Principal,
   'percentage' : number,
 }
-export interface CachedQuizConfig {
-  'max_daily_quizzes' : number,
-  'reward_amount' : bigint,
-  'max_monthly_quizzes' : number,
-  'pass_threshold_percent' : number,
-  'max_daily_attempts' : number,
-  'version' : bigint,
-  'max_weekly_quizzes' : number,
-  'max_yearly_quizzes' : number,
-}
 export interface GlobalStats {
   'total_staked' : bigint,
   'total_allocated' : bigint,
@@ -42,8 +32,32 @@ export interface ShardInfo {
 }
 export type ShardStatus = { 'Full' : null } |
   { 'Active' : null };
+export interface TokenLimits {
+  'max_monthly_tokens' : bigint,
+  'max_yearly_tokens' : bigint,
+  'max_daily_tokens' : bigint,
+  'max_weekly_tokens' : bigint,
+}
+export interface TokenLimitsConfig {
+  'reward_amount' : bigint,
+  'pass_threshold_percent' : number,
+  'max_daily_attempts' : number,
+  'regular_limits' : TokenLimits,
+  'version' : bigint,
+  'subscribed_limits' : TokenLimits,
+}
 export interface _SERVICE {
   'add_allowed_minter' : ActorMethod<[Principal], undefined>,
+  'admin_broadcast_kyc_manager' : ActorMethod<
+    [Principal],
+    { 'Ok' : bigint } |
+      { 'Err' : string }
+  >,
+  'admin_broadcast_subscription_manager' : ActorMethod<
+    [Principal],
+    { 'Ok' : bigint } |
+      { 'Err' : string }
+  >,
   'admin_set_user_shard' : ActorMethod<
     [Principal, Principal],
     { 'Ok' : null } |
@@ -55,8 +69,8 @@ export interface _SERVICE {
     { 'Ok' : bigint } |
       { 'Err' : string }
   >,
-  'distribute_quiz_config' : ActorMethod<
-    [CachedQuizConfig],
+  'distribute_token_limits' : ActorMethod<
+    [TokenLimitsConfig],
     { 'Ok' : bigint } |
       { 'Err' : string }
   >,
@@ -65,7 +79,7 @@ export interface _SERVICE {
     { 'Ok' : [] | [Principal] } |
       { 'Err' : string }
   >,
-  'fetch_voting_power' : ActorMethod<[Principal], bigint>,
+  'fetch_user_voting_power' : ActorMethod<[Principal], bigint>,
   'get_active_shards' : ActorMethod<[], Array<ShardInfo>>,
   'get_archive_for_shard' : ActorMethod<[Principal], [] | [Principal]>,
   'get_board_member_count' : ActorMethod<[], bigint>,
@@ -73,10 +87,13 @@ export interface _SERVICE {
   'get_board_member_shares' : ActorMethod<[], Array<BoardMemberShare>>,
   'get_config' : ActorMethod<[], [Principal, Principal, boolean]>,
   'get_global_stats' : ActorMethod<[], GlobalStats>,
+  'get_kyc_manager_id' : ActorMethod<[], Principal>,
   'get_limits' : ActorMethod<[], [bigint, bigint]>,
   'get_shard_count' : ActorMethod<[], bigint>,
   'get_shard_for_new_user' : ActorMethod<[], [] | [Principal]>,
   'get_shards' : ActorMethod<[], Array<ShardInfo>>,
+  'get_subscription_manager_id' : ActorMethod<[], Principal>,
+  'get_token_limits' : ActorMethod<[], TokenLimitsConfig>,
   'get_tokenomics' : ActorMethod<[], [bigint, bigint, bigint, bigint]>,
   'get_total_voting_power' : ActorMethod<[], bigint>,
   'get_user_shard' : ActorMethod<[Principal], [] | [Principal]>,
@@ -93,6 +110,7 @@ export interface _SERVICE {
     { 'Ok' : bigint } |
       { 'Err' : string }
   >,
+  'register_shard' : ActorMethod<[Principal, [] | [Principal]], undefined>,
   'register_user_location' : ActorMethod<
     [Principal],
     { 'Ok' : null } |
@@ -110,6 +128,17 @@ export interface _SERVICE {
   >,
   'update_shard_user_count' : ActorMethod<
     [bigint],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
+  'update_token_limits' : ActorMethod<
+    [
+      [] | [bigint],
+      [] | [number],
+      [] | [number],
+      [] | [TokenLimits],
+      [] | [TokenLimits],
+    ],
     { 'Ok' : null } |
       { 'Err' : string }
   >,

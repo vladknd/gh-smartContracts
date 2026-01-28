@@ -35,9 +35,7 @@ type ProposalType = variant {
     UpdateBoardMemberShare;
     UpdateGovernanceConfig;
     AddContentFromStaging;
-    UpdateContentNode;
-    UpdateGlobalQuizConfig;
-    UpdateQuizQuestions;
+    UpdateTokenLimits;
     DeleteContentNode;
 };
 
@@ -71,11 +69,6 @@ type UpdateGovernanceConfigPayload = record {
 // Content Governance Payloads
 // ============================================================================
 
-type QuizQuestion = record {
-    question : text;
-    options : vec text;
-    answer : nat8;
-};
 
 type AddContentFromStagingPayload = record {
     staging_canister : principal;
@@ -85,27 +78,22 @@ type AddContentFromStagingPayload = record {
     unit_count : nat32;
 };
 
-type UpdateContentNodePayload = record {
-    content_id : text;
-    new_title : opt text;
-    new_content : opt text;
-    new_paraphrase : opt text;
+
+type TokenLimits = record {
+    max_daily_tokens : nat64;
+    max_weekly_tokens : nat64;
+    max_monthly_tokens : nat64;
+    max_yearly_tokens : nat64;
 };
 
-type UpdateGlobalQuizConfigPayload = record {
+type UpdateTokenLimitsPayload = record {
     new_reward_amount : opt nat64;
     new_pass_threshold : opt nat8;
     new_max_attempts : opt nat8;
-    new_max_daily_quizzes : opt nat8;
-    new_max_weekly_quizzes : opt nat8;
-    new_max_monthly_quizzes : opt nat8;
-    new_max_yearly_quizzes : opt nat16;
+    new_regular_limits : opt TokenLimits;
+    new_subscribed_limits : opt TokenLimits;
 };
 
-type UpdateQuizQuestionsPayload = record {
-    content_id : text;
-    new_questions : vec QuizQuestion;
-};
 
 type DeleteContentNodePayload = record {
     content_id : text;
@@ -137,9 +125,7 @@ type Proposal = record {
     update_board_member_payload : opt UpdateBoardMemberSharePayload;
     update_governance_config_payload : opt UpdateGovernanceConfigPayload;
     add_content_payload : opt AddContentFromStagingPayload;
-    update_content_payload : opt UpdateContentNodePayload;
-    update_quiz_config_payload : opt UpdateGlobalQuizConfigPayload;
-    update_quiz_questions_payload : opt UpdateQuizQuestionsPayload;
+    update_token_limits_payload : opt UpdateTokenLimitsPayload;
     delete_content_payload : opt DeleteContentNodePayload;
 };
 
@@ -191,16 +177,14 @@ type CreateAddContentProposalInput = record {
     external_link : opt text;
 };
 
-type CreateUpdateQuizConfigProposalInput = record {
+type CreateUpdateTokenLimitsProposalInput = record {
     title : text;
     description : text;
     new_reward_amount : opt nat64;
     new_pass_threshold : opt nat8;
     new_max_attempts : opt nat8;
-    new_max_daily_quizzes : opt nat8;
-    new_max_weekly_quizzes : opt nat8;
-    new_max_monthly_quizzes : opt nat8;
-    new_max_yearly_quizzes : opt nat16;
+    new_regular_limits : opt TokenLimits;
+    new_subscribed_limits : opt TokenLimits;
     external_link : opt text;
 };
 
@@ -286,8 +270,8 @@ service : (InitArgs) -> {
     // Create a proposal to add content from staging
     "create_add_content_proposal": (CreateAddContentProposalInput) -> (variant { Ok: nat64; Err: text });
     
-    // Create a proposal to update global quiz configuration
-    "create_update_quiz_config_proposal": (CreateUpdateQuizConfigProposalInput) -> (variant { Ok: nat64; Err: text });
+    // Create a proposal to update global token limits and reward configuration
+    "create_update_token_limits_proposal": (CreateUpdateTokenLimitsProposalInput) -> (variant { Ok: nat64; Err: text });
     
     // Create a proposal to delete a content node
     "create_delete_content_proposal": (CreateDeleteContentProposalInput) -> (variant { Ok: nat64; Err: text });

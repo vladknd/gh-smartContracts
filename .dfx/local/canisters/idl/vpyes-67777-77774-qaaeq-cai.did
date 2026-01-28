@@ -1,105 +1,228 @@
 // ============================================================================
-// Media Assets Canister Candid Interface
+// Learning Engine Candid Interface
 // ============================================================================
-// Permanent storage for media files (videos, images, audio, PDFs)
+// Flexible tree-based content structure with quiz management
 // Updated: January 2026
+
+// ============================================================================
+// Initialization
+// ============================================================================
+
+type InitArgs = record {
+    staking_hub_id : principal;
+    governance_canister_id : opt principal;
+};
+
+// ============================================================================
+// Media Types
+// ============================================================================
 
 type MediaType = variant {
     Video;
     Audio;
     Image;
     PDF;
-    Other;
 };
 
-type FileMetadata = record {
-    hash : text;
-    filename : text;
-    content_type : text;
+type MediaContent = record {
     media_type : MediaType;
-    size : nat64;
-    uploader : principal;
-    uploaded_at : nat64;
-    chunk_count : nat32;
+    url : text;
+    thumbnail_url : opt text;
+    duration_seconds : opt nat32;
+    file_hash : opt text;
 };
 
-type UploadSession = record {
-    session_id : text;
-    filename : text;
-    content_type : text;
-    media_type : MediaType;
-    expected_size : nat64;
-    uploaded_size : nat64;
-    uploader : principal;
+// ============================================================================
+// Quiz Types
+// ============================================================================
+
+type QuizQuestion = record {
+    question : text;
+    options : vec text;
+    answer : nat8;
+};
+
+type QuizData = record {
+    questions : vec QuizQuestion;
+};
+
+// Quiz metadata (configuration is managed by Staking Hub)
+type QuizCacheData = record {
+    content_id : text;
+    answer_hashes : vec blob;
+    question_count : nat8;
+    version : nat64;
+};
+
+// ============================================================================
+// Content Node Types
+// ============================================================================
+
+type ContentNode = record {
+    id : text;
+    parent_id : opt text;
+    order : nat32;
+    display_type : text;
+    title : text;
+    description : opt text;
+    content : opt text;
+    paraphrase : opt text;
+    media : opt MediaContent;
+    quiz : opt QuizData;
+    created_at : nat64;
+    updated_at : nat64;
+    version : nat64;
+};
+
+type PublicQuizQuestion = record {
+    question : text;
+    options : vec text;
+};
+
+type PublicQuizData = record {
+    questions : vec PublicQuizQuestion;
+};
+
+type PublicContentNode = record {
+    id : text;
+    parent_id : opt text;
+    order : nat32;
+    display_type : text;
+    title : text;
+    description : opt text;
+    content : opt text;
+    paraphrase : opt text;
+    media : opt MediaContent;
+    quiz : opt PublicQuizData;
+    created_at : nat64;
+    updated_at : nat64;
+    version : nat64;
+};
+
+// ============================================================================
+// Loading Job Types
+// ============================================================================
+
+type LoadingStatus = variant {
+    InProgress;
+    Completed;
+    Failed;
+    Paused;
+};
+
+type LoadingJob = record {
+    proposal_id : nat64;
+    staging_canister : principal;
+    staging_path : text;
+    content_hash : text;
+    total_units : nat32;
+    loaded_units : nat32;
+    status : LoadingStatus;
+    last_error : opt text;
     started_at : nat64;
-    chunks_received : vec nat32;
+    updated_at : nat64;
 };
 
-type InitArgs = record {
-    allowed_uploaders : vec principal;
+// ============================================================================
+// Version History Types
+// ============================================================================
+
+type ChangeType = variant {
+    Created;
+    Updated;
+    Deleted;
 };
+
+type ContentSnapshot = record {
+    content : ContentNode;
+    modified_at : nat64;
+    modified_by_proposal : nat64;
+    change_type : ChangeType;
+};
+
+// ============================================================================
+// Service Definition
+// ============================================================================
 
 service : (InitArgs) -> {
     // =========================================================================
-    // Upload Functions
+    // Content Node Management
     // =========================================================================
     
-    // Start a chunked upload session
-    "start_upload": (text, text, MediaType, nat64) -> (variant { Ok: text; Err: text });
+    // Add or update a content node
+    "add_content_node": (ContentNode) -> (variant { Ok: null; Err: text });
     
-    // Upload a chunk of data
-    "upload_chunk": (text, nat32, blob) -> (variant { Ok: null; Err: text });
+    // Add multiple content nodes (batch)
+    "add_content_nodes": (vec ContentNode) -> (variant { Ok: nat32; Err: text });
     
-    // Finalize upload and get file hash
-    "finalize_upload": (text) -> (variant { Ok: text; Err: text });
+    // Get a content node by ID (public version without answers)
+    "get_content_node": (text) -> (opt PublicContentNode) query;
     
-    // Simple single-request upload for small files
-    "upload_file": (text, text, MediaType, blob) -> (variant { Ok: text; Err: text });
+    // Get children of a content node
+    "get_children": (text) -> (vec PublicContentNode) query;
     
-    // Cancel an upload session
-    "cancel_upload": (text) -> (variant { Ok: null; Err: text });
+    // Get all root nodes (nodes without parents)
+    "get_root_nodes": () -> (vec PublicContentNode) query;
     
-    // =========================================================================
-    // Query Functions
-    // =========================================================================
-    
-    // Get file metadata by hash
-    "get_file_metadata": (text) -> (opt FileMetadata) query;
-    
-    // Get a specific chunk of a file
-    "get_file_chunk": (text, nat32) -> (opt blob) query;
-    
-    // Get entire file (small files only)
-    "get_file": (text) -> (variant { Ok: blob; Err: text }) query;
-    
-    // Get URL for a file
-    "get_file_url": (text) -> (variant { Ok: text; Err: text }) query;
-    
-    // Check if file exists
-    "file_exists": (text) -> (bool) query;
-    
-    // Get upload session status
-    "get_upload_session": (text) -> (opt UploadSession) query;
-    
-    // List files (paginated)
-    "list_files": (nat64, nat64) -> (vec FileMetadata) query;
-    
-    // Get file count
-    "get_file_count": () -> (nat64) query;
-    
-    // Get total storage used
-    "get_total_storage": () -> (nat64) query;
+    // Delete a content node
+    "delete_content_node": (text, nat64) -> (variant { Ok: null; Err: text });
     
     // =========================================================================
-    // Admin Functions
+    // Quiz Functions
     // =========================================================================
     
-    // Add allowed uploader (controller only)
-    "add_allowed_uploader": (principal) -> (variant { Ok: null; Err: text });
+    // Get quiz cache data for user profile shards
+    "get_quiz_data": (text) -> (opt QuizCacheData) query;
     
-    // Remove allowed uploader (controller only)
-    "remove_allowed_uploader": (principal) -> (variant { Ok: null; Err: text });
+    // Verify quiz answers
+    // Returns: (passed: bool, correct_count: nat64, total_questions: nat64)
+    "verify_quiz": (text, vec nat8) -> (bool, nat64, nat64);
     
-    // Get list of allowed uploaders
-    "get_allowed_uploaders": () -> (vec principal) query;
+    // Get all quiz cache data (for initial sync)
+    "get_all_quiz_cache_data": () -> (vec record { text; QuizCacheData }) query;
+    
+    // =========================================================================
+    // Content Loading (Resilient)
+    // =========================================================================
+    
+    // Start loading content from staging (governance call)
+    "start_content_load": (nat64, principal, text, text, nat32) -> (variant { Ok: null; Err: text });
+    
+    // Continue loading (self-call pattern)
+    "continue_loading": (nat64) -> (variant { Ok: null; Err: text });
+    
+    // Resume loading after error
+    "resume_loading": (nat64) -> (variant { Ok: null; Err: text });
+    
+    // Get loading status for a proposal
+    "get_loading_status": (nat64) -> (opt LoadingJob) query;
+    
+    // Get all loading jobs
+    "get_all_loading_jobs": () -> (vec LoadingJob) query;
+    
+    // =========================================================================
+    // Version History & Audit Trail
+    // =========================================================================
+    
+    // Get version history for a content node
+    "get_content_version_history": (text) -> (vec record { nat64; ContentSnapshot }) query;
+    
+    // Get content at a specific version
+    "get_content_at_version": (text, nat64) -> (opt ContentNode) query;
+    
+    // Get current version number for a content node
+    "get_content_current_version": (text) -> (nat64) query;
+    
+    // Get all changes made by a specific proposal
+    "get_changes_by_proposal": (nat64) -> (vec record { text; ChangeType }) query;
+    
+    // Get global content version
+    "get_content_version_global": () -> (nat64) query;
+    
+    // =========================================================================
+    // Statistics
+    // =========================================================================
+    
+    // Get content statistics: (node_count, quiz_count)
+    "get_content_stats": () -> (nat64, nat64) query;
 }

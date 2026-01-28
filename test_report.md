@@ -1,5 +1,5 @@
 # Comprehensive System Test Report
-Date: Mon Jan 19 04:47:48 EST 2026
+Date: Mon Jan 26 10:55:04 EST 2026
 -----------------------------------
 
 ## 1. System Deployment
@@ -7,20 +7,20 @@ Date: Mon Jan 19 04:47:48 EST 2026
 - **Details**: All canisters deployed successfully.
 
 ### Canister IDs
-- Staking Hub: `vpyes-67777-77774-qaaeq-cai`
-- User Profile: `vb2j2-fp777-77774-qaafq-cai`
-- Learning Engine: `ucwa4-rx777-77774-qaada-cai`
-- Treasury: `vg3po-ix777-77774-qaafa-cai`
-- Governance: `uzt4z-lp777-77774-qaabq-cai`
-- Founder Vesting: `uxrrr-q7777-77774-qaaaq-cai`
-- GHC Ledger: `u6s2n-gx777-77774-qaaba-cai`
-- Media Assets: `ufxgi-4p777-77774-qaadq-cai`
-- Staging Assets: `vizcg-th777-77774-qaaea-cai`
+- Staking Hub: `vu5yx-eh777-77774-qaaga-cai`
+- User Profile: `v27v7-7x777-77774-qaaha-cai`
+- Learning Engine: `vizcg-th777-77774-qaaea-cai`
+- Treasury: `vt46d-j7777-77774-qaagq-cai`
+- Governance: `umunu-kh777-77774-qaaca-cai`
+- Founder Vesting: `u6s2n-gx777-77774-qaaba-cai`
+- GHC Ledger: `uzt4z-lp777-77774-qaabq-cai`
+- Media Assets: `vpyes-67777-77774-qaaeq-cai`
+- Staging Assets: `vb2j2-fp777-77774-qaafq-cai`
 
 ## 1b. Create Test User Identity
-- Test User: `h4yvu-lc236-25dha-mrdfg-rgl5e-pr7vb-k4p3e-nlnus-yqrfr-wid4t-5ae`
+- Test User: `o22xq-qevfk-bw63k-4zv47-frzd7-mb6a5-vluj5-rgqgf-7pi3v-eezz5-xae`
 - **Result**: ✅ PASS
-- **Details**: Created test user: h4yvu-lc236-25dha-mrdfg-rgl5e-pr7vb-k4p3e-nlnus-yqrfr-wid4t-5ae
+- **Details**: Created test user: o22xq-qevfk-bw63k-4zv47-frzd7-mb6a5-vluj5-rgqgf-7pi3v-eezz5-xae
 
 ## 2. Internet Identity Verification
 - **Result**: ✅ PASS
@@ -90,7 +90,7 @@ Date: Mon Jan 19 04:47:48 EST 2026
 
 ## 17. Vesting: Check Genesis Timestamp
 - **Result**: ✅ PASS
-- **Details**: Genesis timestamp accessible: (1_768_816_181_883_594_116 : nat64)
+- **Details**: Genesis timestamp accessible: (1_769_443_032_471_716_340 : nat64)
 
 ## 18. Tokenomics: Check Staking Hub Tokenomics
 - **Result**: ✅ PASS
@@ -112,9 +112,9 @@ Date: Mon Jan 19 04:47:48 EST 2026
 - **Result**: ✅ PASS
 - **Details**: Learning Engine content stats accessible.
 
-## 23. Learning Engine: Check Global Quiz Config
+## 23. Staking Hub: Check Token Limits Config
 - **Result**: ✅ PASS
-- **Details**: Global quiz config accessible.
+- **Details**: Token limits config accessible from Staking Hub.
 
 -----------------------------------
 ## Test Summary

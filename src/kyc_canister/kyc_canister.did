@@ -1,0 +1,30 @@
+type VerificationTier = variant {
+    None;
+    Human;
+    KYC;
+};
+
+type KycStatus = record {
+    user : principal;
+    tier : VerificationTier;
+    verified_at : nat64;
+    provider : text;
+};
+
+type InitArgs = record {
+    staking_hub_id : principal;
+};
+
+service : (InitArgs) -> {
+    // Submit KYC data (mock for now)
+    "submit_kyc_data" : (text) -> (variant { Ok : text; Err : text });
+    
+    // Trigger AI verification (mock for now)
+    "verify_identity" : (principal) -> (variant { Ok : VerificationTier; Err : text });
+    
+    // Get user KYC status from this canister's state
+    "get_user_kyc_status" : (principal) -> (opt KycStatus) query;
+
+    // Admin: update staking hub ID
+    "admin_set_staking_hub" : (principal) -> (variant { Ok : null; Err : text });
+}

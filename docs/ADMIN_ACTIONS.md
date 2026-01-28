@@ -90,7 +90,34 @@ dfx canister call staking_hub admin_set_user_shard '(principal "USER_ID", princi
 
 ---
 
-## 4. Emergency & Upgrades
+## 4. Founder Vesting Administration
+
+### Register a Founder
+After deploying the `founder_vesting` canister, you must manually register each founder and their token allocation.
+
+**Rules:**
+- Must be executed by the canister controller.
+- Allocation is in `e8s` (1 token = 100,000,000 e8s).
+- Vesting starts relative to the genesis timestamp (set at canister initialization).
+
+**Command (Bash):**
+```bash
+# Founder 1: 350M tokens
+F1_PRINCIPAL="n7kyi-a2ccw-erzef-tzywo-kuqyh-4x6on-6ltec-flkee-5zcdi-62drw-gae"
+F1_ALLOCATION=35000000000000000
+
+# Founder 2: 150M tokens
+F2_PRINCIPAL="vlg44-yhcay-gabeb-4qse6-k4tvu-ujdun-jyzjc-aq5nm-45hye-2qsr5-3ae"
+F2_ALLOCATION=15000000000000000
+
+# Register
+dfx canister call founder_vesting admin_register_founder "(principal \"$F1_PRINCIPAL\", $F1_ALLOCATION)"
+dfx canister call founder_vesting admin_register_founder "(principal \"$F2_PRINCIPAL\", $F2_ALLOCATION)"
+```
+
+---
+
+## 5. Emergency & Upgrades
 
 ### Canister Upgrades
 Controllers can upgrade canister code using `dfx`.

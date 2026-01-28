@@ -52,6 +52,8 @@ FOUNDER_VESTING_ID=$(dfx canister id founder_vesting)
 MEDIA_ASSETS_ID=$(dfx canister id media_assets)
 STAGING_ASSETS_ID=$(dfx canister id staging_assets)
 USER_PROFILE_ID=$(dfx canister id user_profile)
+SUBSCRIPTION_CANISTER_ID=$(dfx canister id subscription_canister)
+KYC_CANISTER_ID=$(dfx canister id kyc_canister)
 
 echo ""
 echo "============================================================================"
@@ -67,6 +69,8 @@ echo "  Staging Assets:      $STAGING_ASSETS_ID"
 echo "  User Profile:        $USER_PROFILE_ID"
 echo "  Founder Vesting:     $FOUNDER_VESTING_ID"
 echo "  Internet Identity:   $II_ID"
+echo "  Subscription:        $SUBSCRIPTION_CANISTER_ID"
+echo "  KYC Canister:        $KYC_CANISTER_ID"
 echo ""
 
 # ============================================================================
@@ -124,7 +128,7 @@ dfx deploy icrc1_index_canister --argument "(opt variant { Init = record { ledge
 # ============================================================================
 
 echo "Deploying Staking Hub..."
-dfx deploy staking_hub --argument "(record { ledger_id = principal \"$LEDGER_ID\"; learning_content_id = principal \"$LEARNING_ID\"; user_profile_wasm = vec {} })"
+dfx deploy staking_hub --argument "(record { ledger_id = principal \"$LEDGER_ID\"; learning_content_id = principal \"$LEARNING_ID\"; user_profile_wasm = vec {}; archive_canister_wasm = null })"
 
 echo "Deploying Treasury Canister..."
 dfx deploy treasury_canister --argument "(record { ledger_id = principal \"$LEDGER_ID\"; governance_canister_id = principal \"$GOVERNANCE_ID\" })"
@@ -167,9 +171,23 @@ dfx canister call staking_hub add_allowed_minter "(principal \"$USER_PROFILE_ID\
 echo "Deploying Founder Vesting..."
 dfx deploy founder_vesting --argument "(record { 
     ledger_id = principal \"$LEDGER_ID\"; 
-    founder1 = principal \"$F1\"; 
-    founder2 = principal \"$F2\" 
 })"
+
+echo "Registering founders..."
+dfx canister call founder_vesting admin_register_founder "(principal \"$F1\", 35000000000000000)"
+dfx canister call founder_vesting admin_register_founder "(principal \"$F2\", 15000000000000000)"
+
+echo "Deploying Subscription Canister..."
+dfx deploy subscription_canister --argument "(record { staking_hub_id = principal \"$STAKING_HUB_ID\" })"
+
+echo "Broadcasting Subscription Canister ID to Shards..."
+dfx canister call staking_hub admin_broadcast_subscription_manager "(principal \"$SUBSCRIPTION_CANISTER_ID\")"
+
+echo "Deploying KYC Canister..."
+dfx deploy kyc_canister --argument "(record { staking_hub_id = principal \"$STAKING_HUB_ID\" })"
+
+echo "Broadcasting KYC Canister ID to Shards..."
+dfx canister call staking_hub admin_broadcast_kyc_manager "(principal \"$KYC_CANISTER_ID\")"
 
 # ============================================================================
 # Generate Frontend Configuration
@@ -194,7 +212,9 @@ cat > ic.config.json <<EOF
         "media_assets": "$MEDIA_ASSETS_ID",
         "staging_assets": "$STAGING_ASSETS_ID",
         "internet_identity": "$II_ID",
-        "founder_vesting": "$FOUNDER_VESTING_ID"
+        "founder_vesting": "$FOUNDER_VESTING_ID",
+        "subscription_canister": "$SUBSCRIPTION_CANISTER_ID",
+        "kyc_canister": "$KYC_CANISTER_ID"
     },
     "founders": [
         {

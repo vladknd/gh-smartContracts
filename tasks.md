@@ -281,6 +281,28 @@ Create a canister that integrates with decentralized exchanges (DEX) on the Inte
 
 ---
 
+## Task 8: Implement Periodic Stats Sync for User Profile Shards
+
+### Description
+Add a periodic timer (e.g., every hour) to the user profile shards to force a synchronization of statistics with the Staking Hub.
+
+### Rationale
+Currently, shards sync statistics with the Hub primarily when their minting allowance falls below a certain threshold. While this ensures safety for token generation, it means the global aggregate statistics (`total_staked`) in the Staking Hub can remain stale if many users are earning tokens but the shard hasn't needed a refill yet. This can lead to a slightly inaccurate (lower) global approval threshold for governance proposals. Implementing a periodic sync ensures that the global state is refreshed regularly regardless of minting activity.
+
+### Tips & Considerations
+- Use `ic_cdk_timers::set_timer_interval` to schedule the task.
+- A 1-hour interval is likely sufficient to balance accuracy with canister instruction overhead.
+- Ensure the timer task calls the existing `sync_with_hub_internal()` function or a specialized lightweight version.
+- Handle potential network/concurrency issues (e.g., if a sync is already in progress when the timer fires).
+- Monitor the cycle cost of frequent inter-canister calls if the number of shards becomes very large.
+
+### Questions to Clarify
+- What is the ideal synchronization frequency? (Recommended: 1 hour)
+- Should the interval be configurable via the Staking Hub and pushed to shards?
+- Should the sync be staggered across shards to avoid "thundering herd" spikes on the Staking Hub?
+
+---
+
 ## Priority Recommendations
 
 Based on security and functionality needs:
@@ -292,7 +314,8 @@ Based on security and functionality needs:
 5. **Medium Priority**: Task 5 (Multi-token treasury support) - Needed before ICO
 6. **Medium Priority**: Task 6 (ICO canister) - Revenue generation for project
 7. **Low Priority**: Task 4C-F (Additional board member features) - Nice-to-have features
-8. **Low Priority**: Task 7 (DEX integration) - Useful but not critical initially
+8. **Low Priority**: Task 8 (Periodic stats sync) - Improves accuracy of governance thresholds
+9. **Low Priority**: Task 7 (DEX integration) - Useful but not critical initially
 
 ---
 

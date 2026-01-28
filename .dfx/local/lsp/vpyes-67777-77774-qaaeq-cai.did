@@ -1,46 +1,102 @@
-type FileMetadata = record {
-  hash : text;
-  media_type : MediaType;
-  size : nat64;
-  content_type : text;
-  filename : text;
-  chunk_count : nat32;
-  uploader : principal;
-  uploaded_at : nat64;
+type ChangeType = variant { Updated; Created; Deleted };
+type ContentNode = record {
+  id : text;
+  media : opt MediaContent;
+  title : text;
+  updated_at : nat64;
+  content : opt text;
+  order : nat32;
+  paraphrase : opt text;
+  quiz : opt QuizData;
+  description : opt text;
+  created_at : nat64;
+  display_type : text;
+  version : nat64;
+  parent_id : opt text;
 };
-type InitArgs = record { allowed_uploaders : vec principal };
-type MediaType = variant { PDF; Image; Audio; Other; Video };
-type UploadSession = record {
-  uploaded_size : nat64;
-  session_id : text;
-  chunks_received : vec nat32;
-  media_type : MediaType;
-  content_type : text;
-  expected_size : nat64;
-  filename : text;
-  uploader : principal;
+type ContentSnapshot = record {
+  modified_at : nat64;
+  content : ContentNode;
+  change_type : ChangeType;
+  modified_by_proposal : nat64;
+};
+type InitArgs = record {
+  governance_canister_id : opt principal;
+  staking_hub_id : principal;
+};
+type LoadingJob = record {
+  last_error : opt text;
+  status : LoadingStatus;
+  updated_at : nat64;
+  staging_path : text;
+  total_units : nat32;
+  content_hash : text;
+  loaded_units : nat32;
+  staging_canister : principal;
+  proposal_id : nat64;
   started_at : nat64;
 };
+type LoadingStatus = variant { Failed; Paused; InProgress; Completed };
+type MediaContent = record {
+  url : text;
+  duration_seconds : opt nat32;
+  media_type : MediaType;
+  file_hash : opt text;
+  thumbnail_url : opt text;
+};
+type MediaType = variant { PDF; Image; Audio; Video };
+type PublicContentNode = record {
+  id : text;
+  media : opt MediaContent;
+  title : text;
+  updated_at : nat64;
+  content : opt text;
+  order : nat32;
+  paraphrase : opt text;
+  quiz : opt PublicQuizData;
+  description : opt text;
+  created_at : nat64;
+  display_type : text;
+  version : nat64;
+  parent_id : opt text;
+};
+type PublicQuizData = record { questions : vec PublicQuizQuestion };
+type PublicQuizQuestion = record { question : text; options : vec text };
+type QuizCacheData = record {
+  question_count : nat8;
+  content_id : text;
+  version : nat64;
+  answer_hashes : vec blob;
+};
+type QuizData = record { questions : vec QuizQuestion };
+type QuizQuestion = record {
+  question : text;
+  answer : nat8;
+  options : vec text;
+};
 service : {
-  add_allowed_uploader : (principal) -> (variant { Ok; Err : text });
-  cancel_upload : (text) -> (variant { Ok; Err : text });
-  file_exists : (text) -> (bool) query;
-  finalize_upload : (text) -> (variant { Ok : text; Err : text });
-  get_allowed_uploaders : () -> (vec principal) query;
-  get_file : (text) -> (variant { Ok : blob; Err : text }) query;
-  get_file_chunk : (text, nat32) -> (opt blob) query;
-  get_file_count : () -> (nat64) query;
-  get_file_metadata : (text) -> (opt FileMetadata) query;
-  get_file_url : (text) -> (variant { Ok : text; Err : text }) query;
-  get_total_storage : () -> (nat64) query;
-  get_upload_session : (text) -> (opt UploadSession) query;
-  list_files : (nat64, nat64) -> (vec FileMetadata) query;
-  remove_allowed_uploader : (principal) -> (variant { Ok; Err : text });
-  start_upload : (text, text, MediaType, nat64) -> (
-      variant { Ok : text; Err : text },
+  add_content_node : (ContentNode) -> (variant { Ok; Err : text });
+  add_content_nodes : (vec ContentNode) -> (variant { Ok : nat32; Err : text });
+  continue_loading : (nat64) -> (variant { Ok; Err : text });
+  delete_content_node : (text, nat64) -> (variant { Ok; Err : text });
+  get_all_loading_jobs : () -> (vec LoadingJob) query;
+  get_all_quiz_cache_data : () -> (vec record { text; QuizCacheData }) query;
+  get_changes_by_proposal : (nat64) -> (vec record { text; ChangeType }) query;
+  get_children : (text) -> (vec PublicContentNode) query;
+  get_content_at_version : (text, nat64) -> (opt ContentNode) query;
+  get_content_current_version : (text) -> (nat64) query;
+  get_content_node : (text) -> (opt PublicContentNode) query;
+  get_content_stats : () -> (nat64, nat64) query;
+  get_content_version_global : () -> (nat64) query;
+  get_content_version_history : (text) -> (
+      vec record { nat64; ContentSnapshot },
+    ) query;
+  get_loading_status : (nat64) -> (opt LoadingJob) query;
+  get_quiz_data : (text) -> (opt QuizCacheData) query;
+  get_root_nodes : () -> (vec PublicContentNode) query;
+  resume_loading : (nat64) -> (variant { Ok; Err : text });
+  start_content_load : (nat64, principal, text, text, nat32) -> (
+      variant { Ok; Err : text },
     );
-  upload_chunk : (text, nat32, blob) -> (variant { Ok; Err : text });
-  upload_file : (text, text, MediaType, blob) -> (
-      variant { Ok : text; Err : text },
-    );
+  verify_quiz : (text, blob) -> (bool, nat64, nat64);
 }

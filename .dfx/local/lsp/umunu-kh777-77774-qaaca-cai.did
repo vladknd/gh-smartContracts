@@ -67,17 +67,15 @@ type CreateUpdateGovernanceConfigProposalInput = record {
   new_voting_period_days : opt nat16;
   new_resubmission_cooldown_days : opt nat16;
 };
-type CreateUpdateQuizConfigProposalInput = record {
+type CreateUpdateTokenLimitsProposalInput = record {
   external_link : opt text;
   new_pass_threshold : opt nat8;
   title : text;
-  new_max_daily_quizzes : opt nat8;
-  new_max_weekly_quizzes : opt nat8;
-  new_max_yearly_quizzes : opt nat16;
   new_max_attempts : opt nat8;
   description : text;
-  new_max_monthly_quizzes : opt nat8;
   new_reward_amount : opt nat64;
+  new_regular_limits : opt TokenLimits;
+  new_subscribed_limits : opt TokenLimits;
 };
 type DeleteContentNodePayload = record { content_id : text; reason : text };
 type InitArgs = record {
@@ -90,11 +88,9 @@ type Proposal = record {
   status : ProposalStatus;
   external_link : opt text;
   title : text;
-  update_quiz_config_payload : opt UpdateGlobalQuizConfigPayload;
   add_content_payload : opt AddContentFromStagingPayload;
   votes_no : nat64;
   recipient : opt principal;
-  update_quiz_questions_payload : opt UpdateQuizQuestionsPayload;
   description : text;
   delete_content_payload : opt DeleteContentNodePayload;
   created_at : nat64;
@@ -108,7 +104,7 @@ type Proposal = record {
   voter_count : nat64;
   votes_yes : nat64;
   remove_board_member_payload : opt RemoveBoardMemberPayload;
-  update_content_payload : opt UpdateContentNodePayload;
+  update_token_limits_payload : opt UpdateTokenLimitsPayload;
   update_board_member_payload : opt UpdateBoardMemberSharePayload;
   amount : opt nat64;
   token_type : opt TokenType;
@@ -134,19 +130,12 @@ type ProposalStatus = variant {
 type ProposalType = variant {
   UpdateGovernanceConfig;
   UpdateBoardMemberShare;
-  UpdateContentNode;
-  UpdateGlobalQuizConfig;
   AddContentFromStaging;
-  UpdateQuizQuestions;
+  UpdateTokenLimits;
   DeleteContentNode;
   Treasury;
   AddBoardMember;
   RemoveBoardMember;
-};
-type QuizQuestion = record {
-  question : text;
-  answer : nat8;
-  options : vec text;
 };
 type RemoveBoardMemberPayload = record { member_to_remove : principal };
 type SupportRecord = record {
@@ -155,25 +144,16 @@ type SupportRecord = record {
   timestamp : nat64;
   support_amount : nat64;
 };
+type TokenLimits = record {
+  max_monthly_tokens : nat64;
+  max_yearly_tokens : nat64;
+  max_daily_tokens : nat64;
+  max_weekly_tokens : nat64;
+};
 type TokenType = variant { GHC; ICP; USDC };
 type UpdateBoardMemberSharePayload = record {
   member : principal;
   new_percentage : nat8;
-};
-type UpdateContentNodePayload = record {
-  content_id : text;
-  new_title : opt text;
-  new_content : opt text;
-  new_paraphrase : opt text;
-};
-type UpdateGlobalQuizConfigPayload = record {
-  new_pass_threshold : opt nat8;
-  new_max_daily_quizzes : opt nat8;
-  new_max_weekly_quizzes : opt nat8;
-  new_max_yearly_quizzes : opt nat16;
-  new_max_attempts : opt nat8;
-  new_max_monthly_quizzes : opt nat8;
-  new_reward_amount : opt nat64;
 };
 type UpdateGovernanceConfigPayload = record {
   new_support_period_days : opt nat16;
@@ -183,9 +163,12 @@ type UpdateGovernanceConfigPayload = record {
   new_voting_period_days : opt nat16;
   new_resubmission_cooldown_days : opt nat16;
 };
-type UpdateQuizQuestionsPayload = record {
-  content_id : text;
-  new_questions : vec QuizQuestion;
+type UpdateTokenLimitsPayload = record {
+  new_pass_threshold : opt nat8;
+  new_max_attempts : opt nat8;
+  new_reward_amount : opt nat64;
+  new_regular_limits : opt TokenLimits;
+  new_subscribed_limits : opt TokenLimits;
 };
 type VoteRecord = record {
   voter : principal;
@@ -221,8 +204,8 @@ service : {
   create_update_governance_config_proposal : (
       CreateUpdateGovernanceConfigProposalInput,
     ) -> (variant { Ok : nat64; Err : text });
-  create_update_quiz_config_proposal : (
-      CreateUpdateQuizConfigProposalInput,
+  create_update_token_limits_proposal : (
+      CreateUpdateTokenLimitsProposalInput,
     ) -> (variant { Ok : nat64; Err : text });
   execute_proposal : (nat64) -> (variant { Ok; Err : text });
   finalize_proposal : (nat64) -> (variant { Ok : ProposalStatus; Err : text });

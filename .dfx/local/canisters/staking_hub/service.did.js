@@ -11,15 +11,19 @@ export const idlFactory = ({ IDL }) => {
     'version' : IDL.Nat64,
     'answer_hashes' : IDL.Vec(IDL.Vec(IDL.Nat8)),
   });
-  const CachedQuizConfig = IDL.Record({
-    'max_daily_quizzes' : IDL.Nat8,
+  const TokenLimits = IDL.Record({
+    'max_monthly_tokens' : IDL.Nat64,
+    'max_yearly_tokens' : IDL.Nat64,
+    'max_daily_tokens' : IDL.Nat64,
+    'max_weekly_tokens' : IDL.Nat64,
+  });
+  const TokenLimitsConfig = IDL.Record({
     'reward_amount' : IDL.Nat64,
-    'max_monthly_quizzes' : IDL.Nat8,
     'pass_threshold_percent' : IDL.Nat8,
     'max_daily_attempts' : IDL.Nat8,
+    'regular_limits' : TokenLimits,
     'version' : IDL.Nat64,
-    'max_weekly_quizzes' : IDL.Nat8,
-    'max_yearly_quizzes' : IDL.Nat16,
+    'subscribed_limits' : TokenLimits,
   });
   const ShardStatus = IDL.Variant({ 'Full' : IDL.Null, 'Active' : IDL.Null });
   const ShardInfo = IDL.Record({
@@ -40,6 +44,16 @@ export const idlFactory = ({ IDL }) => {
   });
   return IDL.Service({
     'add_allowed_minter' : IDL.Func([IDL.Principal], [], []),
+    'admin_broadcast_kyc_manager' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
+        [],
+      ),
+    'admin_broadcast_subscription_manager' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
+        [],
+      ),
     'admin_set_user_shard' : IDL.Func(
         [IDL.Principal, IDL.Principal],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
@@ -51,8 +65,8 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
         [],
       ),
-    'distribute_quiz_config' : IDL.Func(
-        [CachedQuizConfig],
+    'distribute_token_limits' : IDL.Func(
+        [TokenLimitsConfig],
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
         [],
       ),
@@ -61,7 +75,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Opt(IDL.Principal), 'Err' : IDL.Text })],
         [],
       ),
-    'fetch_voting_power' : IDL.Func([IDL.Principal], [IDL.Nat64], []),
+    'fetch_user_voting_power' : IDL.Func([IDL.Principal], [IDL.Nat64], []),
     'get_active_shards' : IDL.Func([], [IDL.Vec(ShardInfo)], ['query']),
     'get_archive_for_shard' : IDL.Func(
         [IDL.Principal],
@@ -85,6 +99,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_global_stats' : IDL.Func([], [GlobalStats], ['query']),
+    'get_kyc_manager_id' : IDL.Func([], [IDL.Principal], ['query']),
     'get_limits' : IDL.Func([], [IDL.Nat64, IDL.Nat64], ['query']),
     'get_shard_count' : IDL.Func([], [IDL.Nat64], ['query']),
     'get_shard_for_new_user' : IDL.Func(
@@ -93,6 +108,8 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_shards' : IDL.Func([], [IDL.Vec(ShardInfo)], ['query']),
+    'get_subscription_manager_id' : IDL.Func([], [IDL.Principal], ['query']),
+    'get_token_limits' : IDL.Func([], [TokenLimitsConfig], ['query']),
     'get_tokenomics' : IDL.Func(
         [],
         [IDL.Nat64, IDL.Nat64, IDL.Nat64, IDL.Nat64],
@@ -117,6 +134,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
         [],
       ),
+    'register_shard' : IDL.Func(
+        [IDL.Principal, IDL.Opt(IDL.Principal)],
+        [],
+        [],
+      ),
     'register_user_location' : IDL.Func(
         [IDL.Principal],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
@@ -134,6 +156,17 @@ export const idlFactory = ({ IDL }) => {
       ),
     'update_shard_user_count' : IDL.Func(
         [IDL.Nat64],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
+        [],
+      ),
+    'update_token_limits' : IDL.Func(
+        [
+          IDL.Opt(IDL.Nat64),
+          IDL.Opt(IDL.Nat8),
+          IDL.Opt(IDL.Nat8),
+          IDL.Opt(TokenLimits),
+          IDL.Opt(TokenLimits),
+        ],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),

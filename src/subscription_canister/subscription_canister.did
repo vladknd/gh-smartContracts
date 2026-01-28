@@ -1,0 +1,31 @@
+type SubscriptionRecord = record {
+    user : principal;
+    shard_id : principal;
+    session_id : text;
+    amount : nat64;
+    timestamp : nat64;
+    status : text;
+};
+
+type InitArgs = record {
+    staking_hub_id : principal;
+};
+
+service : (InitArgs) -> {
+    // Start a stripe checkout process
+    "request_checkout": (principal) -> (variant { Ok : text; Err : text });
+
+    // Webhook-like endpoint called by the bridge
+    "confirm_payment": (text) -> (variant { Ok : null; Err : text });
+
+    // Check if a user is currently subscribed in this canister's records
+    "get_subscription_status": (principal) -> (bool) query;
+
+    // Admin: Manually sync with a shard (e.g. if automatic activation failed)
+    "admin_sync_user_subscription": (principal, principal, bool) -> (variant { Ok : null; Err : text });
+    
+    // Admin: Update the staking hub ID
+    "admin_update_staking_hub": (principal) -> (variant { Ok : null; Err : text });
+
+    "get_staking_hub": () -> (principal) query;
+}

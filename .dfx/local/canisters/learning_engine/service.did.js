@@ -55,6 +55,12 @@ export const idlFactory = ({ IDL }) => {
     'proposal_id' : IDL.Nat64,
     'started_at' : IDL.Nat64,
   });
+  const QuizCacheData = IDL.Record({
+    'question_count' : IDL.Nat8,
+    'content_id' : IDL.Text,
+    'version' : IDL.Nat64,
+    'answer_hashes' : IDL.Vec(IDL.Vec(IDL.Nat8)),
+  });
   const ChangeType = IDL.Variant({
     'Updated' : IDL.Null,
     'Created' : IDL.Null,
@@ -88,21 +94,6 @@ export const idlFactory = ({ IDL }) => {
     'change_type' : ChangeType,
     'modified_by_proposal' : IDL.Nat64,
   });
-  const QuizConfig = IDL.Record({
-    'max_daily_quizzes' : IDL.Nat8,
-    'reward_amount' : IDL.Nat64,
-    'max_monthly_quizzes' : IDL.Nat8,
-    'pass_threshold_percent' : IDL.Nat8,
-    'max_daily_attempts' : IDL.Nat8,
-    'max_weekly_quizzes' : IDL.Nat8,
-    'max_yearly_quizzes' : IDL.Nat16,
-  });
-  const QuizCacheData = IDL.Record({
-    'question_count' : IDL.Nat8,
-    'content_id' : IDL.Text,
-    'version' : IDL.Nat64,
-    'answer_hashes' : IDL.Vec(IDL.Vec(IDL.Nat8)),
-  });
   return IDL.Service({
     'add_content_node' : IDL.Func(
         [ContentNode],
@@ -125,6 +116,11 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'get_all_loading_jobs' : IDL.Func([], [IDL.Vec(LoadingJob)], ['query']),
+    'get_all_quiz_cache_data' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, QuizCacheData))],
+        ['query'],
+      ),
     'get_changes_by_proposal' : IDL.Func(
         [IDL.Nat64],
         [IDL.Vec(IDL.Tuple(IDL.Text, ChangeType))],
@@ -157,7 +153,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Nat64, ContentSnapshot))],
         ['query'],
       ),
-    'get_global_quiz_config' : IDL.Func([], [QuizConfig], ['query']),
     'get_loading_status' : IDL.Func(
         [IDL.Nat64],
         [IDL.Opt(LoadingJob)],
@@ -175,23 +170,10 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),
-    'update_global_quiz_config' : IDL.Func(
-        [
-          IDL.Opt(IDL.Nat64),
-          IDL.Opt(IDL.Nat8),
-          IDL.Opt(IDL.Nat8),
-          IDL.Opt(IDL.Nat8),
-          IDL.Opt(IDL.Nat8),
-          IDL.Opt(IDL.Nat8),
-          IDL.Opt(IDL.Nat16),
-        ],
-        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
-        [],
-      ),
     'verify_quiz' : IDL.Func(
         [IDL.Text, IDL.Vec(IDL.Nat8)],
         [IDL.Bool, IDL.Nat64, IDL.Nat64],
-        ['query'],
+        [],
       ),
   });
 };
