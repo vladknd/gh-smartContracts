@@ -70,6 +70,7 @@ else
 fi
 
 # Switch to a unique identity for this test run to ensure fresh user state
+ADMIN_IDENTITY=$(dfx identity whoami)
 TEST_USER="up_test_$(date +%s)"
 log_step "Creating unique test identity: $TEST_USER"
 dfx identity new "$TEST_USER" --storage-mode=plaintext &>/dev/null || true
@@ -77,9 +78,9 @@ dfx identity use "$TEST_USER"
 USER_PRINCIPAL=$(dfx identity get-principal)
 log_info "Test Identity Principal: $USER_PRINCIPAL"
 
-# Define cleanup to switch back to default
+# Define cleanup to switch back to original identity
 cleanup() {
-    dfx identity use default
+    dfx identity use "$ADMIN_IDENTITY"
 }
 trap cleanup EXIT
 
@@ -112,8 +113,8 @@ fi
 log_header "PHASE 3: Quiz Logic & Limits"
 
 log_step "Seeding quiz data into Learning Engine"
-# Switch to controller for admin setup
-dfx identity use default
+# Switch back to admin for setup
+dfx identity use "$ADMIN_IDENTITY"
 log_info "Caller: $(dfx identity get-principal)"
 
 # ContentNode struct for intro_1
@@ -145,12 +146,19 @@ dfx canister call staking_hub add_allowed_minter "(principal \"$PROFILE_ID\")"
 dfx canister call user_profile debug_force_sync
 
 log_step "Broadcasting Config from Hub (Reward=10G, Pass=66%)"
-# We set high limits to ensure the reward fits within the daily/weekly quotas
+# We set limits within the new allowed ranges
+# Regular: Daily 2-5, Weekly 10-20, Monthly 30-60, Yearly 200-400
+# (Values are in e8s: 1 GHC = 100,000,000)
 dfx canister call staking_hub update_token_limits "(
-    opt 10_000_000_000, 
+    opt 10_000_000, 
     opt 66, 
     opt 5, 
-    opt record { max_daily_tokens=100_000_000_000; max_weekly_tokens=500_000_000_000; max_monthly_tokens=2_000_000_000_000; max_yearly_tokens=10_000_000_000_000 }, 
+    opt record { 
+        max_daily_tokens=200_000_000; 
+        max_weekly_tokens=1_000_000_000; 
+        max_monthly_tokens=3_000_000_000; 
+        max_yearly_tokens=20_000_000_000 
+    }, 
     null
 )"
 sleep 2
@@ -161,9 +169,45 @@ dfx identity use "$TEST_USER"
 log_step "Submitting Quiz (Correct - 3/3)"
 SUBMIT_2=$(dfx canister call user_profile submit_quiz '("intro_1", blob "\00\01\00")')
 if [[ "$SUBMIT_2" == *"Ok"* ]] && [[ "$SUBMIT_2" == *"10"* ]]; then
-    log_pass "Quiz passed correctly - Reward received"
+    log_pass "Quiz passed correctly - Reward received (0.1 GHC)"
 else
     log_fail "Quiz submission failed: $SUBMIT_2"
+fi
+
+log_header "PHASE 3.5: Limit Range Validation"
+
+log_step "Verifying Out-of-Range Limit Update (Too High)"
+INVALID_UPDATE=$(dfx --identity "$ADMIN_IDENTITY" canister call staking_hub update_token_limits "(
+    null, null, null,
+    opt record { 
+        max_daily_tokens=2_000_000_000_000; 
+        max_weekly_tokens=1_000_000_000; 
+        max_monthly_tokens=3_000_000_000; 
+        max_yearly_tokens=20_000_000_000 
+    }, 
+    null
+)" 2>&1 || true)
+if [[ "$INVALID_UPDATE" == *"Regular daily limit must be between"* ]]; then
+    log_pass "Correctly blocked out-of-range daily limit (20,000 GHC > 10,000 GHC)"
+else
+    log_fail "Failed to block out-of-range limit: $INVALID_UPDATE"
+fi
+
+log_step "Verifying Out-of-Range Limit Update (Too Low)"
+INVALID_UPDATE_LOW=$(dfx --identity "$ADMIN_IDENTITY" canister call staking_hub update_token_limits "(
+    null, null, null,
+    opt record { 
+        max_daily_tokens=100_000_000; 
+        max_weekly_tokens=1_000_000_000; 
+        max_monthly_tokens=3_000_000_000; 
+        max_yearly_tokens=20_000_000_000 
+    }, 
+    null
+)" 2>&1 || true)
+if [[ "$INVALID_UPDATE_LOW" == *"Regular daily limit must be between"* ]]; then
+    log_pass "Correctly blocked out-of-range daily limit (1 GHC < 2 GHC)"
+else
+    log_fail "Failed to block out-of-range limit (too low): $INVALID_UPDATE_LOW"
 fi
 
 # ============================================================================
@@ -175,12 +219,12 @@ log_step "Hitting Daily Quota"
 # Alice used 1 quiz. Submit 4 more.
 for i in {2..5}; do
     UNIT_ID="u_$i"
-    dfx --identity default canister call learning_engine add_content_node "(record { id=\"$UNIT_ID\"; parent_id=null; order=1; display_type=\"Unit\"; title=\"T\"; description=null; content=null; paraphrase=null; media=null; quiz=opt record { questions=vec { record { question=\"Q\"; options=vec {\"A\"}; answer=0:nat8 } } }; created_at=0; updated_at=0; version=1 })" &>/dev/null
+    dfx --identity "$ADMIN_IDENTITY" canister call learning_engine add_content_node "(record { id=\"$UNIT_ID\"; parent_id=null; order=1; display_type=\"Unit\"; title=\"T\"; description=null; content=null; paraphrase=null; media=null; quiz=opt record { questions=vec { record { question=\"Q\"; options=vec {\"A\"}; answer=0:nat8 } } }; created_at=0; updated_at=0; version=1 })" &>/dev/null
     dfx canister call user_profile submit_quiz "(\"$UNIT_ID\", blob \"\\00\")" &>/dev/null
 done
 
 log_step "Verifying Daily Limit Blocking"
-dfx --identity default canister call learning_engine add_content_node "(record { id=\"u_blocked\"; parent_id=null; order=1; display_type=\"Unit\"; title=\"T\"; description=null; content=null; paraphrase=null; media=null; quiz=opt record { questions=vec { record { question=\"Q\"; options=vec {\"A\"}; answer=0:nat8 } } }; created_at=0; updated_at=0; version=1 })" &>/dev/null
+dfx --identity "$ADMIN_IDENTITY" canister call learning_engine add_content_node "(record { id=\"u_blocked\"; parent_id=null; order=1; display_type=\"Unit\"; title=\"T\"; description=null; content=null; paraphrase=null; media=null; quiz=opt record { questions=vec { record { question=\"Q\"; options=vec {\"A\"}; answer=0:nat8 } } }; created_at=0; updated_at=0; version=1 })" &>/dev/null
 BLOCKED=$(dfx canister call user_profile submit_quiz '("u_blocked", blob "\00")' 2>&1 || true)
 if [[ "$BLOCKED" == *"Daily quiz limit reached"* ]]; then
     log_pass "Daily quiz quota (5/day) enforced"
@@ -189,8 +233,8 @@ else
 fi
 
 log_step "Simulating Day Reset"
-# Switch to controller for admin action
-dfx identity use default
+# Switch back to admin for system modification
+dfx identity use "$ADMIN_IDENTITY"
 # Set last_active_day to 0 (far in past) to trigger reset on next activity
 dfx canister call user_profile admin_set_user_stats "(principal \"$USER_PRINCIPAL\", record { daily_quizzes=5:nat8; daily_earnings=50000000000; weekly_quizzes=5:nat8; weekly_earnings=50000000000; monthly_quizzes=5:nat8; monthly_earnings=50000000000; yearly_quizzes=5:nat16; yearly_earnings=50000000000; last_active_day=0:nat64 })"
 # Switch back to test user
@@ -209,26 +253,32 @@ fi
 # ============================================================================
 log_header "PHASE 5: Subscriptions"
 
-NOW_DAY=$(dfx canister call user_profile get_current_day --query | grep -oP '\d+' | head -n 1)
+NOW_DAY=$(dfx canister call user_profile get_current_day --query | tr -d '_' | grep -oP '\d+' | head -n 1)
 
 log_step "Hitting Regular Daily Token Limit"
 # We set a tiny limit (1000 e8s) to ensure the next quiz (10G e8s) blocks
-# update_token_limits is a Hub call, likely needs controller or minter authority?
-# Hub update_token_limits is restricted? Let's check. 
-# Staking_hub code says: if !is_controller... trap
-dfx identity use default
+# update_token_limits is a Hub call, needs controller authority
+dfx identity use "$ADMIN_IDENTITY"
+# We set a tiny limit (exactly 2 GHC, which is the minimum)
+dfx identity use "$ADMIN_IDENTITY"
 dfx canister call staking_hub update_token_limits "(
-    opt 10_000_000_000, 
+    opt 10_000_000, 
     opt 66, 
     opt 5, 
-    opt record { max_daily_tokens=1000; max_weekly_tokens=10000; max_monthly_tokens=100000; max_yearly_tokens=1000000 }, 
+    opt record { 
+        max_daily_tokens=200_000_000; 
+        max_weekly_tokens=1_000_000_000; 
+        max_monthly_tokens=3_000_000_000; 
+        max_yearly_tokens=20_000_000_000 
+    }, 
     null
 )"
-# Reset user stats to ensure we are fresh for this test
-dfx canister call user_profile admin_set_user_stats "(principal \"$USER_PRINCIPAL\", record { daily_quizzes=0:nat8; daily_earnings=995; weekly_quizzes=0:nat8; weekly_earnings=0; monthly_quizzes=0:nat8; monthly_earnings=0; yearly_quizzes=0:nat16; yearly_earnings=0; last_active_day=$NOW_DAY:nat64 })"
+# Reset user stats to simulate having earned almost the daily limit
+# 199,500,000 earns + 10,000,000 reward would exceed 200,000,000
+dfx canister call user_profile admin_set_user_stats "(principal \"$USER_PRINCIPAL\", record { daily_quizzes=0:nat8; daily_earnings=195_000_000; weekly_quizzes=0:nat8; weekly_earnings=0; monthly_quizzes=0:nat8; monthly_earnings=0; yearly_quizzes=0:nat16; yearly_earnings=0; last_active_day=$NOW_DAY:nat64 })"
 dfx identity use "$TEST_USER"
 
-dfx --identity default canister call learning_engine add_content_node "(record { id=\"u_phase5\"; parent_id=null; order=1; display_type=\"Unit\"; title=\"T\"; description=null; content=null; paraphrase=null; media=null; quiz=opt record { questions=vec { record { question=\"Q\"; options=vec {\"A\"}; answer=0:nat8 } } }; created_at=0; updated_at=0; version=1 })" &>/dev/null
+dfx --identity "$ADMIN_IDENTITY" canister call learning_engine add_content_node "(record { id=\"u_phase5\"; parent_id=null; order=1; display_type=\"Unit\"; title=\"T\"; description=null; content=null; paraphrase=null; media=null; quiz=opt record { questions=vec { record { question=\"Q\"; options=vec {\"A\"}; answer=0:nat8 } } }; created_at=0; updated_at=0; version=1 })" &>/dev/null
 LIMIT_BLOCK=$(dfx canister call user_profile submit_quiz '("u_phase5", blob "\00")' 2>&1 || true)
 if [[ "$LIMIT_BLOCK" == *"Daily token limit reached"* ]]; then
     log_pass "Regular daily token limit enforced"
@@ -237,11 +287,11 @@ else
 fi
 
 log_step "Upgrading to Subscription"
-dfx identity use default
+dfx identity use "$ADMIN_IDENTITY"
 dfx canister call user_profile admin_set_subscription "(principal \"$USER_PRINCIPAL\", true)"
 dfx identity use "$TEST_USER"
 
-dfx --identity default canister call learning_engine add_content_node "(record { id=\"u_phase5_sub\"; parent_id=null; order=1; display_type=\"Unit\"; title=\"T\"; description=null; content=null; paraphrase=null; media=null; quiz=opt record { questions=vec { record { question=\"Q\"; options=vec {\"A\"}; answer=0:nat8 } } }; created_at=0; updated_at=0; version=1 })" &>/dev/null
+dfx --identity "$ADMIN_IDENTITY" canister call learning_engine add_content_node "(record { id=\"u_phase5_sub\"; parent_id=null; order=1; display_type=\"Unit\"; title=\"T\"; description=null; content=null; paraphrase=null; media=null; quiz=opt record { questions=vec { record { question=\"Q\"; options=vec {\"A\"}; answer=0:nat8 } } }; created_at=0; updated_at=0; version=1 })" &>/dev/null
 SUB_WORKED=$(dfx canister call user_profile submit_quiz '("u_phase5_sub", blob "\00")')
 if [[ "$SUB_WORKED" == *"Ok"* ]]; then
     log_pass "Subscription successfully increased daily token allowance"
@@ -255,11 +305,11 @@ fi
 log_header "PHASE 6: Archiving"
 
 log_info "Setting Archive Canister"
-dfx --identity default canister call user_profile set_archive_canister "(principal \"$ARCHIVE_ID\")" &>/dev/null
+dfx --identity "$ADMIN_IDENTITY" canister call user_profile set_archive_canister "(principal \"$ARCHIVE_ID\")" &>/dev/null
 
 log_step "Triggering Archive Pruning"
 # Even if we don't have 151 records, the debug trigger forces the check logic
-dfx --identity default canister call user_profile debug_trigger_archive &>/dev/null
+dfx --identity "$ADMIN_IDENTITY" canister call user_profile debug_trigger_archive &>/dev/null
 log_pass "Archive event triggered successfully"
 
 # ============================================================================

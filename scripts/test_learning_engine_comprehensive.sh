@@ -40,6 +40,8 @@ else
     log_info "Using existing deployment"
 fi
 
+ADMIN_IDENTITY=$(dfx identity whoami)
+
 # ============================================================================
 # PHASE 2: TREE STRUCTURE & CONTENT
 # ============================================================================
@@ -56,11 +58,11 @@ fi
 
 log_step "Creating a Book -> Chapter -> Unit hierarchy"
 # ROOT: Book
-dfx --identity default canister call learning_engine add_content_node '(record { id="book_1"; parent_id=null; order=1; display_type="Book"; title="Climate Change 101"; description=null; content=opt "Overview of climate science"; paraphrase=null; media=null; quiz=null; created_at=0; updated_at=0; version=1 })' &>/dev/null
+dfx --identity "$ADMIN_IDENTITY" canister call learning_engine add_content_node '(record { id="book_1"; parent_id=null; order=1; display_type="Book"; title="Climate Change 101"; description=null; content=opt "Overview of climate science"; paraphrase=null; media=null; quiz=null; created_at=0; updated_at=0; version=1 })' &>/dev/null
 # CHILD: Chapter 1
-dfx --identity default canister call learning_engine add_content_node '(record { id="ch_1"; parent_id=opt "book_1"; order=1; display_type="Chapter"; title="The Greenhouse Effect"; description=null; content=null; paraphrase=null; media=null; quiz=null; created_at=0; updated_at=0; version=1 })' &>/dev/null
+dfx --identity "$ADMIN_IDENTITY" canister call learning_engine add_content_node '(record { id="ch_1"; parent_id=opt "book_1"; order=1; display_type="Chapter"; title="The Greenhouse Effect"; description=null; content=null; paraphrase=null; media=null; quiz=null; created_at=0; updated_at=0; version=1 })' &>/dev/null
 # GRANDCHILD: Unit 1.1 with Quiz
-dfx --identity default canister call learning_engine add_content_node '(record { 
+dfx --identity "$ADMIN_IDENTITY" canister call learning_engine add_content_node '(record { 
     id="unit_1.1"; 
     parent_id=opt "ch_1"; 
     order=1; 
@@ -80,10 +82,15 @@ dfx --identity default canister call learning_engine add_content_node '(record {
 
 log_step "Verifying Root Nodes lookup"
 ROOTS=$(dfx canister call learning_engine get_root_nodes)
-if [[ "$ROOTS" == *"Climate Change 101"* && "$ROOTS" != *"Greenhouse"* ]]; then
-    log_pass "Hierarchy correctly identified (Roots isolated)"
+if [[ "$ROOTS" == *"Climate Change 101"* ]]; then
+    # Verify ch_1 is NOT a root (it should be a child of book_1)
+    if [[ "$ROOTS" == *"The Greenhouse Effect"* ]]; then
+        log_fail "Hierarchy error: ch_1 (Greenhouse) detected as a root node"
+    else
+        log_pass "Hierarchy correctly identified (Roots isolated)"
+    fi
 else
-    log_fail "Root nodes lookup incorrect: $ROOTS"
+    log_fail "Root nodes lookup failed: book_1 (Climate Change 101) not found in $ROOTS"
 fi
 
 log_step "Verifying Children traversal"
@@ -143,7 +150,7 @@ CURRENT_V=$(echo "$RAW_V" | grep -oP '^\(\s*\K\d+' || echo "0")
 NEXT_V=$((CURRENT_V + 1))
 log_info "Current version: $CURRENT_V, Updating to: $NEXT_V"
 
-dfx --identity default canister call learning_engine add_content_node "(record { id=\"book_1\"; parent_id=null; order=1; display_type=\"Book\"; title=\"Climate Change 101 (Revised $NEXT_V)\"; description=null; content=opt \"Updated content v$NEXT_V\"; paraphrase=null; media=null; quiz=null; created_at=0; updated_at=0; version=$NEXT_V })" &>/dev/null
+dfx --identity "$ADMIN_IDENTITY" canister call learning_engine add_content_node "(record { id=\"book_1\"; parent_id=null; order=1; display_type=\"Book\"; title=\"Climate Change 101 (Revised $NEXT_V)\"; description=null; content=opt \"Updated content v$NEXT_V\"; paraphrase=null; media=null; quiz=null; created_at=0; updated_at=0; version=$NEXT_V })" &>/dev/null
 
 log_step "Verifying Current Version"
 NEW_CUR_VER=$(dfx canister call learning_engine get_content_current_version '("book_1")')

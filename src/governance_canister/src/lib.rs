@@ -472,8 +472,11 @@ async fn create_update_governance_config_proposal(input: CreateUpdateGovernanceC
     
     // Validate approval percentage if specified
     if let Some(pct) = input.new_approval_percentage {
-        if pct == 0 || pct > 100 {
-            return Err("Approval percentage must be between 1 and 100".to_string());
+        if pct < MIN_APPROVAL_PERCENTAGE || pct > MAX_APPROVAL_PERCENTAGE {
+            return Err(format!(
+                "Approval percentage must be between {} and {}",
+                MIN_APPROVAL_PERCENTAGE, MAX_APPROVAL_PERCENTAGE
+            ));
         }
     }
     
@@ -1519,8 +1522,11 @@ fn execute_update_governance_config_proposal_internal(proposal: &Proposal) -> Re
     
     // Validate approval percentage if specified
     if let Some(pct) = payload.new_approval_percentage {
-        if pct == 0 || pct > 100 {
-            return Err("Approval percentage must be between 1 and 100".to_string());
+        if pct < MIN_APPROVAL_PERCENTAGE || pct > MAX_APPROVAL_PERCENTAGE {
+            return Err(format!(
+                "Approval percentage must be between {} and {}",
+                MIN_APPROVAL_PERCENTAGE, MAX_APPROVAL_PERCENTAGE
+            ));
         }
     }
     

@@ -50,6 +50,10 @@ log_info "Staging Assets ID: $STAGING_ID"
 # ============================================================================
 log_step "2. Stage Content"
 
+# Ensure current user is an allowed stager
+log_info "Adding current user as allowed stager..."
+dfx canister call staging_assets add_allowed_stager "(principal \"$(dfx identity get-principal)\")" || true
+
 # Define a simple content node
 NODE_VEC="vec {
     record {

@@ -34,11 +34,12 @@ else
 fi
 
 # Switch to unique identity
+ADMIN_IDENTITY=$(dfx identity whoami)
 TEST_USER="up_simple_$(date +%s)"
 dfx identity new "$TEST_USER" --storage-mode=plaintext &>/dev/null || true
 dfx identity use "$TEST_USER"
 TEST_USER_PRINCIPAL=$(dfx identity get-principal)
-trap "dfx identity use default" EXIT
+trap "dfx identity use $ADMIN_IDENTITY" EXIT
 
 
 # ============================================================================
@@ -81,8 +82,8 @@ log_step "Admin Override: Setting User Stats (Simulate Earnings)"
 # Calculate current day index
 TODAY=$(($(date +%s) / 86400))
 
-# Switch to controller for admin call
-dfx identity use default
+# Switch to admin for privileged call
+dfx identity use "$ADMIN_IDENTITY"
 
 EARN=$(dfx canister call user_profile admin_set_user_stats "(principal \"$TEST_USER_PRINCIPAL\", record {
     last_active_day=$TODAY;

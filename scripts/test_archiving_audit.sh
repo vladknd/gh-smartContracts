@@ -32,6 +32,7 @@ fi
 
 
 # Get IDs
+ADMIN_IDENTITY=$(dfx identity whoami)
 USER_PROFILE_ID=$(dfx canister id user_profile)
 ARCHIVE_ID=$(dfx canister id archive_canister)
 STAKING_HUB_ID=$(dfx canister id staking_hub)
@@ -77,7 +78,7 @@ log_info "Voting and executing Proposal #$PROP_ID..."
 dfx canister call governance_canister support_proposal "($PROP_ID : nat64)" >/dev/null
 dfx canister call governance_canister vote "($PROP_ID : nat64, true)" >/dev/null
 dfx canister call governance_canister admin_set_proposal_status "($PROP_ID : nat64, variant { Approved })" >/dev/null
-dfx canister call governance_canister execute_proposal "($PROP_ID : nat64)" >/dev/null
+dfx canister call governance_canister execute_proposal "($PROP_ID : nat64)" || log_fail "Failed to execute proposal #$PROP_ID"
 
 log_pass "New token limits active in Staking Hub and User Profile Shard"
 
@@ -88,28 +89,28 @@ log_step "User Subscription Flow Verification"
 
 # Setup a test user
 log_info "Registering audit test user..."
-dfx identity new audit_user --storage-mode plaintext 2>/dev/null || true
-dfx identity use audit_user
+dfx identity new arch_audit_tmp_user --storage-mode plaintext 2>/dev/null || true
+dfx identity use arch_audit_tmp_user
 USER_PRINCIPAL=$(dfx identity get-principal)
 dfx canister call user_profile register_user "(record { email = \"audit_$(date +%s)@ghc.com\"; name = \"Audit Tester\"; education = \"QA\"; gender = \"Other\" })"
 
 # Check regular limit (1000 GHC)
 log_info "Hitting regular token limit (1000 GHC)..."
-dfx identity use default
+dfx identity use "$ADMIN_IDENTITY" # Switch back to admin for content creation
 for i in $(seq 1 11); do
     TEMP_ID="unit_$i"
     dfx canister call learning_engine add_content_node "(record { id = \"$TEMP_ID\"; parent_id = null; order = 1; display_type = \"UNIT\"; title = \"Unit $i\"; description = null; content = null; paraphrase = null; media = null; quiz = opt record { questions = vec { record { question = \"1+1?\"; options = vec { \"2\"; \"3\" }; answer = 0 } } }; created_at = 0; updated_at = 0; version = 1; })" >/dev/null
     
     if [ $i -le 10 ]; then
-        dfx identity use audit_user
+        dfx identity use arch_audit_tmp_user
         RES=$(dfx canister call user_profile submit_quiz "(\"$TEMP_ID\", vec {0})" 2>&1)
         if [[ ! "$RES" == *"Ok"* ]]; then log_fail "Quiz $i failed: $RES"; fi
-        dfx identity use default
+        dfx identity use "$ADMIN_IDENTITY" # Switch back to admin for next content creation
     fi
 done
 
 # 11th should fail
-dfx identity use audit_user
+dfx identity use arch_audit_tmp_user
 RES=$(dfx canister call user_profile submit_quiz "(\"unit_11\", vec {0})" 2>&1)
 if [[ "$RES" == *"Daily token limit reached"* ]]; then
     log_pass "Regular limit correctly blocked user at 1000 GHC"
@@ -119,11 +120,11 @@ fi
 
 # Upgrade to Subscribed
 log_info "Upgrading user to SUBSCRIBED..."
-dfx identity use default
+dfx identity use "$ADMIN_IDENTITY"
 dfx canister call user_profile admin_set_subscription "(principal \"$USER_PRINCIPAL\", true)"
 
 # 11th should now work
-dfx identity use audit_user
+dfx identity use arch_audit_tmp_user
 RES=$(dfx canister call user_profile submit_quiz "(\"unit_11\", vec {0})" 2>&1)
 if [[ "$RES" == *"Ok"* ]]; then
     log_pass "Subscription upgrade allowed user to exceed regular limit"
@@ -139,15 +140,15 @@ log_step "Archiving Pressure Test (Threshold: 150 Transactions)"
 log_info "Generating ~150 transactions to trigger archiving..."
 # We already have ~11 transactions. We need 140 more.
 # To speed up, we'll use a loop and many small units.
-dfx identity use default
+dfx identity use "$ADMIN_IDENTITY"
 for b in $(seq 12 160); do
     if [ $((b % 20)) -eq 0 ]; then echo "  Processing batch $b..."; fi
     TEMP_ID="stress_$b"
     dfx canister call learning_engine add_content_node "(record { id = \"$TEMP_ID\"; parent_id = null; order = 1; display_type = \"UNIT\"; title = \"Stress $b\"; description = null; content = null; paraphrase = null; media = null; quiz = opt record { questions = vec { record { question = \"1+1?\"; options = vec { \"2\"; \"3\" }; answer = 0 } } }; created_at = 0; updated_at = 0; version = 1; })" >/dev/null
     
-    dfx identity use audit_user
+    dfx identity use arch_audit_tmp_user
     dfx canister call user_profile submit_quiz "(\"$TEMP_ID\", vec {0})"
-    dfx identity use default
+    dfx identity use "$ADMIN_IDENTITY"
 done
 
 COUNT=$(dfx canister call user_profile get_profile "(principal \"$USER_PRINCIPAL\")" | grep "transaction_count" | grep -oP '\d+' | head -1)
@@ -203,5 +204,5 @@ fi
 summary
 
 # Cleanup
-dfx identity use default
-dfx identity remove audit_user 2>/dev/null || true
+dfx identity use "$ADMIN_IDENTITY"
+dfx identity remove arch_audit_tmp_user 2>/dev/null || true

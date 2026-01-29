@@ -4,21 +4,21 @@
 [0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
 [1;33m[INFO][0m Building all canisters...
    Compiling archive_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/archive_canister)
+   Compiling staking_hub v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staking_hub)
+   Compiling treasury_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/treasury_canister)
    Compiling staging_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staging_assets)
-   Compiling learning_engine v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/learning_engine)
+   Compiling governance_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/governance_canister)
    Compiling media_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/media_assets)
+   Compiling learning_engine v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/learning_engine)
    Compiling user_profile v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/user_profile)
    Compiling founder_vesting v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/founder_vesting)
-   Compiling treasury_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/treasury_canister)
    Compiling subscription_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/subscription_canister)
-   Compiling staking_hub v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staking_hub)
-   Compiling governance_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/governance_canister)
    Compiling kyc_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/kyc_canister)
-    Finished `release` profile [optimized] target(s) in 16.10s
+    Finished `release` profile [optimized] target(s) in 16.60s
 [0;32m[SUCCESS][0m All canisters built successfully
 [1;33m[INFO][0m WASM sizes:
--rwxrwxrwx 2 vozni vozni 537K Jan 28 12:50 target/wasm32-unknown-unknown/release/archive_canister.wasm
--rwxrwxrwx 2 vozni vozni 830K Jan 28 12:50 target/wasm32-unknown-unknown/release/user_profile.wasm
+-rwxrwxrwx 2 vozni vozni 537K Jan 29 09:22 target/wasm32-unknown-unknown/release/archive_canister.wasm
+-rwxrwxrwx 2 vozni vozni 830K Jan 29 09:22 target/wasm32-unknown-unknown/release/user_profile.wasm
 
 [0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
 [0;34mPHASE 2: Network Setup[0m
@@ -30,7 +30,7 @@
 [0;34mPHASE 3: Deploying Core Infrastructure[0m
 [0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
 [1;33m[INFO][0m Creating canisters...
-Created a wallet canister on the "local" network for user "default" with ID "uqqxf-5h777-77774-qaaaa-cai"
+Created a wallet canister on the "local" network for user "audit_user" with ID "uqqxf-5h777-77774-qaaaa-cai"
 archive_canister canister created with canister id: uxrrr-q7777-77774-qaaaq-cai
 founder_vesting canister created with canister id: u6s2n-gx777-77774-qaaba-cai
 ghc_ledger canister created with canister id: uzt4z-lp777-77774-qaabq-cai
@@ -108,7 +108,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'learning_engine'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p learning_engine --locked
    Compiling learning_engine v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/learning_engine)
-    Finished `release` profile [optimized] target(s) in 9.19s
+    Finished `release` profile [optimized] target(s) in 9.40s
 Installed code for canister learning_engine, with canister ID vpyes-67777-77774-qaaeq-cai
 Deployed canisters.
 URLs:
@@ -142,7 +142,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'staking_hub'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p staking_hub --locked
    Compiling staking_hub v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staking_hub)
-    Finished `release` profile [optimized] target(s) in 9.77s
+    Finished `release` profile [optimized] target(s) in 10.01s
 Installed code for canister staking_hub, with canister ID vt46d-j7777-77774-qaagq-cai
 Deployed canisters.
 URLs:
@@ -175,7 +175,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'user_profile'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p user_profile --locked
    Compiling user_profile v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/user_profile)
-    Finished `release` profile [optimized] target(s) in 9.25s
+    Finished `release` profile [optimized] target(s) in 9.32s
 Installed code for canister user_profile, with canister ID xad5d-bh777-77774-qaaia-cai
 Deployed canisters.
 URLs:
@@ -204,7 +204,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'archive_canister'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p archive_canister --locked
    Compiling archive_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/archive_canister)
-    Finished `release` profile [optimized] target(s) in 5.75s
+    Finished `release` profile [optimized] target(s) in 5.98s
 Installed code for canister archive_canister, with canister ID uxrrr-q7777-77774-qaaaq-cai
 Deployed canisters.
 URLs:
@@ -229,7 +229,7 @@ URLs:
 [1;33m[INFO][0m Registering user_profile as a shard in staking_hub...
 ()
 [1;33m[INFO][0m Linking archive to user_profile...
-[1;33m[INFO][0m Current identity (controller): x7bvc-oflwk-ir7fn-nlr2v-3lyrd-kpc3j-yka2s-topqb-3fxww-55qmb-yqe
+[1;33m[INFO][0m Current identity (controller): 73any-v4cry-3qsru-lxh5o-mowq3-avioz-qxh6k-5s363-ytgw6-6deek-bqe
 (variant { Ok })
 [0;32m[SUCCESS][0m User Profile and Archive deployed
 
@@ -243,7 +243,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'treasury_canister'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p treasury_canister --locked
    Compiling treasury_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/treasury_canister)
-    Finished `release` profile [optimized] target(s) in 7.49s
+    Finished `release` profile [optimized] target(s) in 7.63s
 Installed code for canister treasury_canister, with canister ID v56tl-sp777-77774-qaahq-cai
 Deployed canisters.
 URLs:
@@ -272,7 +272,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'governance_canister'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p governance_canister --locked
    Compiling governance_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/governance_canister)
-    Finished `release` profile [optimized] target(s) in 11.77s
+    Finished `release` profile [optimized] target(s) in 12.09s
 Installed code for canister governance_canister, with canister ID umunu-kh777-77774-qaaca-cai
 Deployed canisters.
 URLs:
@@ -303,7 +303,7 @@ All canisters have already been created.
 WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is not installed. Please run 'cargo install cargo-audit' so that vulnerabilities can be detected.
 Building canister 'ico_canister'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p ico_canister --locked
-    Finished `release` profile [optimized] target(s) in 2.79s
+    Finished `release` profile [optimized] target(s) in 2.87s
 Installed code for canister ico_canister, with canister ID ulvla-h7777-77774-qaacq-cai
 Deployed canisters.
 URLs:
@@ -333,7 +333,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'staging_assets'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p staging_assets --locked
    Compiling staging_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/staging_assets)
-    Finished `release` profile [optimized] target(s) in 7.14s
+    Finished `release` profile [optimized] target(s) in 7.41s
 Installed code for canister staging_assets, with canister ID vu5yx-eh777-77774-qaaga-cai
 Deployed canisters.
 URLs:
@@ -360,7 +360,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'media_assets'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p media_assets --locked
    Compiling media_assets v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/media_assets)
-    Finished `release` profile [optimized] target(s) in 6.80s
+    Finished `release` profile [optimized] target(s) in 6.96s
 Installed code for canister media_assets, with canister ID vg3po-ix777-77774-qaafa-cai
 Deployed canisters.
 URLs:
@@ -390,7 +390,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'founder_vesting'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p founder_vesting --locked
    Compiling founder_vesting v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/founder_vesting)
-    Finished `release` profile [optimized] target(s) in 6.91s
+    Finished `release` profile [optimized] target(s) in 7.05s
 Installed code for canister founder_vesting, with canister ID u6s2n-gx777-77774-qaaba-cai
 Deployed canisters.
 URLs:
@@ -421,7 +421,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'subscription_canister'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p subscription_canister --locked
    Compiling subscription_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/subscription_canister)
-    Finished `release` profile [optimized] target(s) in 6.11s
+    Finished `release` profile [optimized] target(s) in 6.29s
 Installed code for canister subscription_canister, with canister ID v27v7-7x777-77774-qaaha-cai
 Deployed canisters.
 URLs:
@@ -451,7 +451,7 @@ WARN: Cannot check for vulnerabilities in rust canisters because cargo-audit is 
 Building canister 'kyc_canister'.
 Executing: cargo build --target wasm32-unknown-unknown --release -p kyc_canister --locked
    Compiling kyc_canister v0.1.0 (/mnt/c/LIB/CODE/gh-smartContracts/src/kyc_canister)
-    Finished `release` profile [optimized] target(s) in 5.65s
+    Finished `release` profile [optimized] target(s) in 5.77s
 Installed code for canister kyc_canister, with canister ID vizcg-th777-77774-qaaea-cai
 Deployed canisters.
 URLs:
@@ -496,7 +496,7 @@ URLs:
       user_count = 0 : nat64;
       status = variant { Active };
       canister_id = principal "xad5d-bh777-77774-qaaia-cai";
-      created_at = 1_769_622_754_063_913_282 : nat64;
+      created_at = 1_769_696_645_291_037_159 : nat64;
       archive_canister_id = opt principal "uxrrr-q7777-77774-qaaaq-cai";
     };
   },

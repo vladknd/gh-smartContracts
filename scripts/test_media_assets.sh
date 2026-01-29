@@ -42,6 +42,10 @@ log_info "Media Assets ID: $MEDIA_ID"
 # ============================================================================
 log_step "Testing Simple Upload"
 
+# Ensure current user is an allowed uploader
+log_info "Adding current user as allowed uploader..."
+dfx canister call media_assets add_allowed_uploader "(principal \"$(dfx identity get-principal)\")" &>/dev/null || true
+
 # Upload a small file
 # Blob syntax: blob "\CA\FE" or similar. Or just string for text.
 # For simplicity, we upload a small text file as blob.

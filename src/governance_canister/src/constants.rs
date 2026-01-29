@@ -12,6 +12,12 @@ pub const DEFAULT_SUPPORT_THRESHOLD: u64 = 15_000 * 100_000_000; // 15,000 token
 /// Proposals need at least this percentage of YES votes to pass
 pub const DEFAULT_APPROVAL_PERCENTAGE: u8 = 30;
 
+/// Minimum approval threshold: 30%
+pub const MIN_APPROVAL_PERCENTAGE: u8 = 30;
+
+/// Maximum approval threshold: 50% (+ 1 logic applied in calculation)
+pub const MAX_APPROVAL_PERCENTAGE: u8 = 50;
+
 /// Default support period for proposals in Proposed state: 1 week in nanoseconds
 pub const DEFAULT_SUPPORT_PERIOD_NANOS: u64 = 7 * 24 * 60 * 60 * 1_000_000_000;
 

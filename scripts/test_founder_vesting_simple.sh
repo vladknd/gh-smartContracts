@@ -18,6 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/test_helper.sh"
 
 log_header "FOUNDER VESTING SIMPLE TEST"
+ADMIN_IDENTITY=$(dfx identity whoami)
 
 # ============================================================================
 # 1. SETUP & DEPLOY
@@ -112,5 +113,5 @@ else
     log_fail "Unexpected claim result: $CLAIM_RES"
 fi
 
-dfx identity use default
+dfx identity use "$ADMIN_IDENTITY"
 summary

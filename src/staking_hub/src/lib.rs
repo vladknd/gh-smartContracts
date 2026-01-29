@@ -145,6 +145,38 @@ async fn update_token_limits(
         // return Err("Unauthorized".to_string());
     }
 
+    // Validate Regular Limits
+    if let Some(ref limits) = regular_limits {
+        if limits.max_daily_tokens < MIN_REGULAR_DAILY || limits.max_daily_tokens > MAX_REGULAR_DAILY {
+            return Err(format!("Regular daily limit must be between {} and {}", MIN_REGULAR_DAILY, MAX_REGULAR_DAILY));
+        }
+        if limits.max_weekly_tokens < MIN_REGULAR_WEEKLY || limits.max_weekly_tokens > MAX_REGULAR_WEEKLY {
+            return Err(format!("Regular weekly limit must be between {} and {}", MIN_REGULAR_WEEKLY, MAX_REGULAR_WEEKLY));
+        }
+        if limits.max_monthly_tokens < MIN_REGULAR_MONTHLY || limits.max_monthly_tokens > MAX_REGULAR_MONTHLY {
+            return Err(format!("Regular monthly limit must be between {} and {}", MIN_REGULAR_MONTHLY, MAX_REGULAR_MONTHLY));
+        }
+        if limits.max_yearly_tokens < MIN_REGULAR_YEARLY || limits.max_yearly_tokens > MAX_REGULAR_YEARLY {
+            return Err(format!("Regular yearly limit must be between {} and {}", MIN_REGULAR_YEARLY, MAX_REGULAR_YEARLY));
+        }
+    }
+
+    // Validate Subscribed Limits
+    if let Some(ref limits) = subscribed_limits {
+        if limits.max_daily_tokens < MIN_SUBSCRIBED_DAILY || limits.max_daily_tokens > MAX_SUBSCRIBED_DAILY {
+            return Err(format!("Subscribed daily limit must be between {} and {}", MIN_SUBSCRIBED_DAILY, MAX_SUBSCRIBED_DAILY));
+        }
+        if limits.max_weekly_tokens < MIN_SUBSCRIBED_WEEKLY || limits.max_weekly_tokens > MAX_SUBSCRIBED_WEEKLY {
+            return Err(format!("Subscribed weekly limit must be between {} and {}", MIN_SUBSCRIBED_WEEKLY, MAX_SUBSCRIBED_WEEKLY));
+        }
+        if limits.max_monthly_tokens < MIN_SUBSCRIBED_MONTHLY || limits.max_monthly_tokens > MAX_SUBSCRIBED_MONTHLY {
+            return Err(format!("Subscribed monthly limit must be between {} and {}", MIN_SUBSCRIBED_MONTHLY, MAX_SUBSCRIBED_MONTHLY));
+        }
+        if limits.max_yearly_tokens < MIN_SUBSCRIBED_YEARLY || limits.max_yearly_tokens > MAX_SUBSCRIBED_YEARLY {
+            return Err(format!("Subscribed yearly limit must be between {} and {}", MIN_SUBSCRIBED_YEARLY, MAX_SUBSCRIBED_YEARLY));
+        }
+    }
+
     let new_config = TOKEN_LIMITS_CONFIG.with(|c| {
         let mut cell = c.borrow_mut();
         let mut config = cell.get().clone();

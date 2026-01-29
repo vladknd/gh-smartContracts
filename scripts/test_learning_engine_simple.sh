@@ -35,16 +35,18 @@ log_info "Learning Engine: $LEARNING_ENGINE_ID"
 log_info "User Profile: $USER_PROFILE_ID"
 log_info "Staking Hub: $STAKING_HUB_ID"
 
-# Create unique test user
-TEST_USER="quiz_test_$(date +%s)"
-dfx identity new "$TEST_USER" --storage-mode plaintext 2>/dev/null || true
+# Switch to unique identity
+ADMIN_IDENTITY=$(dfx identity whoami)
+TEST_USER="up_simple_$(date +%s)"
+dfx identity new "$TEST_USER" --storage-mode=plaintext &>/dev/null || true
 dfx identity use "$TEST_USER"
-USER_PRINCIPAL=$(dfx identity get-principal)
+TEST_USER_PRINCIPAL=$(dfx identity get-principal)
+trap "dfx identity use $ADMIN_IDENTITY" EXIT
 
 # Cleanup trap
 cleanup() {
     echo -e "\n${BLUE}=== Cleaning up... ===${NC}"
-    dfx identity use default
+    dfx identity use "$ADMIN_IDENTITY"
     dfx identity remove "$TEST_USER" 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -52,7 +54,7 @@ trap cleanup EXIT
 # Test 1: Add a learning unit (as admin)
 log_step "Test 1: Adding learning unit"
 QUIZ_ID="quiz_test_unit_$(date +%s)"
-dfx identity use default
+dfx identity use "$ADMIN_IDENTITY"
 RESULT=$(dfx canister call learning_engine add_content_node "(record {
     id = \"$QUIZ_ID\";
     parent_id = null;
@@ -108,11 +110,11 @@ fi
 # Test 3: Register user and submit quiz
 log_step "Test 3: Registering user"
 dfx identity use "$TEST_USER"
-REG_RESULT=$(dfx canister call user_profile register_user '(record { 
-    email = "quiz@test.com"; 
-    name = "Quiz Tester"; 
-    education = "Test"; 
-    gender = "Test" 
+REG_RESULT=$(dfx canister call user_profile register_user '(record {
+    email = "quiz@test.com";
+    name = "Quiz Tester";
+    education = "Test";
+    gender = "Test"
 })' 2>&1)
 
 if [[ $REG_RESULT == *"Ok"* ]]; then
@@ -144,7 +146,7 @@ fi
 
 # Test 6: Verify reward allocation
 log_step "Test 6: Verifying reward allocation"
-PROFILE=$(dfx canister call user_profile get_profile "(principal \"$USER_PRINCIPAL\")" 2>&1)
+PROFILE=$(dfx canister call user_profile get_profile "(principal \"$TEST_USER_PRINCIPAL\")" 2>&1)
 
 if [[ $PROFILE == *"staked_balance"* ]]; then
     log_pass "Profile shows staked balance (rewards allocated)"

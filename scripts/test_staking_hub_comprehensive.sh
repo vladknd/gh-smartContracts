@@ -64,10 +64,15 @@ fi
 # 7. Sync Token Limits from Hub
 log_header "Syncing Token Limits"
 dfx canister call staking_hub update_token_limits "(
-    opt 50000000, 
+    opt 50_000_000, 
     opt 80, 
     opt 10, 
-    opt record { max_daily_tokens=1000000000; max_weekly_tokens=5000000000; max_monthly_tokens=20000000000; max_yearly_tokens=100000000000 }, 
+    opt record { 
+        max_daily_tokens=200_000_000; 
+        max_weekly_tokens=1_000_000_000; 
+        max_monthly_tokens=3_000_000_000; 
+        max_yearly_tokens=20_000_000_000 
+    }, 
     null
 )"
 log_pass "Token limits updated and distributed"

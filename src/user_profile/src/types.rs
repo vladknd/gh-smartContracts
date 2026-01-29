@@ -196,10 +196,10 @@ pub struct TokenLimits {
 impl Default for TokenLimits {
     fn default() -> Self {
         Self {
-            max_daily_tokens: 100_000_000_000,   // 1000 GHC
-            max_weekly_tokens: 500_000_000_000,  // 5000 GHC
-            max_monthly_tokens: 1_500_000_000_000, // 15000 GHC
-            max_yearly_tokens: 10_000_000_000_000, // 100000 GHC
+            max_daily_tokens: 200_000_000,      // 2 GHC
+            max_weekly_tokens: 1_000_000_000,    // 10 GHC
+            max_monthly_tokens: 3_000_000_000,   // 30 GHC
+            max_yearly_tokens: 20_000_000_000,   // 200 GHC
         }
     }
 }
@@ -218,15 +218,15 @@ pub struct TokenLimitsConfig {
 impl Default for TokenLimitsConfig {
     fn default() -> Self {
         Self {
-            reward_amount: 10_000_000_000,      // 100 GHC
+            reward_amount: 10_000_000,      // 0.1 GHC
             pass_threshold_percent: 80,
             max_daily_attempts: 5,
             regular_limits: TokenLimits::default(),
             subscribed_limits: TokenLimits {
-                max_daily_tokens: 200_000_000_000,    // 2000 GHC
-                max_weekly_tokens: 1_000_000_000_000, // 10000 GHC
-                max_monthly_tokens: 3_000_000_000_000, // 30000 GHC
-                max_yearly_tokens: 20_000_000_000_000, // 200000 GHC
+                max_daily_tokens: 500_000_000,    // 5 GHC
+                max_weekly_tokens: 2_000_000_000,  // 20 GHC
+                max_monthly_tokens: 6_000_000_000,  // 60 GHC
+                max_yearly_tokens: 40_000_000_000, // 400 GHC
             },
             version: 0,
         }

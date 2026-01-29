@@ -81,7 +81,12 @@ pub async fn calculate_approval_threshold() -> Result<u64, String> {
     let approval_pct = get_approval_percentage() as u64;
     
     // Calculate threshold
-    let threshold = (total_staked * approval_pct) / 100;
+    let mut threshold = (total_staked * approval_pct) / 100;
+    
+    // If threshold is set to 50%, add 1 unit of voting power to require a strict majority
+    if approval_pct == 50 {
+        threshold += 1;
+    }
     
     Ok(threshold)
 }
