@@ -1,61 +1,27 @@
-// Founder Vesting Canister Interface
-// Manages time-locked founder token allocations with 10%/year vesting
-
-type InitArgs = record {
-    ledger_id : principal;   // GHC Ledger canister ID
-};
-
-// Internal vesting schedule (not exposed directly)
+type InitArgs = record { ledger_id : principal };
 type VestingSchedule = record {
-    founder : principal;
-    total_allocation : nat64;
-    claimed : nat64;
-    vesting_start : nat64;
+  claimed : nat64;
+  vesting_start : nat64;
+  founder : principal;
+  total_allocation : nat64;
 };
-
-// Public vesting status for queries
 type VestingStatus = record {
-    founder : principal;           // Founder principal ID
-    total_allocation : nat64;      // Total tokens allocated (in e8s)
-    vested : nat64;                // Currently vested/unlocked (in e8s)
-    claimed : nat64;               // Already claimed (in e8s)
-    claimable : nat64;             // Available to claim now (in e8s)
-    years_elapsed : nat64;         // Years since vesting start
-    unlock_percentage : nat64;     // Current unlock % (0-100)
+  years_elapsed : nat64;
+  claimed : nat64;
+  claimable : nat64;
+  founder : principal;
+  vested : nat64;
+  total_allocation : nat64;
+  unlock_percentage : nat64;
 };
-
 service : (InitArgs) -> {
-    // =========================================================================
-    // FOUNDER CLAIM FUNCTION
-    // =========================================================================
-    
-    // Claim vested tokens (only callable by registered founders)
-    // Returns the amount claimed on success
-    "claim_vested": () -> (variant { Ok: nat64; Err: text });
-    
-    // Registration (Controller only)
-    "admin_register_founder": (principal, nat64) -> (variant { Ok; Err: text });
-    
-    // Testing functions
-    "admin_claim_vested_at": (nat64) -> (variant { Ok: nat64; Err: text });
-    "admin_set_genesis_timestamp": (nat64) -> ();
-    
-    // =========================================================================
-    // QUERY FUNCTIONS
-    // =========================================================================
-    
-    // Get vesting status for a specific founder
-    "get_vesting_status": (principal) -> (opt VestingStatus) query;
-    
-    // Get all vesting schedules (for dashboard/admin)
-    "get_all_vesting_schedules": () -> (vec VestingStatus) query;
-    
-    // Get genesis timestamp (when vesting started)
-    "get_genesis_timestamp": () -> (nat64) query;
-    
-    // Get total unclaimed tokens across all founders
-    "get_total_unclaimed": () -> (nat64) query;
-    
-    // Check if a principal is a registered founder
-    "is_founder": (principal) -> (bool) query;
+  admin_claim_vested_at : (nat64) -> (variant { Ok : nat64; Err : text });
+  admin_register_founder : (principal, nat64) -> (variant { Ok; Err : text });
+  admin_set_genesis_timestamp : (nat64) -> ();
+  claim_vested : () -> (variant { Ok : nat64; Err : text });
+  get_all_vesting_schedules : () -> (vec VestingStatus) query;
+  get_genesis_timestamp : () -> (nat64) query;
+  get_total_unclaimed : () -> (nat64) query;
+  get_vesting_status : (principal) -> (opt VestingStatus) query;
+  is_founder : (principal) -> (bool) query;
 }

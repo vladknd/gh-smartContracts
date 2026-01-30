@@ -1,379 +1,259 @@
-// ============================================================================
-// Governance Canister Candid Interface
-// ============================================================================
-// Proposal lifecycle, voting, board member management, and content governance
-// Updated: January 2026
-
-type TokenType = variant {
-    GHC;
-    USDC;
-    ICP;
-};
-
-type ProposalCategory = variant {
-    Marketing;
-    Development;
-    Partnership;
-    Liquidity;
-    CommunityGrant;
-    Operations;
-    Custom : text;
-};
-
-type ProposalStatus = variant {
-    Proposed;
-    Active;
-    Approved;
-    Rejected;
-    Executed;
-};
-
-type ProposalType = variant {
-    Treasury;
-    AddBoardMember;
-    RemoveBoardMember;
-    UpdateBoardMemberShare;
-    UpdateGovernanceConfig;
-    AddContentFromStaging;
-    UpdateContentNode;
-    UpdateGlobalQuizConfig;
-    UpdateQuizQuestions;
-    DeleteContentNode;
-};
-
 type AddBoardMemberPayload = record {
-    new_member : principal;
-    percentage : nat8;
+  share_bps : nat16;
+  new_member : principal;
 };
-
-type RemoveBoardMemberPayload = record {
-    member_to_remove : principal;
-};
-
-type UpdateBoardMemberSharePayload = record {
-    member : principal;
-    new_percentage : nat8;
-};
-
-type UpdateGovernanceConfigPayload = record {
-    new_min_voting_power : opt nat64;
-    new_support_threshold : opt nat64;
-    new_approval_percentage : opt nat8;
-    // Timing Configuration
-    new_support_period_days : opt nat16;
-    new_voting_period_days : opt nat16;
-    new_resubmission_cooldown_days : opt nat16;
-};
-
-
-
-// ============================================================================
-// Content Governance Payloads
-// ============================================================================
-
-type QuizQuestion = record {
-    question : text;
-    options : vec text;
-    answer : nat8;
-};
-
 type AddContentFromStagingPayload = record {
-    staging_canister : principal;
-    staging_path : text;
-    content_hash : text;
-    content_title : text;
-    unit_count : nat32;
+  unit_count : nat32;
+  staging_path : text;
+  content_hash : text;
+  staging_canister : principal;
+  content_title : text;
 };
-
-type UpdateContentNodePayload = record {
-    content_id : text;
-    new_title : opt text;
-    new_content : opt text;
-    new_paraphrase : opt text;
-};
-
-type UpdateGlobalQuizConfigPayload = record {
-    new_reward_amount : opt nat64;
-    new_pass_threshold : opt nat8;
-    new_max_attempts : opt nat8;
-    new_max_daily_quizzes : opt nat8;
-    new_max_weekly_quizzes : opt nat8;
-    new_max_monthly_quizzes : opt nat8;
-    new_max_yearly_quizzes : opt nat16;
-};
-
-type UpdateQuizQuestionsPayload = record {
-    content_id : text;
-    new_questions : vec QuizQuestion;
-};
-
-type DeleteContentNodePayload = record {
-    content_id : text;
-    reason : text;
-};
-
-type Proposal = record {
-    id : nat64;
-    proposer : principal;
-    created_at : nat64;
-    voting_ends_at : nat64;
-    title : text;
-    description : text;
-    recipient : opt principal;
-    amount : opt nat64;
-    token_type : opt TokenType;
-    category : opt ProposalCategory;
-    external_link : opt text;
-    votes_yes : nat64;
-    votes_no : nat64;
-    voter_count : nat64;
-    support_amount : nat64;
-    supporter_count : nat64;
-    required_yes_votes : nat64;
-    status : ProposalStatus;
-    proposal_type : ProposalType;
-    board_member_payload : opt AddBoardMemberPayload;
-    remove_board_member_payload : opt RemoveBoardMemberPayload;
-    update_board_member_payload : opt UpdateBoardMemberSharePayload;
-    update_governance_config_payload : opt UpdateGovernanceConfigPayload;
-    add_content_payload : opt AddContentFromStagingPayload;
-    update_content_payload : opt UpdateContentNodePayload;
-    update_quiz_config_payload : opt UpdateGlobalQuizConfigPayload;
-    update_quiz_questions_payload : opt UpdateQuizQuestionsPayload;
-    delete_content_payload : opt DeleteContentNodePayload;
-};
-
-type VoteRecord = record {
-    voter : principal;
-    proposal_id : nat64;
-    vote : bool;
-    voting_power : nat64;
-    timestamp : nat64;
-};
-
-type SupportRecord = record {
-    supporter : principal;
-    proposal_id : nat64;
-    support_amount : nat64;
-    timestamp : nat64;
-};
-
-// ============================================================================
-// Proposal Creation Input Types
-// ============================================================================
-
-type CreateTreasuryProposalInput = record {
-    title : text;
-    description : text;
-    recipient : principal;
-    amount : nat64;
-    token_type : TokenType;
-    category : ProposalCategory;
-    external_link : opt text;
-};
-
-type CreateBoardMemberProposalInput = record {
-    title : text;
-    description : text;
-    new_member : principal;
-    percentage : nat8;
-    external_link : opt text;
-};
-
-type CreateAddContentProposalInput = record {
-    title : text;
-    description : text;
-    staging_canister : principal;
-    staging_path : text;
-    content_hash : text;
-    content_title : text;
-    unit_count : nat32;
-    external_link : opt text;
-};
-
-type CreateUpdateQuizConfigProposalInput = record {
-    title : text;
-    description : text;
-    new_reward_amount : opt nat64;
-    new_pass_threshold : opt nat8;
-    new_max_attempts : opt nat8;
-    new_max_daily_quizzes : opt nat8;
-    new_max_weekly_quizzes : opt nat8;
-    new_max_monthly_quizzes : opt nat8;
-    new_max_yearly_quizzes : opt nat16;
-    external_link : opt text;
-};
-
-type CreateDeleteContentProposalInput = record {
-    title : text;
-    description : text;
-    content_id : text;
-    reason : text;
-    external_link : opt text;
-};
-
-type CreateRemoveBoardMemberProposalInput = record {
-    title : text;
-    description : text;
-    member_to_remove : principal;
-    external_link : opt text;
-};
-
-type CreateUpdateBoardMemberShareProposalInput = record {
-    title : text;
-    description : text;
-    member : principal;
-    new_percentage : nat8;
-    external_link : opt text;
-};
-
-type CreateUpdateGovernanceConfigProposalInput = record {
-    title : text;
-    description : text;
-    new_min_voting_power : opt nat64;
-    new_support_threshold : opt nat64;
-    new_approval_percentage : opt nat8;
-    // Timing Configuration (in days, 1-365)
-    new_support_period_days : opt nat16;
-    new_voting_period_days : opt nat16;
-    new_resubmission_cooldown_days : opt nat16;
-    external_link : opt text;
-};
-
 type BoardMemberShare = record {
-    member : principal;
-    percentage : nat8;
+  member : principal;
+  is_sentinel : bool;
+  share_bps : nat16;
 };
-
+type CreateAddContentProposalInput = record {
+  external_link : opt text;
+  title : text;
+  unit_count : nat32;
+  staging_path : text;
+  content_hash : text;
+  description : text;
+  staging_canister : principal;
+  content_title : text;
+};
+type CreateBoardMemberProposalInput = record {
+  external_link : opt text;
+  title : text;
+  description : text;
+  share_bps : nat16;
+  new_member : principal;
+};
+type CreateDeleteContentProposalInput = record {
+  external_link : opt text;
+  title : text;
+  content_id : text;
+  description : text;
+  reason : text;
+};
+type CreateRemoveBoardMemberProposalInput = record {
+  external_link : opt text;
+  title : text;
+  description : text;
+  member_to_remove : principal;
+};
+type CreateTreasuryProposalInput = record {
+  external_link : opt text;
+  title : text;
+  recipient : principal;
+  description : text;
+  category : ProposalCategory;
+  amount : nat64;
+  token_type : TokenType;
+};
+type CreateUpdateBoardMemberShareProposalInput = record {
+  member : principal;
+  external_link : opt text;
+  title : text;
+  description : text;
+  new_share_bps : nat16;
+};
+type CreateUpdateGovernanceConfigProposalInput = record {
+  external_link : opt text;
+  title : text;
+  new_support_period_days : opt nat16;
+  new_approval_percentage : opt nat8;
+  description : text;
+  new_min_voting_power : opt nat64;
+  new_support_threshold : opt nat64;
+  new_voting_period_days : opt nat16;
+  new_resubmission_cooldown_days : opt nat16;
+};
+type CreateUpdateSentinelProposalInput = record {
+  external_link : opt text;
+  title : text;
+  description : text;
+  new_sentinel : principal;
+};
+type CreateUpdateTokenLimitsProposalInput = record {
+  external_link : opt text;
+  new_pass_threshold : opt nat8;
+  title : text;
+  new_max_attempts : opt nat8;
+  description : text;
+  new_reward_amount : opt nat64;
+  new_regular_limits : opt TokenLimits;
+  new_subscribed_limits : opt TokenLimits;
+};
+type DeleteContentNodePayload = record { content_id : text; reason : text };
 type InitArgs = record {
-    staking_hub_id : principal;
-    treasury_canister_id : principal;
-    learning_engine_id : opt principal;
+  learning_engine_id : opt principal;
+  treasury_canister_id : principal;
+  staking_hub_id : principal;
 };
-
+type Proposal = record {
+  id : nat64;
+  status : ProposalStatus;
+  external_link : opt text;
+  title : text;
+  add_content_payload : opt AddContentFromStagingPayload;
+  votes_no : nat64;
+  recipient : opt principal;
+  description : text;
+  delete_content_payload : opt DeleteContentNodePayload;
+  created_at : nat64;
+  board_member_payload : opt AddBoardMemberPayload;
+  update_governance_config_payload : opt UpdateGovernanceConfigPayload;
+  required_yes_votes : nat64;
+  voting_ends_at : nat64;
+  supporter_count : nat64;
+  update_sentinel_payload : opt UpdateSentinelPayload;
+  category : opt ProposalCategory;
+  proposer : principal;
+  voter_count : nat64;
+  votes_yes : nat64;
+  remove_board_member_payload : opt RemoveBoardMemberPayload;
+  update_token_limits_payload : opt UpdateTokenLimitsPayload;
+  update_board_member_payload : opt UpdateBoardMemberSharePayload;
+  amount : opt nat64;
+  token_type : opt TokenType;
+  proposal_type : ProposalType;
+  support_amount : nat64;
+};
+type ProposalCategory = variant {
+  Partnership;
+  CommunityGrant;
+  Custom : text;
+  Operations;
+  Development;
+  Marketing;
+  Liquidity;
+};
+type ProposalStatus = variant {
+  Active;
+  Approved;
+  Rejected;
+  Proposed;
+  Executed;
+};
+type ProposalType = variant {
+  UpdateSentinel;
+  UpdateGovernanceConfig;
+  UpdateBoardMemberShare;
+  AddContentFromStaging;
+  UpdateTokenLimits;
+  DeleteContentNode;
+  Treasury;
+  AddBoardMember;
+  RemoveBoardMember;
+};
+type RemoveBoardMemberPayload = record { member_to_remove : principal };
+type SupportRecord = record {
+  supporter : principal;
+  proposal_id : nat64;
+  timestamp : nat64;
+  support_amount : nat64;
+};
+type TokenLimits = record {
+  max_monthly_tokens : nat64;
+  max_yearly_tokens : nat64;
+  max_daily_tokens : nat64;
+  max_weekly_tokens : nat64;
+};
+type TokenType = variant { GHC; ICP; USDC };
+type UpdateBoardMemberSharePayload = record {
+  member : principal;
+  new_share_bps : nat16;
+};
+type UpdateGovernanceConfigPayload = record {
+  new_support_period_days : opt nat16;
+  new_approval_percentage : opt nat8;
+  new_min_voting_power : opt nat64;
+  new_support_threshold : opt nat64;
+  new_voting_period_days : opt nat16;
+  new_resubmission_cooldown_days : opt nat16;
+};
+type UpdateSentinelPayload = record { new_sentinel : principal };
+type UpdateTokenLimitsPayload = record {
+  new_pass_threshold : opt nat8;
+  new_max_attempts : opt nat8;
+  new_reward_amount : opt nat64;
+  new_regular_limits : opt TokenLimits;
+  new_subscribed_limits : opt TokenLimits;
+};
+type VoteRecord = record {
+  voter : principal;
+  vote : bool;
+  proposal_id : nat64;
+  timestamp : nat64;
+  voting_power : nat64;
+};
 service : (InitArgs) -> {
-    // =========================================================================
-    // Proposal Management - Treasury
-    // =========================================================================
-    
-    // Create a new treasury spending proposal
-    "create_treasury_proposal": (CreateTreasuryProposalInput) -> (variant { Ok: nat64; Err: text });
-    
-    // =========================================================================
-    // Proposal Management - Board Members
-    // =========================================================================
-    
-    // Create a board member proposal (add new member)
-    "create_board_member_proposal": (CreateBoardMemberProposalInput) -> (variant { Ok: nat64; Err: text });
-    
-    // Create a proposal to remove a board member
-    "create_remove_board_member_proposal": (CreateRemoveBoardMemberProposalInput) -> (variant { Ok: nat64; Err: text });
-    
-    // Create a proposal to update a board member's share
-    "create_update_board_member_share_proposal": (CreateUpdateBoardMemberShareProposalInput) -> (variant { Ok: nat64; Err: text });
-    
-    // =========================================================================
-    // Proposal Management - Governance Config
-    // =========================================================================
-    
-    // Create a proposal to update governance configuration
-    "create_update_governance_config_proposal": (CreateUpdateGovernanceConfigProposalInput) -> (variant { Ok: nat64; Err: text });
-    
-    // =========================================================================
-    // Proposal Management - Content Governance
-    // =========================================================================
-    
-    // Create a proposal to add content from staging
-    "create_add_content_proposal": (CreateAddContentProposalInput) -> (variant { Ok: nat64; Err: text });
-    
-    // Create a proposal to update global quiz configuration
-    "create_update_quiz_config_proposal": (CreateUpdateQuizConfigProposalInput) -> (variant { Ok: nat64; Err: text });
-    
-    // Create a proposal to delete a content node
-    "create_delete_content_proposal": (CreateDeleteContentProposalInput) -> (variant { Ok: nat64; Err: text });
-    
-    // =========================================================================
-    // Proposal Actions
-    // =========================================================================
-    
-    // Vote on a proposal (true = YES, false = NO)
-    "vote": (nat64, bool) -> (variant { Ok: null; Err: text });
-
-    // Support a proposal in the Proposed state
-    "support_proposal": (nat64) -> (variant { Ok: null; Err: text });
-    
-    // Execute an Approved proposal
-    "execute_proposal": (nat64) -> (variant { Ok: null; Err: text });
-    
-    // Finalize a proposal after voting period ends
-    "finalize_proposal": (nat64) -> (variant { Ok: ProposalStatus; Err: text });
-    
-    // =========================================================================
-    // Proposal Queries
-    // =========================================================================
-    
-    "get_proposal": (nat64) -> (opt Proposal) query;
-    "get_active_proposals": () -> (vec Proposal) query;
-    "get_all_proposals": () -> (vec Proposal) query;
-    
-    // Get all votes on a proposal
-    "get_proposal_votes": (nat64) -> (vec VoteRecord) query;
-    "get_proposal_supporters": (nat64) -> (vec SupportRecord) query;
-    
-    // Check if a user has voted on a proposal
-    "has_voted": (nat64, principal) -> (bool) query;
-    
-    // Get governance config: (min_power_to_propose, support_threshold, support_days, voting_days, cooldown_days, approval_percentage)
-    "get_governance_config": () -> (nat64, nat64, nat64, nat64, nat64, nat8) query;
-    
-    // =========================================================================
-    // Voting Power
-    // =========================================================================
-    
-    // Get effective voting power for a user (Board Member weighted VUC or Regular User staked balance)
-    "get_user_voting_power": (principal) -> (variant { Ok: nat64; Err: text });
-    
-    // Get effective voting power for the caller
-    "get_my_voting_power": () -> (variant { Ok: nat64; Err: text });
-    
-    // =========================================================================
-    // Board Member Management
-    // =========================================================================
-    
-    // Set all board member shares (admin only, before lock)
-    "set_board_member_shares": (vec BoardMemberShare) -> (variant { Ok: null; Err: text });
-    
-    // Lock board member shares (admin only - use proposals after this)
-    "lock_board_member_shares": () -> (variant { Ok: null; Err: text });
-    
-    // Check if board shares are locked
-    "are_board_shares_locked": () -> (bool) query;
-    
-    // Get all board members with their percentages
-    "get_board_member_shares": () -> (vec BoardMemberShare) query;
-    
-    // Get a specific board member's percentage
-    "get_board_member_share": (principal) -> (opt nat8) query;
-    
-    // Get number of board members
-    "get_board_member_count": () -> (nat64) query;
-    
-    // Check if a principal is a board member
-    "is_board_member": (principal) -> (bool) query;
-    
-    // =========================================================================
-    // Configuration
-    // =========================================================================
-    
-    "get_treasury_canister_id": () -> (principal) query;
-    "get_staking_hub_id": () -> (principal) query;
-    "get_learning_engine_id": () -> (principal) query;
-    "set_learning_engine_id": (principal) -> (variant { Ok: null; Err: text });
-    "set_treasury_canister_id": (principal) -> (variant { Ok: null; Err: text });
-    
-    // =========================================================================
-    // Admin Debug (For Testing)
-    // =========================================================================
-    "admin_expire_proposal": (nat64) -> (variant { Ok: null; Err: text });
-    "admin_set_proposal_status": (nat64, ProposalStatus) -> (variant { Ok: null; Err: text });
+  admin_expire_proposal : (nat64) -> (variant { Ok; Err : text });
+  admin_set_proposal_status : (nat64, ProposalStatus) -> (
+      variant { Ok; Err : text },
+    );
+  are_board_shares_locked : () -> (bool) query;
+  clear_sentinel_member : () -> (variant { Ok; Err : text });
+  create_add_content_proposal : (CreateAddContentProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_board_member_proposal : (CreateBoardMemberProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_delete_content_proposal : (CreateDeleteContentProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_remove_board_member_proposal : (
+      CreateRemoveBoardMemberProposalInput,
+    ) -> (variant { Ok : nat64; Err : text });
+  create_treasury_proposal : (CreateTreasuryProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_update_board_member_share_proposal : (
+      CreateUpdateBoardMemberShareProposalInput,
+    ) -> (variant { Ok : nat64; Err : text });
+  create_update_governance_config_proposal : (
+      CreateUpdateGovernanceConfigProposalInput,
+    ) -> (variant { Ok : nat64; Err : text });
+  create_update_sentinel_proposal : (CreateUpdateSentinelProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  create_update_token_limits_proposal : (
+      CreateUpdateTokenLimitsProposalInput,
+    ) -> (variant { Ok : nat64; Err : text });
+  execute_proposal : (nat64) -> (variant { Ok; Err : text });
+  finalize_proposal : (nat64) -> (variant { Ok : ProposalStatus; Err : text });
+  get_active_proposals : () -> (vec Proposal) query;
+  get_all_board_member_voting_powers : () -> (
+      variant { Ok : vec record { principal; nat16; nat64; bool }; Err : text },
+    );
+  get_all_proposals : () -> (vec Proposal) query;
+  get_board_member_count : () -> (nat64) query;
+  get_board_member_share : (principal) -> (opt nat16) query;
+  get_board_member_shares : () -> (vec BoardMemberShare) query;
+  get_governance_config : () -> (nat64, nat64, nat64, nat64, nat64, nat8) query;
+  get_learning_engine_id : () -> (principal) query;
+  get_my_voting_power : () -> (variant { Ok : nat64; Err : text });
+  get_proposal : (nat64) -> (opt Proposal) query;
+  get_proposal_supporters : (nat64) -> (vec SupportRecord) query;
+  get_proposal_votes : (nat64) -> (vec VoteRecord) query;
+  get_sentinel_member : () -> (opt principal) query;
+  get_staking_hub_id : () -> (principal) query;
+  get_treasury_canister_id : () -> (principal) query;
+  get_user_voting_power : (principal) -> (variant { Ok : nat64; Err : text });
+  has_voted : (nat64, principal) -> (bool) query;
+  is_board_member : (principal) -> (bool) query;
+  lock_board_member_shares : () -> (variant { Ok; Err : text });
+  set_board_member_shares : (vec BoardMemberShare) -> (
+      variant { Ok; Err : text },
+    );
+  set_learning_engine_id : (principal) -> (variant { Ok; Err : text });
+  set_sentinel_member : (principal) -> (variant { Ok; Err : text });
+  set_treasury_canister_id : (principal) -> (variant { Ok; Err : text });
+  support_proposal : (nat64) -> (variant { Ok; Err : text });
+  unlock_board_member_shares : () -> (variant { Ok; Err : text });
+  vote : (nat64, bool) -> (variant { Ok; Err : text });
 }

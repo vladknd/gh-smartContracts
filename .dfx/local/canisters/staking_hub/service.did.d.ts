@@ -2,10 +2,6 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
-export interface BoardMemberShare {
-  'member' : Principal,
-  'percentage' : number,
-}
 export interface GlobalStats {
   'total_staked' : bigint,
   'total_allocated' : bigint,
@@ -63,7 +59,6 @@ export interface _SERVICE {
     { 'Ok' : null } |
       { 'Err' : string }
   >,
-  'are_board_shares_locked' : ActorMethod<[], boolean>,
   'distribute_quiz_cache' : ActorMethod<
     [string, QuizCacheData],
     { 'Ok' : bigint } |
@@ -82,9 +77,6 @@ export interface _SERVICE {
   'fetch_user_voting_power' : ActorMethod<[Principal], bigint>,
   'get_active_shards' : ActorMethod<[], Array<ShardInfo>>,
   'get_archive_for_shard' : ActorMethod<[Principal], [] | [Principal]>,
-  'get_board_member_count' : ActorMethod<[], bigint>,
-  'get_board_member_share' : ActorMethod<[Principal], [] | [number]>,
-  'get_board_member_shares' : ActorMethod<[], Array<BoardMemberShare>>,
   'get_config' : ActorMethod<[], [Principal, Principal, boolean]>,
   'get_global_stats' : ActorMethod<[], GlobalStats>,
   'get_kyc_manager_id' : ActorMethod<[], Principal>,
@@ -98,13 +90,7 @@ export interface _SERVICE {
   'get_total_voting_power' : ActorMethod<[], bigint>,
   'get_user_shard' : ActorMethod<[Principal], [] | [Principal]>,
   'get_vuc' : ActorMethod<[], bigint>,
-  'is_board_member' : ActorMethod<[Principal], boolean>,
   'is_registered_shard' : ActorMethod<[Principal], boolean>,
-  'lock_board_member_shares' : ActorMethod<
-    [],
-    { 'Ok' : null } |
-      { 'Err' : string }
-  >,
   'process_unstake' : ActorMethod<
     [Principal, bigint],
     { 'Ok' : bigint } |
@@ -113,11 +99,6 @@ export interface _SERVICE {
   'register_shard' : ActorMethod<[Principal, [] | [Principal]], undefined>,
   'register_user_location' : ActorMethod<
     [Principal],
-    { 'Ok' : null } |
-      { 'Err' : string }
-  >,
-  'set_board_member_shares' : ActorMethod<
-    [Array<BoardMemberShare>],
     { 'Ok' : null } |
       { 'Err' : string }
   >,

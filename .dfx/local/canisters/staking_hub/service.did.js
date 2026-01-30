@@ -33,10 +33,6 @@ export const idlFactory = ({ IDL }) => {
     'created_at' : IDL.Nat64,
     'archive_canister_id' : IDL.Opt(IDL.Principal),
   });
-  const BoardMemberShare = IDL.Record({
-    'member' : IDL.Principal,
-    'percentage' : IDL.Nat8,
-  });
   const GlobalStats = IDL.Record({
     'total_staked' : IDL.Nat64,
     'total_allocated' : IDL.Nat64,
@@ -59,7 +55,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),
-    'are_board_shares_locked' : IDL.Func([], [IDL.Bool], ['query']),
     'distribute_quiz_cache' : IDL.Func(
         [IDL.Text, QuizCacheData],
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
@@ -80,17 +75,6 @@ export const idlFactory = ({ IDL }) => {
     'get_archive_for_shard' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(IDL.Principal)],
-        ['query'],
-      ),
-    'get_board_member_count' : IDL.Func([], [IDL.Nat64], ['query']),
-    'get_board_member_share' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Opt(IDL.Nat8)],
-        ['query'],
-      ),
-    'get_board_member_shares' : IDL.Func(
-        [],
-        [IDL.Vec(BoardMemberShare)],
         ['query'],
       ),
     'get_config' : IDL.Func(
@@ -122,13 +106,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'get_vuc' : IDL.Func([], [IDL.Nat64], ['query']),
-    'is_board_member' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'is_registered_shard' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
-    'lock_board_member_shares' : IDL.Func(
-        [],
-        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
-        [],
-      ),
     'process_unstake' : IDL.Func(
         [IDL.Principal, IDL.Nat64],
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
@@ -141,11 +119,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'register_user_location' : IDL.Func(
         [IDL.Principal],
-        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
-        [],
-      ),
-    'set_board_member_shares' : IDL.Func(
-        [IDL.Vec(BoardMemberShare)],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),

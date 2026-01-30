@@ -1,75 +1,36 @@
-// ============================================================================
-// Archive Canister Candid Interface
-// ============================================================================
-// This canister stores archived transaction history from user_profile shards.
-// Each archive canister is paired with exactly one user_profile shard.
-// Data is append-only for integrity and audit purposes.
-
-// Arguments for canister initialization
-type InitArgs = record {
-    parent_shard_id : principal;
-};
-
-// Transaction data received from user_profile shard for archiving
-type TransactionToArchive = record {
-    sequence : nat64;
-    timestamp : nat64;
-    transaction_type : text;
-    amount : nat64;
-    metadata : text;
-};
-
-// Archived transaction record (includes archive metadata)
-type ArchivedTransaction = record {
-    sequence : nat64;
-    timestamp : nat64;
-    transaction_type : text;
-    amount : nat64;
-    metadata : text;
-    archived_at : nat64;
-};
-
-// Archive statistics
 type ArchiveStats = record {
-    parent_shard : principal;
-    entry_count : nat64;
-    size_bytes : nat64;
-    is_full : bool;
-    next_archive : opt principal;
+  is_full : bool;
+  size_bytes : nat64;
+  parent_shard : principal;
+  entry_count : nat64;
+  next_archive : opt principal;
 };
-
+type ArchivedTransaction = record {
+  transaction_type : text;
+  metadata : text;
+  timestamp : nat64;
+  amount : nat64;
+  sequence : nat64;
+  archived_at : nat64;
+};
+type InitArgs = record { parent_shard_id : principal };
+type TransactionToArchive = record {
+  transaction_type : text;
+  metadata : text;
+  timestamp : nat64;
+  amount : nat64;
+  sequence : nat64;
+};
 service : (InitArgs) -> {
-    // =========================================================================
-    // Write Operations (Only parent shard can call)
-    // =========================================================================
-    
-    // Receive a batch of transactions to archive
-    // Returns the number of transactions successfully archived
-    receive_archive_batch : (principal, vec TransactionToArchive) -> (variant { Ok : nat64; Err : text });
-    
-    // =========================================================================
-    // Read Operations (Public)
-    // =========================================================================
-    
-    // Get archived transactions for a user (paginated)
-    get_archived_transactions : (principal, opt nat64, nat64) -> (vec ArchivedTransaction) query;
-    
-    // Get count of archived transactions for a user
-    get_archived_count : (principal) -> (nat64) query;
-    
-    // Get total count of all archived transactions
-    get_total_archived_count : () -> (nat64) query;
-    
-    // Get archive statistics
-    get_stats : () -> (ArchiveStats) query;
-    
-    // =========================================================================
-    // Admin Operations
-    // =========================================================================
-    
-    // Get parent shard ID
-    get_parent_shard : () -> (principal) query;
-    
-    // Set next archive in chain (for future scaling)
-    set_next_archive : (principal) -> (variant { Ok : null; Err : text });
+  get_archived_count : (principal) -> (nat64) query;
+  get_archived_transactions : (principal, opt nat64, nat64) -> (
+      vec ArchivedTransaction,
+    ) query;
+  get_parent_shard : () -> (principal) query;
+  get_stats : () -> (ArchiveStats) query;
+  get_total_archived_count : () -> (nat64) query;
+  receive_archive_batch : (principal, vec TransactionToArchive) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  set_next_archive : (principal) -> (variant { Ok; Err : text });
 }

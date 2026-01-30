@@ -2,19 +2,9 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
-/**
- * ============================================================================
- * Version History Types
- * ============================================================================
- */
 export type ChangeType = { 'Updated' : null } |
   { 'Created' : null } |
   { 'Deleted' : null };
-/**
- * ============================================================================
- * Content Node Types
- * ============================================================================
- */
 export interface ContentNode {
   'id' : string,
   'media' : [] | [MediaContent],
@@ -36,16 +26,6 @@ export interface ContentSnapshot {
   'change_type' : ChangeType,
   'modified_by_proposal' : bigint,
 }
-/**
- * ============================================================================
- * Learning Engine Candid Interface
- * ============================================================================
- * Flexible tree-based content structure with quiz management
- * Updated: January 2026
- * ============================================================================
- * Initialization
- * ============================================================================
- */
 export interface InitArgs {
   'governance_canister_id' : [] | [Principal],
   'staking_hub_id' : Principal,
@@ -62,11 +42,6 @@ export interface LoadingJob {
   'proposal_id' : bigint,
   'started_at' : bigint,
 }
-/**
- * ============================================================================
- * Loading Job Types
- * ============================================================================
- */
 export type LoadingStatus = { 'Failed' : null } |
   { 'Paused' : null } |
   { 'InProgress' : null } |
@@ -78,11 +53,6 @@ export interface MediaContent {
   'file_hash' : [] | [string],
   'thumbnail_url' : [] | [string],
 }
-/**
- * ============================================================================
- * Media Types
- * ============================================================================
- */
 export type MediaType = { 'PDF' : null } |
   { 'Image' : null } |
   { 'Audio' : null } |
@@ -113,34 +83,12 @@ export interface QuizCacheData {
   'version' : bigint,
   'answer_hashes' : Array<Uint8Array | number[]>,
 }
-export interface QuizConfig {
-  /**
-   * Quiz limits - maximum quizzes per time period
-   */
-  'max_daily_quizzes' : number,
-  'reward_amount' : bigint,
-  'max_monthly_quizzes' : number,
-  'pass_threshold_percent' : number,
-  'max_daily_attempts' : number,
-  'max_weekly_quizzes' : number,
-  'max_yearly_quizzes' : number,
-}
 export interface QuizData { 'questions' : Array<QuizQuestion> }
-/**
- * ============================================================================
- * Quiz Types
- * ============================================================================
- */
 export interface QuizQuestion {
   'question' : string,
   'answer' : number,
   'options' : Array<string>,
 }
-/**
- * ============================================================================
- * Service Definition
- * ============================================================================
- */
 export interface _SERVICE {
   'add_content_node' : ActorMethod<
     [ContentNode],
@@ -163,6 +111,7 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'get_all_loading_jobs' : ActorMethod<[], Array<LoadingJob>>,
+  'get_all_quiz_cache_data' : ActorMethod<[], Array<[string, QuizCacheData]>>,
   'get_changes_by_proposal' : ActorMethod<
     [bigint],
     Array<[string, ChangeType]>
@@ -177,7 +126,6 @@ export interface _SERVICE {
     [string],
     Array<[bigint, ContentSnapshot]>
   >,
-  'get_global_quiz_config' : ActorMethod<[], QuizConfig>,
   'get_loading_status' : ActorMethod<[bigint], [] | [LoadingJob]>,
   'get_quiz_data' : ActorMethod<[string], [] | [QuizCacheData]>,
   'get_root_nodes' : ActorMethod<[], Array<PublicContentNode>>,
@@ -188,19 +136,6 @@ export interface _SERVICE {
   >,
   'start_content_load' : ActorMethod<
     [bigint, Principal, string, string, number],
-    { 'Ok' : null } |
-      { 'Err' : string }
-  >,
-  'update_global_quiz_config' : ActorMethod<
-    [
-      [] | [bigint],
-      [] | [number],
-      [] | [number],
-      [] | [number],
-      [] | [number],
-      [] | [number],
-      [] | [number],
-    ],
     { 'Ok' : null } |
       { 'Err' : string }
   >,

@@ -45,7 +45,7 @@ log_step "Setting initial board members (Controller Only)"
 # Ensure we are controller
 dfx canister update-settings governance_canister --add-controller "$USER_P" &>/dev/null || true
 
-RES=$(dfx canister call governance_canister set_board_member_shares "(vec { record { member = principal \"$USER_P\"; percentage = 100 } })" 2>&1 || true)
+RES=$(dfx canister call governance_canister set_board_member_shares "(vec { record { member = principal \"$USER_P\"; share_bps = 10000 : nat16; is_sentinel = false } })" --candid src/governance_canister/governance_canister.did 2>&1 || true)
 if [[ "$RES" == *"Ok"* ]]; then
     log_pass "Initial board configuration successful"
 elif [[ "$RES" == *"locked"* ]]; then
@@ -54,8 +54,12 @@ else
     log_fail "Board configuration failed: $RES"
 fi
 
+log_step "Setting sentinel member (Required for locking)"
+SENTINEL_P="rrkah-fqaaa-aaaaa-aaaaq-cai"
+dfx canister call governance_canister set_sentinel_member "(principal \"$SENTINEL_P\")" --candid src/governance_canister/governance_canister.did &>/dev/null || true
+
 log_step "Locking board member shares"
-dfx canister call governance_canister lock_board_member_shares &>/dev/null || true
+dfx canister call governance_canister lock_board_member_shares --candid src/governance_canister/governance_canister.did &>/dev/null || true
 log_pass "Board configuration locked"
 
 # ============================================================================

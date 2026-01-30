@@ -1,17 +1,44 @@
 use candid::{Principal, CandidType, Deserialize};
 use crate::state::*;
+use crate::constants::*;
 
 // ============================================================================
 // BOARD MEMBER HELPERS
 // ============================================================================
 
-/// Check if a principal is a board member (local check)
+/// Check if a principal is any type of board member (regular or sentinel)
 pub fn is_board_member_local(principal: &Principal) -> bool {
+    // Check if sentinel
+    let sentinel = SENTINEL_MEMBER.with(|s| *s.borrow().get());
+    if sentinel != Principal::anonymous() && sentinel == *principal {
+        return true;
+    }
+    // Check if regular board member
     BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(principal))
 }
 
-/// Get a board member's percentage share (internal)
-pub fn get_board_member_percentage_local(principal: &Principal) -> Option<u8> {
+/// Check if a principal is the sentinel member
+pub fn is_sentinel_local(principal: &Principal) -> bool {
+    let sentinel = SENTINEL_MEMBER.with(|s| *s.borrow().get());
+    sentinel != Principal::anonymous() && sentinel == *principal
+}
+
+/// Get the sentinel member's principal (returns None if not set)
+pub fn get_sentinel_local() -> Option<Principal> {
+    let sentinel = SENTINEL_MEMBER.with(|s| *s.borrow().get());
+    if sentinel == Principal::anonymous() {
+        None
+    } else {
+        Some(sentinel)
+    }
+}
+
+/// Get a regular board member's BPS share (returns None for sentinel or non-member)
+pub fn get_board_member_share_bps_local(principal: &Principal) -> Option<u16> {
+    // Sentinel is not in BPS map
+    if is_sentinel_local(principal) {
+        return None;
+    }
     BOARD_MEMBER_SHARES.with(|b| b.borrow().get(principal))
 }
 
@@ -91,16 +118,26 @@ pub async fn calculate_approval_threshold() -> Result<u64, String> {
     Ok(threshold)
 }
 
+// ============================================================================
+// VOTING POWER CALCULATION (Cumulative Partitioning - Zero Dust)
+// ============================================================================
+
 /// Fetch voting power for a user
-/// - Board members: returns VUC * percentage / 100 (queries staking hub for VUC)
-/// - Regular users: returns staked balance (queries staking hub)
+/// 
+/// - Sentinel member: returns exactly 1 unit of VUC (1 e8s)
+/// - Regular board members: calculated using cumulative partitioning for zero dust
+/// - Regular users: returns staked balance from staking hub
 pub async fn fetch_voting_power(user: Principal) -> Result<u64, String> {
     let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
     
-    // Check if board member first
-    if let Some(percentage) = get_board_member_percentage_local(&user) {
-        // It's a board member!
-        // Their power is (percentage / 100) * VUC
+    // Check if sentinel first - sentinel gets exactly 1 unit of VUC
+    if is_sentinel_local(&user) {
+        return Ok(1); // Exactly 1 e8s of voting power
+    }
+    
+    // Check if regular board member
+    if let Some(_user_share_bps) = get_board_member_share_bps_local(&user) {
+        // It's a regular board member - use cumulative partitioning
         
         // Fetch VUC from staking hub
         let result: Result<(u64,), _> = ic_cdk::call(
@@ -109,13 +146,36 @@ pub async fn fetch_voting_power(user: Principal) -> Result<u64, String> {
             (),
         ).await;
         
-        match result {
-            Ok((vuc,)) => {
-                let power = (vuc * percentage as u64) / 100;
-                return Ok(power);
-            },
+        let vuc = match result {
+            Ok((v,)) => v,
             Err((code, msg)) => return Err(format!("Failed to fetch VUC: {:?} {}", code, msg)),
+        };
+        
+        // Get all board members sorted by Principal for determinism
+        let mut all_members: Vec<(Principal, u16)> = BOARD_MEMBER_SHARES.with(|b| {
+            b.borrow().iter().collect()
+        });
+        all_members.sort_by(|a, b| a.0.cmp(&b.0));
+        
+        // Use cumulative partitioning to calculate power without dust
+        // Formula: power[i] = (VUC * cumulative_bps[0..i+1]) / BPS_TOTAL - (VUC * cumulative_bps[0..i]) / BPS_TOTAL
+        let mut cumulative_bps: u32 = 0;
+        let mut prev_boundary: u64 = 0;
+        
+        for (member, share_bps) in all_members {
+            cumulative_bps += share_bps as u32;
+            let current_boundary = (vuc as u128 * cumulative_bps as u128 / BPS_TOTAL as u128) as u64;
+            let power = current_boundary - prev_boundary;
+            
+            if member == user {
+                return Ok(power);
+            }
+            
+            prev_boundary = current_boundary;
         }
+        
+        // Should not reach here if user is in the map
+        return Err(format!("Board member {} not found in shares map", user));
     }
     
     // Not a board member, check user staked balance
@@ -129,4 +189,50 @@ pub async fn fetch_voting_power(user: Principal) -> Result<u64, String> {
         Ok((power,)) => Ok(power),
         Err((code, msg)) => Err(format!("Failed to fetch user power: {:?} {}", code, msg)),
     }
+}
+
+/// Calculate all board member voting powers at once (for display/debugging)
+/// Returns Vec of (Principal, share_bps, voting_power, is_sentinel)
+pub async fn calculate_all_board_member_powers() -> Result<Vec<(Principal, u16, u64, bool)>, String> {
+    let staking_hub_id = STAKING_HUB_ID.with(|id| *id.borrow().get());
+    
+    // Fetch VUC from staking hub
+    let result: Result<(u64,), _> = ic_cdk::call(
+        staking_hub_id,
+        "get_vuc",
+        (),
+    ).await;
+    
+    let vuc = match result {
+        Ok((v,)) => v,
+        Err((code, msg)) => return Err(format!("Failed to fetch VUC: {:?} {}", code, msg)),
+    };
+    
+    let mut powers: Vec<(Principal, u16, u64, bool)> = Vec::new();
+    
+    // Add sentinel first if set
+    if let Some(sentinel) = get_sentinel_local() {
+        powers.push((sentinel, 0, 1, true)); // 0 BPS, 1 unit power, is_sentinel = true
+    }
+    
+    // Get all regular board members sorted
+    let mut all_members: Vec<(Principal, u16)> = BOARD_MEMBER_SHARES.with(|b| {
+        b.borrow().iter().collect()
+    });
+    all_members.sort_by(|a, b| a.0.cmp(&b.0));
+    
+    // Calculate using cumulative partitioning
+    let mut cumulative_bps: u32 = 0;
+    let mut prev_boundary: u64 = 0;
+    
+    for (member, share_bps) in all_members {
+        cumulative_bps += share_bps as u32;
+        let current_boundary = (vuc as u128 * cumulative_bps as u128 / BPS_TOTAL as u128) as u64;
+        let power = current_boundary - prev_boundary;
+        
+        powers.push((member, share_bps, power, false));
+        prev_boundary = current_boundary;
+    }
+    
+    Ok(powers)
 }

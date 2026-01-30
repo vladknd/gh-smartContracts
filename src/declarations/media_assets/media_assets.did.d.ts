@@ -13,13 +13,6 @@ export interface FileMetadata {
   'uploaded_at' : bigint,
 }
 export interface InitArgs { 'allowed_uploaders' : Array<Principal> }
-/**
- * ============================================================================
- * Media Assets Canister Candid Interface
- * ============================================================================
- * Permanent storage for media files (videos, images, audio, PDFs)
- * Updated: January 2026
- */
 export type MediaType = { 'PDF' : null } |
   { 'Image' : null } |
   { 'Audio' : null } |

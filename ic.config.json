@@ -3,16 +3,21 @@
     "host": "http://localhost:4943",
     "canisters": {
         "icrc1_index": "ucwa4-rx777-77774-qaada-cai",
-        "user_profile": "v27v7-7x777-77774-qaaha-cai",
-        "learning_engine": "vizcg-th777-77774-qaaea-cai",
-        "staking_hub": "vu5yx-eh777-77774-qaaga-cai",
-        "treasury_canister": "vt46d-j7777-77774-qaagq-cai",
+        "user_profile": "xad5d-bh777-77774-qaaia-cai",
+        "learning_engine": "vpyes-67777-77774-qaaeq-cai",
+        "staking_hub": "vt46d-j7777-77774-qaagq-cai",
+        "treasury_canister": "v56tl-sp777-77774-qaahq-cai",
         "governance_canister": "umunu-kh777-77774-qaaca-cai",
         "ghc_ledger": "uzt4z-lp777-77774-qaabq-cai",
-        "media_assets": "vpyes-67777-77774-qaaeq-cai",
-        "staging_assets": "vb2j2-fp777-77774-qaafq-cai",
+        "media_assets": "vg3po-ix777-77774-qaafa-cai",
+        "staging_assets": "vu5yx-eh777-77774-qaaga-cai",
         "internet_identity": "ufxgi-4p777-77774-qaadq-cai",
-        "founder_vesting": "u6s2n-gx777-77774-qaaba-cai"
+        "founder_vesting": "u6s2n-gx777-77774-qaaba-cai",
+        "subscription_canister": "v27v7-7x777-77774-qaaha-cai",
+        "kyc_canister": "vizcg-th777-77774-qaaea-cai",
+        "archive_canister": "uxrrr-q7777-77774-qaaaq-cai",
+        "sonic_adapter": "vb2j2-fp777-77774-qaafq-cai",
+        "ico_canister": "ulvla-h7777-77774-qaacq-cai"
     },
     "founders": [
         {

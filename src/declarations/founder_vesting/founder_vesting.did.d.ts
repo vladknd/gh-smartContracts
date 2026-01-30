@@ -2,61 +2,34 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
-/**
- * Founder Vesting Canister Interface
- * Manages time-locked founder token allocations with 10%/year vesting
- */
-export interface InitArgs {
-  /**
-   * GHC Ledger canister ID
-   */
-  'founder1' : Principal,
-  /**
-   * Founder 1 principal (0.35B allocation)
-   */
-  'founder2' : Principal,
-  'ledger_id' : Principal,
-}
-/**
- * Internal vesting schedule (not exposed directly)
- */
+export interface InitArgs { 'ledger_id' : Principal }
 export interface VestingSchedule {
   'claimed' : bigint,
   'vesting_start' : bigint,
   'founder' : Principal,
   'total_allocation' : bigint,
 }
-/**
- * Public vesting status for queries
- */
 export interface VestingStatus {
-  /**
-   * Available to claim now (in e8s)
-   */
   'years_elapsed' : bigint,
-  /**
-   * Currently vested/unlocked (in e8s)
-   */
   'claimed' : bigint,
-  /**
-   * Already claimed (in e8s)
-   */
   'claimable' : bigint,
   'founder' : Principal,
-  /**
-   * Total tokens allocated (in e8s)
-   */
   'vested' : bigint,
-  /**
-   * Founder principal ID
-   */
   'total_allocation' : bigint,
-  /**
-   * Years since vesting start
-   */
   'unlock_percentage' : bigint,
 }
 export interface _SERVICE {
+  'admin_claim_vested_at' : ActorMethod<
+    [bigint],
+    { 'Ok' : bigint } |
+      { 'Err' : string }
+  >,
+  'admin_register_founder' : ActorMethod<
+    [Principal, bigint],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
+  'admin_set_genesis_timestamp' : ActorMethod<[bigint], undefined>,
   'claim_vested' : ActorMethod<[], { 'Ok' : bigint } | { 'Err' : string }>,
   'get_all_vesting_schedules' : ActorMethod<[], Array<VestingStatus>>,
   'get_genesis_timestamp' : ActorMethod<[], bigint>,

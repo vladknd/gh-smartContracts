@@ -322,15 +322,12 @@ import sys
 
 raw = '''$EXISTING_SHARES'''
 
-
 if raw.strip() == "(vec {})":
-    # Empty list, handle gracefully (will add current user)
     members = []
 else:
-    # Parse the principals and percentages
-    members = re.findall(r'member = principal "([^"]+)";\s*percentage = (\d+)', raw)
+    # Parse the principals and BPS
+    members = re.findall(r'member = principal "([^"]+)";\s*is_sentinel = (false|true);\s*share_bps = ([\d_]+)', raw)
     if not members and "vec" in raw:
-        # Might be different format or empty
         pass
     elif not members:
         print("ERROR: Could not parse existing board members", file=sys.stderr)
@@ -338,44 +335,34 @@ else:
 
 test_user = "$USER_PRINCIPAL"
 
-# If only a few members, we can add a new one
-# Reduce each member's share proportionally to make room for 10%
-new_shares = []
-remaining = 90  # 100 - 10 for test user
-total_orig = sum(int(pct) for _, pct in members)
+# Filter out sentinel and use only regular members for BPS redistribution
+regular_members = [(m[0], int(m[2].replace("_", ""))) for m in members if m[1] == "false"]
 
-for principal, pct in members:
-    # Proportionally reduce
-    new_pct = max(1, int(int(pct) * 90 / total_orig))
-    new_shares.append((principal, new_pct))
-
-# Add test user with 10%
-new_shares.append((test_user, 10))
-
-# Adjust to make sure total is 100
-current_total = sum(pct for _, pct in new_shares)
-if current_total != 100:
-    diff = 100 - current_total
-    # If we have other members, adjust largest. If not, test user is only one (already 10).
-    # If test user is only one, set to 100.
-    if len(new_shares) > 1:
-        # Check if diff is negative (we added 10, so total probably > 100 if it was 100)
-        # But we previously reduced everyone?
-        # My previous logic was: reduce existing to 90%.
-        # If empty, loop didn't run. new_shares has only test user (10). total=10.
-        # diff = 90.
-        # Add diff to largest (test user). 10+90=100.
-        pass
+# If no regular members, test user gets 100% (10000 BPS)
+if not regular_members:
+    new_shares = [(test_user, 10000)]
+else:
+    # Give test user 10% (1000 BPS) and reduce others proportionally
+    # Others share 9000 BPS
+    new_shares = []
+    total_orig = sum(pct for _, pct in regular_members)
+    for principal, pct in regular_members:
+        new_pct = max(1, int(pct * 9000 / total_orig))
+        new_shares.append((principal, new_pct))
     
-    # Add diff to largest share
+    new_shares.append((test_user, 1000))
+
+# Adjust to make sure total is 10000
+current_total = sum(pct for _, pct in new_shares)
+if current_total != 10000:
+    diff = 10000 - current_total
     largest_idx = max(range(len(new_shares)), key=lambda i: new_shares[i][1])
     new_shares[largest_idx] = (new_shares[largest_idx][0], new_shares[largest_idx][1] + diff)
-
 
 # Build Candid vec
 parts = []
 for principal, pct in new_shares:
-    parts.append(f'record {{ member = principal "{principal}"; percentage = {pct} : nat8 }}')
+    parts.append(f'record {{ member = principal "{principal}"; share_bps = {pct} : nat16; is_sentinel = false }}')
 
 print("vec { " + "; ".join(parts) + " }")
 PYEOF
@@ -387,9 +374,9 @@ PYEOF
         log_fail "Could not parse existing board members"
         # Try alternative: just set the test user as sole board member for testing
         log_substep "Fallback: Setting test user as only board member..."
-        SET_RESULT=$(dfx canister call governance_canister set_board_member_shares "(vec { record { member = principal \"$USER_PRINCIPAL\"; percentage = 100 : nat8 } })" 2>&1)
+        SET_RESULT=$(dfx canister call governance_canister set_board_member_shares "(vec { record { member = principal \"$USER_PRINCIPAL\"; share_bps = 10000 : nat16; is_sentinel = false } })" --candid src/governance_canister/governance_canister.did 2>&1)
     else
-        SET_RESULT=$(dfx canister call governance_canister set_board_member_shares "($NEW_SHARES)" 2>&1)
+        SET_RESULT=$(dfx canister call governance_canister set_board_member_shares "($NEW_SHARES)" --candid src/governance_canister/governance_canister.did 2>&1)
     fi
     
     echo "Set shares result: $SET_RESULT"

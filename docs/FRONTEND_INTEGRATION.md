@@ -24,17 +24,19 @@ Complete API reference for integrating React/TypeScript frontends with the Green
 6. [Staking Hub Canister](#6-staking-hub-canister)
 7. [Treasury Canister](#7-treasury-canister)
 8. [Governance Canister](#8-governance-canister)
-9. [Content Governance Canisters](#9-content-governance-canisters)
-10. [GHC Ledger (ICRC-1)](#10-ghc-ledger-icrc-1)
-11. [Founder Vesting Canister](#11-founder-vesting-canister)
-12. [ICRC-1 Index Canister](#12-icrc-1-index-canister)
-13. [ICO Canister](#13-ico-canister) *(NEW)*
-14. [Sonic Adapter Canister](#14-sonic-adapter-canister) *(NEW)*
-15. [Archive Canister](#15-archive-canister) *(NEW)*
-16. [Complete React Integration](#16-complete-react-integration)
-17. [Error Handling](#17-error-handling)
-18. [UI Pages Reference](#18-ui-pages-reference)
-19. [Migration from operational_governance](#19-migration-from-operational_governance)
+9. [Content Governance (Staging & Media)](#9-content-governance-canisters)
+10. [KYC Canister](#10-kyc-canister) *(NEW)*
+11. [Subscription Canister](#11-subscription-canister) *(NEW)*
+12. [GHC Ledger (ICRC-1)](#12-ghc-ledger-icrc-1)
+13. [Founder Vesting Canister](#13-founder-vesting-canister)
+14. [ICRC-1 Index Canister](#14-icrc-1-index-canister)
+15. [ICO Canister](#15-ico-canister)
+16. [Sonic Adapter Canister](#16-sonic-adapter-canister)
+17. [Archive Canister](#17-archive-canister)
+18. [Complete React Integration](#18-complete-react-integration)
+19. [Error Handling](#19-error-handling)
+20. [UI Pages Reference](#20-ui-pages-reference)
+21. [Migration Guide](#21-migration-from-operational_governance)
 
 ---
 
@@ -106,20 +108,22 @@ This creates declaration files in `src/declarations/` for each canister with Typ
 
 | Canister | Responsibilities |
 |----------|------------------|
-| **user_profile** | User registration, quiz submission, staking, verification tiers |
-| **staking_hub** | Global stats, VUC provider, user voting power oracle, shard management |
-| **learning_engine** | Content storage, quiz data, hierarchical curriculum |
-| **treasury_canister** | Token custody, balance tracking, MMCR releases, transfer execution |
-| **governance_canister** | Proposals, voting, board member management, configurable timings |
-| **ghc_ledger** | ICRC-1 token ledger for GHC |
-| **founder_vesting** | Time-locked founder token vesting |
-| **icrc1_index_canister** | Transaction history indexing |
-| **media_assets** | Permanent storage for approved media files |
-| **staging_assets** | Temporary storage for content awaiting governance approval |
-| **archive_canister** | Long-term transaction history archival from user_profile shards |
-| **ico_canister** | Fixed-price token sales with ckUSDC payments |
-| **sonic_adapter** | DEX integration for adding liquidity and swaps |
-| **internet_identity** | User authentication |
+| **user_profile** | User registration, quiz submission, token earnings, and staking management. |
+| **staking_hub** | Global stats, VUC provider, user voting power oracle, shard management, and token limits. |
+| **learning_engine** | Content storage, quiz data, hierarchical curriculum, and content loading. |
+| **treasury_canister** | Token custody, balance tracking, MMCR releases, transfer execution. |
+| **governance_canister** | Proposals, voting, board member management, configurable timings. |
+| **kyc_canister** | Identity verification management and tier updates. |
+| **subscription_canister** | Paid subscription management and Stripe/Checkout integration. |
+| **ghc_ledger** | ICRC-1 token ledger for GHC. |
+| **founder_vesting** | Time-locked founder token vesting. |
+| **icrc1_index_canister** | Transaction history indexing. |
+| **media_assets** | Permanent storage for approved media files. |
+| **staging_assets** | Temporary storage for content awaiting governance approval. |
+| **archive_canister** | Long-term transaction history archival from user_profile shards. |
+| **ico_canister** | Fixed-price token sales with ckUSDC payments. |
+| **sonic_adapter** | DEX integration for adding liquidity and swaps. |
+| **internet_identity** | User authentication. |
 
 ---
 
@@ -154,6 +158,10 @@ export const CANISTER_IDS = {
   
   // Archive & History
   archive_canister: "ddddd-ddddd-ddddd-ddddd-cai",
+  
+  // KYC & Subscriptions
+  kyc_canister: "eeeee-eeeee-eeeee-eeeee-cai",
+  subscription_canister: "fffff-fffff-fffff-fffff-cai",
   
   // Authentication
   internet_identity: "uxrrr-q7777-77774-qaaaq-cai",
@@ -208,6 +216,19 @@ type TransactionRecord = {
   tx_type: { QuizReward: null } | { Unstake: null };
   amount: bigint;
 };
+
+type TransactionPage = {
+  transactions: TransactionRecord[];
+  local_count: bigint;
+  archived_count: bigint;
+  total_count: bigint;
+  current_page: number;
+  total_pages: number;
+  has_archive_data: boolean;
+  archive_canister_id: Principal | null;
+  source: string;
+};
+
 ```
 
 ### Query Methods
@@ -217,7 +238,8 @@ type TransactionRecord = {
 | `get_profile` | `principal` | `Option<UserProfile>` | Get user's profile and balance |
 | `get_user_stats` | `principal` | `UserTimeStats` | Periodic quiz/earning limits |
 | `is_quiz_completed` | `principal, unit_id: string` | `bool` | Check if quiz was completed |
-| `get_user_transactions` | `principal` | `Vec<TransactionRecord>` | Transaction history |
+| `get_user_transactions` | `principal` | `Vec<TransactionRecord>` | Transaction history (local only) |
+| `get_transactions_page` | `principal, page: nat32` | `TransactionPage` | Paginated history (local + archive) |
 | `get_user_count` | - | `nat64` | Total users in this shard |
 
 ### Update Methods
@@ -226,8 +248,9 @@ type TransactionRecord = {
 |--------|-----------|---------|-------------|
 | `register_user` | `UserProfileUpdate` | `Result<(), String>` | Register new user |
 | `update_profile` | `UserProfileUpdate` | `Result<(), String>` | Update profile info |
-| `submit_quiz` | `unit_id: string, answers: Vec<u8>` | `Result<nat64, String>` | Submit quiz, earn tokens |
+| `submit_quiz` | `unit_id: string, answers: Blob` | `Result<nat64, String>` | Submit quiz, earn tokens |
 | `unstake` | `amount: nat64` | `Result<nat64, String>` | Withdraw tokens to wallet |
+
 
 ### Code Examples
 
@@ -248,11 +271,13 @@ await userProfileActor.register_user({
 const [userProfile] = await userProfileActor.get_profile(userPrincipal);
 const stakedBalance = Number(userProfile.staked_balance) / 1e8;
 
-// Submit quiz (answers as array of option indices)
-const result = await userProfileActor.submit_quiz("unit_1", [0, 2, 1, 3]);
+// Submit quiz (answers as encoded Blob)
+const quizBlob = new Uint8Array([0, 2, 1, 3]);
+const result = await userProfileActor.submit_quiz("unit_1", quizBlob);
 if ('Ok' in result) {
-  console.log(`Earned ${Number(result.Ok) / 1e8} GHC`); // 100 GHC per quiz
+  console.log(`Earned ${Number(result.Ok) / 1e8} GHC`); 
 }
+
 
 // Check limits
 const stats = await userProfileActor.get_user_stats(userPrincipal);
@@ -317,12 +342,6 @@ type PublicContentNode = {
   version: bigint;
 };
 
-// Global quiz configuration
-type QuizConfig = {
-  reward_amount: bigint;         // Tokens per quiz (default: 10B e8s = 100 GHC)
-  pass_threshold_percent: number; // Min score to pass (default: 80%)
-  max_daily_attempts: number;     // Per-quiz daily limit (default: 5)
-};
 ```
 
 ### Content Hierarchy
@@ -345,8 +364,8 @@ CHAPTER (root node, parent_id = null)
 | `get_children` | `parent_id: string` | `Vec<PublicContentNode>` | Get children of a node, sorted by order |
 | `get_content_node` | `id: string` | `Option<PublicContentNode>` | Get single node by ID |
 | `get_content_stats` | - | `(nat64, nat64)` | (total_nodes, quizzes_count) |
-| `get_global_quiz_config` | - | `QuizConfig` | Global quiz reward settings |
-| `verify_quiz` | `content_id: string, answers: Vec<u8>` | `(bool, nat64, nat64)` | (passed, correct, total) |
+| `verify_quiz` | `content_id: string, answers: Blob` | `(bool, nat64, nat64)` | (passed, correct, total) |
+
 
 ### Code Examples
 
@@ -382,14 +401,10 @@ if (node.length > 0) {
   console.log(`Type: ${content.display_type}`);
 }
 
-// Get quiz configuration
-const config = await learningEngineActor.get_global_quiz_config();
-console.log(`Reward: ${Number(config.reward_amount) / 1e8} GHC per quiz`);
-console.log(`Pass threshold: ${config.pass_threshold_percent}%`);
-
 // Get statistics
 const [nodeCount, quizCount] = await learningEngineActor.get_content_stats();
 console.log(`${nodeCount} content nodes, ${quizCount} quizzes`);
+
 ```
 
 ### Quiz Submission (via user_profile)
@@ -424,6 +439,23 @@ type GlobalStats = {
   total_unstaked: bigint;  // Total tokens unstaked
   total_allocated: bigint; // Total tokens mined
 };
+
+type TokenLimits = {
+  max_daily_tokens: bigint;
+  max_weekly_tokens: bigint;
+  max_monthly_tokens: bigint;
+  max_yearly_tokens: bigint;
+};
+
+type TokenLimitsConfig = {
+  reward_amount: bigint;
+  pass_threshold_percent: number;
+  max_daily_attempts: number;
+  regular_limits: TokenLimits;
+  subscribed_limits: TokenLimits;
+  version: bigint;
+};
+
 ```
 
 ### Query Methods
@@ -435,6 +467,8 @@ type GlobalStats = {
 | `get_total_voting_power` | - | `nat64` | VUC + total_staked |
 | `get_tokenomics` | - | `(nat64, nat64, nat64, nat64)` | (max_supply, allocated, vuc, total_power) |
 | `get_user_shard` | `principal` | `Option<Principal>` | Get user's shard canister |
+| `get_token_limits` | - | `TokenLimitsConfig` | Current quiz reward and token limit settings |
+
 
 ### Update Methods
 
@@ -460,6 +494,11 @@ const vuc = await stakingHubActor.get_vuc();
 
 // Get user's staked balance (regular users)
 const stakedBalance = await stakingHubActor.fetch_user_voting_power(userPrincipal);
+
+// Get token limits and rewards
+const limits = await stakingHubActor.get_token_limits();
+console.log(`Daily Max: ${Number(limits.regular_limits.max_daily_tokens) / 1e8} GHC`);
+
 ```
 
 ---
@@ -556,6 +595,7 @@ All timing parameters are configurable via `UpdateGovernanceConfig` proposals.
 | Min voting power to propose | 150 tokens | Required to create proposals |
 | Support threshold | 15,000 tokens | Voting power needed to move from Proposed to Active |
 | Approval percentage | 30% | Percentage of total staked needed for YES votes to pass |
+| **Board Member Rule** | **At least 1** | A proposal MUST receive at least one YES vote from a board member identity to be approved. |
 | **Support period** | 7 days | Time for regular user proposals to gather support (configurable) |
 | **Voting period** | 14 days | Duration for active voting (configurable) |
 | **Resubmission cooldown** | 180 days | Wait time for rejected proposals (configurable) |
@@ -574,12 +614,18 @@ type ProposalType =
   | { Treasury: null }            // Token transfer proposal
   | { AddBoardMember: null }      // Add new board member
   | { RemoveBoardMember: null }   // Remove existing board member
-  | { UpdateBoardMemberShare: null }; // Update board member's share percentage
+  | { UpdateBoardMemberShare: null } // Update board member's share
+  | { UpdateGovernanceConfig: null } // Update governance parameters
+  | { AddContentFromStaging: null } // Approve educational content
+  | { DeleteContentNode: null }     // Delete educational content
+  | { UpdateTokenLimits: null }    // Update quiz rewards/limits
+  | { UpdateSentinel: null };       // Update sentinel member
 
 type TokenType = 
   | { GHC: null }
   | { USDC: null }
   | { ICP: null };
+
 
 type ProposalCategory = 
   | { Marketing: null }
@@ -609,6 +655,7 @@ type Proposal = {
   votes_yes: bigint;
   votes_no: bigint;
   voter_count: bigint;
+  board_member_yes_count: number;
   support_amount: bigint;
   supporter_count: bigint;
   status: ProposalStatus;
@@ -616,7 +663,7 @@ type Proposal = {
 
 type AddBoardMemberPayload = {
   new_member: Principal;
-  percentage: number;
+  share_bps: number;    // Basis points (100 = 1%)
 };
 
 type RemoveBoardMemberPayload = {
@@ -625,8 +672,9 @@ type RemoveBoardMemberPayload = {
 
 type UpdateBoardMemberSharePayload = {
   member: Principal;
-  new_percentage: number;
+  new_share_bps: number; // Basis points
 };
+
 
 type VoteRecord = {
   voter: Principal;
@@ -657,7 +705,7 @@ type BoardMemberProposalInput = {
   title: string;
   description: string;
   new_member: Principal;
-  percentage: number; // 1-99
+  share_bps: number;   // Share in basis points (1-9900)
   external_link: [] | [string];
 };
 
@@ -672,14 +720,16 @@ type UpdateBoardMemberShareProposalInput = {
   title: string;
   description: string;
   member: Principal;
-  new_percentage: number; // 1-99
+  new_share_bps: number; // New share in basis points (1-9900)
   external_link: [] | [string];
 };
 
 type BoardMemberShare = {
   member: Principal;
-  percentage: number;
+  share_bps: number;    // Basis points (10000 = 100%)
+  is_sentinel: boolean; // True for the sentinel member (1 unit power)
 };
+
 ```
 
 ### Query Methods - Proposals
@@ -692,27 +742,25 @@ type BoardMemberShare = {
 | `get_proposal_votes` | `id: nat64` | `Vec<VoteRecord>` | Who voted on proposal |
 | `get_proposal_supporters` | `id: nat64` | `Vec<SupportRecord>` | Who supported proposal |
 | `has_voted` | `id: nat64, voter: Principal` | `bool` | Check if user voted |
-| `get_governance_config` | - | `GovernanceConfig` | All governance parameters (see below) |
+| `get_governance_config` | - | `(nat64, nat64, nat64, nat64, nat64, nat8)` | support_threshold, min_voting_power, support_period, voting_period, resubmission_cooldown, approval_percentage |
 
-### Governance Config Structure
+### Governance Config Structure (from get_governance_config)
 
-```typescript
-type GovernanceConfig = {
-  min_voting_power: bigint;       // Min power to create proposals (in e8s)
-  support_threshold: bigint;      // Power to move Proposed → Active (in e8s)
-  approval_percentage: number;    // Percentage of staked for YES votes (1-100)
-  support_period_days: number;    // Days to gather support (default: 7)
-  voting_period_days: number;     // Days for voting (default: 14)
-  resubmission_cooldown_days: number; // Days before resubmission (default: 180)
-};
-```
+1. **support_threshold**: Voting power (e8s) needed to move from Proposed to Active.
+2. **min_voting_power**: Min power (e8s) to create proposals.
+3. **support_period**: Duration in days for gathering support.
+4. **voting_period**: Duration in days for active voting.
+5. **resubmission_cooldown**: Days to wait before resubmitting rejected proposal.
+6. **approval_percentage**: Percentage of total staked for YES votes (1-100).
+
 
 ### Query Methods - Board Members
 
 | Method | Arguments | Returns | Description |
 |--------|-----------|---------|-------------|
-| `get_board_member_shares` | - | `Vec<BoardMemberShare>` | All board members |
-| `get_board_member_share` | `principal` | `Option<nat8>` | Member's percentage |
+| `get_board_member_shares` | - | `Vec<BoardMemberShare>` | All board members (includes sentinel) |
+| `get_all_board_member_voting_powers` | - | `Result<Vec<(Principal, u16, u64, bool)>, String>` | Members with shares, voting power, and sentinel status |
+| `get_board_member_share` | `principal` | `Option<nat16>` | Member's BPS share |
 | `get_board_member_count` | - | `nat64` | Number of board members |
 | `is_board_member` | `principal` | `bool` | Check if principal is board member |
 | `are_board_shares_locked` | - | `bool` | Check if shares are locked |
@@ -727,15 +775,17 @@ type GovernanceConfig = {
 | `create_board_member_proposal` | `BoardMemberProposalInput` | `Result<nat64, String>` | Create add board member proposal |
 | `create_remove_board_member_proposal` | `RemoveBoardMemberProposalInput` | `Result<nat64, String>` | Create remove board member proposal |
 | `create_update_board_member_share_proposal` | `UpdateBoardMemberShareProposalInput` | `Result<nat64, String>` | Create update board member share proposal |
-| `support_proposal` | `id: nat64` | `Result<(), String>` | Support proposal (non-board members) |
+| `create_update_governance_config_proposal` | `UpdateGovernanceConfigProposalInput` | `Result<nat64, String>` | Update timings/thresholds |
+| `create_update_token_limits_proposal` | `UpdateTokenLimitsProposalInput` | `Result<nat64, String>` | Update quiz rewards/limits |
+| `create_update_sentinel_proposal` | `UpdateSentinelProposalInput` | `Result<nat64, String>` | Update sentinel member |
+| `support_proposal` | `id: nat64` | `Result<(), String>` | Support proposal (non-board) |
 | `vote` | `id: nat64, approve: bool` | `Result<(), String>` | Vote on proposal |
 | `execute_proposal` | `id: nat64` | `Result<(), String>` | Execute approved proposal |
 | `finalize_proposal` | `id: nat64` | `Result<ProposalStatus, String>` | Force finalization |
 | `set_board_member_shares` | `Vec<BoardMemberShare>` | `Result<(), String>` | Set board members (admin) |
 | `lock_board_member_shares` | - | `Result<(), String>` | Lock shares (admin) |
-| `get_user_voting_power` | `principal` | `Result<nat64, String>` | Get effective voting power |
-| `get_my_voting_power` | - | `Result<nat64, String>` | Get caller's voting power |
-| `set_treasury_canister_id` | `Principal` | `Result<(), String>` | Set treasury canister (admin) |
+| `set_sentinel_member` | `Principal` | `Result<(), String>` | Set sentinel (admin) |
+
 
 ### Code Examples - Proposals
 
@@ -747,11 +797,18 @@ const [minPower, threshold, supportDays, votingDays, cooldown] =
 // Check if user is a board member
 const isBoardMember = await govActor.is_board_member(userPrincipal);
 
-// Get board members with their shares
-const boardMembers = await govActor.get_board_member_shares();
-boardMembers.forEach(m => {
-  console.log(`${m.member}: ${m.percentage}%`);
-});
+// Get board members with their shares and voting powers
+const result = await govActor.get_all_board_member_voting_powers();
+if ('Ok' in result) {
+  result.Ok.forEach(([principal, shareBps, votingPower, isSentinel]) => {
+    const percentage = shareBps / 100;
+    const powerGhc = Number(votingPower) / 1e8;
+    console.log(`${principal.toText()}:`);
+    console.log(`  - Role: ${isSentinel ? 'Sentinel' : 'Board Member'}`);
+    console.log(`  - Share: ${percentage}% (${shareBps} BPS)`);
+    console.log(`  - Voting Power: ${powerGhc} GHC`);
+  });
+}
 
 // Create a treasury proposal
 const result = await govActor.create_treasury_proposal({
@@ -769,7 +826,15 @@ const addBoardResult = await govActor.create_board_member_proposal({
   title: "Add Alice to Board",
   description: "Proposing to add Alice as board member with 15% share",
   new_member: alicePrincipal,
-  percentage: 15,
+  share_bps: 1500, // 15% (1500 BPS)
+  external_link: []
+});
+
+// Create a proposal to update the sentinel member
+const updateSentinelResult = await govActor.create_update_sentinel_proposal({
+  title: "Update Sentinel Member",
+  description: "Proposing to change the sentinel member to Carol.",
+  new_sentinel: carolPrincipal,
   external_link: []
 });
 
@@ -786,9 +851,10 @@ const updateShareResult = await govActor.create_update_board_member_share_propos
   title: "Update Alice's Board Share",
   description: "Proposing to update Alice's board share from 15% to 20%",
   member: alicePrincipal,
-  new_percentage: 20,
+  new_share_bps: 2000, // 20%
   external_link: []
 });
+
 
 if ('Ok' in result) {
   console.log(`Proposal created with ID: ${result.Ok}`);
@@ -897,14 +963,17 @@ type CreateDeleteContentProposalInput = {
   external_link: string | null;
 };
 
-type CreateUpdateQuizConfigProposalInput = {
+type CreateUpdateTokenLimitsProposalInput = {
   title: string;
   description: string;
   new_reward_amount: bigint | null;     // In e8s
   new_pass_threshold: number | null;    // 0-100
   new_max_attempts: number | null;
+  new_regular_limits: TokenLimits | null;
+  new_subscribed_limits: TokenLimits | null;
   external_link: string | null;
 };
+
 ```
 
 ### Code Examples
@@ -934,20 +1003,80 @@ const result = await governanceActor.create_add_content_proposal({
   external_link: []
 });
 
-// Create quiz config update proposal
-const quizResult = await governanceActor.create_update_quiz_config_proposal({
+// Create token limits update proposal
+const limitResult = await governanceActor.create_update_token_limits_proposal({
   title: "Increase Quiz Rewards",
   description: "Raise quiz rewards to 150 GHC",
   new_reward_amount: [BigInt(150 * 1e8)],  // 150 GHC
   new_pass_threshold: [],                   // Keep current
   new_max_attempts: [],                     // Keep current
+  new_regular_limits: [],
+  new_subscribed_limits: [],
   external_link: []
 });
+
 ```
 
 ---
 
-## 10. GHC Ledger (ICRC-1)
+---
+
+## 10. KYC Canister
+
+**Canister**: `kyc_canister`  
+**Purpose**: Identity verification management and tier updates.
+
+### Types
+
+```typescript
+type VerificationTier = { KYC: null } | { None: null } | { Human: null };
+
+type KycStatus = {
+  user: Principal;
+  tier: VerificationTier;
+  provider: string;
+  verified_at: bigint;
+};
+```
+
+### Query Methods
+
+| Method | Arguments | Returns | Description |
+|--------|-----------|---------|-------------|
+| `get_user_kyc_status` | `Principal` | `Option<KycStatus>` | Get user's KYC details |
+
+### Update Methods
+
+| Method | Arguments | Returns | Description |
+|--------|-----------|---------|-------------|
+| `submit_kyc_data` | `data: string` | `Result<string, String>` | Submit KYC data for review |
+| `verify_identity` | `Principal` | `Result<VerificationTier, String>` | Internal/Admin: verify user |
+
+---
+
+## 11. Subscription Canister
+
+**Canister**: `subscription_canister`  
+**Purpose**: Paid subscription management.
+
+### Query Methods
+
+| Method | Arguments | Returns | Description |
+|--------|-----------|---------|-------------|
+| `get_subscription_status` | `Principal` | `bool` | Check if user is subscriber |
+| `get_staking_hub` | - | `Principal` | Get linked Staking Hub |
+
+### Update Methods
+
+| Method | Arguments | Returns | Description |
+|--------|-----------|---------|-------------|
+| `request_checkout` | `Principal` | `Result<string, String>` | Start subscription flow (returns session ID) |
+| `confirm_payment` | `session_id: string` | `Result<(), String>` | Confirm successful payment |
+
+---
+
+## 12. GHC Ledger (ICRC-1)
+
 
 **Canister**: `ghc_ledger`  
 **Purpose**: Token ledger for wallet operations.
@@ -1000,7 +1129,8 @@ const result = await ledgerActor.icrc1_transfer({
 
 ---
 
-## 11. Founder Vesting Canister
+## 13. Founder Vesting Canister
+
 
 **Canister**: `founder_vesting`  
 **Purpose**: Time-locked founder token management.
@@ -1067,7 +1197,7 @@ if ('Ok' in result) {
 
 ---
 
-## 12. ICRC-1 Index Canister
+## 14. ICRC-1 Index Canister
 
 **Canister**: `icrc1_index_canister`  
 **Purpose**: Transaction history for wallet.
@@ -1095,7 +1225,8 @@ if ('Ok' in result) {
 
 ---
 
-## 13. ICO Canister
+## 15. ICO Canister
+
 
 **Canister**: `ico_canister`  
 **Purpose**: Fixed-price token sales with ckUSDC payments.
@@ -1165,7 +1296,8 @@ if ('Ok' in result) {
 
 ---
 
-## 14. Sonic Adapter Canister
+## 16. Sonic Adapter Canister
+
 
 **Canister**: `sonic_adapter`  
 **Purpose**: DEX integration for adding liquidity and token swaps on Sonic.
@@ -1213,7 +1345,8 @@ const swapResult = await sonicAdapter.swap(
 
 ---
 
-## 15. Archive Canister
+## 17. Archive Canister
+
 
 **Canister**: `archive_canister`  
 **Purpose**: Long-term storage for transaction history from user_profile shards.
@@ -1230,14 +1363,16 @@ type ArchiveKey = {
 
 type ArchivedTransaction = {
   timestamp: bigint;
-  tx_type: 'QuizReward' | 'Unstake';
+  transaction_type: string;
   amount: bigint;
+  metadata: string;
+  sequence: bigint;
   archived_at: bigint;
-  source_shard: Principal;
 };
 
 type ArchiveStats = {
-  total_entries: bigint;
+  entry_count: bigint;
+  size_bytes: bigint;
   is_full: boolean;
   parent_shard: Principal;
   next_archive: Principal | null;  // For chaining archives
@@ -1248,9 +1383,11 @@ type ArchiveStats = {
 
 | Method | Arguments | Returns | Description |
 |--------|-----------|---------|-------------|
-| `get_user_transactions` | `user: Principal, start: nat64, limit: nat32` | `Vec<ArchivedTransaction>` | Get archived transactions |
-| `get_archive_stats` | - | `ArchiveStats` | Get archive statistics |
-| `is_full` | - | `bool` | Check if archive is at capacity |
+| `get_archived_transactions` | `user: Principal, start: nat64 | null, limit: nat64` | `Vec<ArchivedTransaction>` | Get archived transactions |
+| `get_stats` | - | `ArchiveStats` | Get archive statistics |
+| `get_archived_count` | `user: Principal` | `nat64` | Get count for specific user |
+| `get_total_archived_count` | - | `nat64` | Get total entries in archive |
+
 
 ### Update Methods (Shard Only)
 
@@ -1274,11 +1411,12 @@ archivedTxs.forEach(tx => {
 });
 
 // Check archive capacity
-const stats = await archiveActor.get_archive_stats();
-console.log(`Archive entries: ${stats.total_entries}`);
+const stats = await archiveActor.get_stats();
+console.log(`Archive entries: ${stats.entry_count}`);
 if (stats.is_full && stats.next_archive) {
   console.log(`Overflow to: ${stats.next_archive}`);
 }
+
 ```
 
 ### Complete Transaction History
@@ -1291,9 +1429,10 @@ async function getCompleteHistory(userPrincipal: Principal) {
   const localTxs = await userProfileActor.get_user_transactions(userPrincipal);
   
   // 2. Get archived transactions
-  const archivedTxs = await archiveActor.get_user_transactions(
-    userPrincipal, BigInt(0), 1000
+  const archivedTxs = await archiveActor.get_archived_transactions(
+    userPrincipal, [BigInt(0)], BigInt(1000)
   );
+
   
   // 3. Combine and sort by timestamp
   const allTxs = [...archivedTxs, ...localTxs];
@@ -1305,7 +1444,8 @@ async function getCompleteHistory(userPrincipal: Principal) {
 
 ---
 
-## 16. Complete React Integration
+## 18. Complete React Integration
+
 
 ```typescript
 import { Actor, HttpAgent } from "@dfinity/agent";
@@ -1320,8 +1460,11 @@ import { idlFactory as treasuryIdl } from "./declarations/treasury_canister";
 import { idlFactory as govIdl } from "./declarations/governance_canister";
 import { idlFactory as ledgerIdl } from "./declarations/ghc_ledger";
 import { idlFactory as vestingIdl } from "./declarations/founder_vesting";
+import { idlFactory as kycIdl } from "./declarations/kyc_canister";
+import { idlFactory as subscriptionIdl } from "./declarations/subscription_canister";
 
 import { CANISTER_IDS } from "./canister-ids";
+
 
 class GHCClient {
   private agent: HttpAgent;
@@ -1383,6 +1526,16 @@ class GHCClient {
       agent: this.agent,
       canisterId: CANISTER_IDS.founder_vesting,
     });
+
+    this.kyc = Actor.createActor(kycIdl, {
+      agent: this.agent,
+      canisterId: CANISTER_IDS.kyc_canister,
+    });
+
+    this.subscription = Actor.createActor(subscriptionIdl, {
+      agent: this.agent,
+      canisterId: CANISTER_IDS.subscription_canister,
+    });
   }
   
   getPrincipal(): Principal {
@@ -1402,8 +1555,10 @@ class GHCClient {
     return {
       staked: Number(profile?.staked_balance || 0n) / 1e8,
       wallet: Number(walletBalance) / 1e8,
+      isSubscribed: profile?.is_subscribed || false,
     };
   }
+
   
   // === GOVERNANCE ===
   
@@ -1446,7 +1601,8 @@ export const ghcClient = new GHCClient();
 
 ---
 
-## 17. Error Handling
+## 19. Error Handling
+
 
 ### Common Errors
 
@@ -1485,7 +1641,8 @@ async function safeCall<T>(fn: () => Promise<T>): Promise<{ ok: T } | { err: str
 
 ---
 
-## 18. UI Pages Reference
+## 20. UI Pages Reference
+
 
 ### User Pages
 
@@ -1519,7 +1676,8 @@ async function safeCall<T>(fn: () => Promise<T>): Promise<{ ok: T } | { err: str
 
 ---
 
-## 19. Migration from operational_governance
+## 21. Migration Guide
+
 
 ### Overview
 

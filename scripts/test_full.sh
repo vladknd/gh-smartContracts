@@ -66,6 +66,7 @@ run_module "KYC Verification" "test_kyc_flow.sh"
 # --- Specialized Series (Stress, Edge Cases, Scaling) ---
 run_module "Governance Stress (500+ Nodes)" "test_governance_stress.sh"
 run_module "Governance Edge Cases" "test_governance_edge_cases.sh"
+run_module "Governance BPS System" "test_governance_bps_system.sh"
 run_module "Staking Auto-Scaling" "test_staking_hub_scaling.sh"
 run_module "Learning Engine Simple E2E" "test_learning_engine_simple.sh"
 run_module "User Profile Simple E2E" "test_user_profile_simple.sh"

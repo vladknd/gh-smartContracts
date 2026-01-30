@@ -149,9 +149,11 @@ async fn create_treasury_proposal(input: CreateTreasuryProposalInput) -> Result<
         add_content_payload: None,
         update_token_limits_payload: None,
         delete_content_payload: None,
+        update_sentinel_payload: None,
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
+        board_member_yes_count: 0,
         support_amount: 0,
         supporter_count: 0,
         required_yes_votes,
@@ -167,9 +169,10 @@ async fn create_treasury_proposal(input: CreateTreasuryProposalInput) -> Result<
 /// Create a proposal to add a new board member
 /// 
 /// This creates a proposal that, if approved, will:
-/// 1. Add the specified wallet as a new board member
-/// 2. Allocate the specified percentage to them
-/// 3. Diminish existing board members' shares equally to accommodate the new percentage
+/// 1. Add the specified wallet as a new regular board member
+/// 2. Allocate the specified BPS share to them
+/// 3. Proportionally reduce existing members' shares to accommodate the new share
+/// NOTE: The sentinel member is never affected by BPS redistribution
 #[update]
 async fn create_board_member_proposal(input: CreateBoardMemberProposalInput) -> Result<u64, String> {
     let proposer = ic_cdk::caller();
@@ -182,13 +185,16 @@ async fn create_board_member_proposal(input: CreateBoardMemberProposalInput) -> 
     if input.description.is_empty() || input.description.len() > 5000 {
         return Err("Description must be 1-5000 characters".to_string());
     }
-    if input.percentage == 0 || input.percentage > 99 {
-        return Err("Percentage must be between 1 and 99".to_string());
+    if input.share_bps < MIN_MEMBER_SHARE_BPS || input.share_bps > MAX_MEMBER_SHARE_BPS {
+        return Err(format!(
+            "Share must be between {} and {} BPS (0.01% to 99.00%)",
+            MIN_MEMBER_SHARE_BPS, MAX_MEMBER_SHARE_BPS
+        ));
     }
     
-    // Check if the new member is already a board member (local check)
+    // Check if the new member is already a board member or sentinel
     if is_board_member_local(&input.new_member) {
-        return Err("The specified address is already a board member".to_string());
+        return Err("The specified address is already a board member or sentinel".to_string());
     }
     
     // Check if proposer is a board member (local check)
@@ -237,7 +243,7 @@ async fn create_board_member_proposal(input: CreateBoardMemberProposalInput) -> 
         category: None,
         board_member_payload: Some(AddBoardMemberPayload {
             new_member: input.new_member,
-            percentage: input.percentage,
+            share_bps: input.share_bps,
         }),
         remove_board_member_payload: None,
         update_board_member_payload: None,
@@ -245,9 +251,11 @@ async fn create_board_member_proposal(input: CreateBoardMemberProposalInput) -> 
         add_content_payload: None,
         update_token_limits_payload: None,
         delete_content_payload: None,
+        update_sentinel_payload: None,
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
+        board_member_yes_count: 0,
         support_amount: 0,
         supporter_count: 0,
         required_yes_votes,
@@ -262,12 +270,14 @@ async fn create_board_member_proposal(input: CreateBoardMemberProposalInput) -> 
     Ok(id)
 }
 
+
 // ============================================================================
 // ADMIN GOVERNANCE PROPOSAL CREATION
 // ============================================================================
 
 /// Create a proposal to remove a board member
-/// Their share is redistributed equally among remaining members
+/// Their share is redistributed proportionally among remaining members
+/// NOTE: Cannot remove the sentinel - use UpdateSentinel to change the sentinel
 #[update]
 async fn create_remove_board_member_proposal(input: CreateRemoveBoardMemberProposalInput) -> Result<u64, String> {
     let proposer = ic_cdk::caller();
@@ -281,7 +291,12 @@ async fn create_remove_board_member_proposal(input: CreateRemoveBoardMemberPropo
         return Err("Description must be 1-5000 characters".to_string());
     }
     
-    // Verify the member exists
+    // Cannot remove the sentinel - use UpdateSentinel instead
+    if is_sentinel_local(&input.member_to_remove) {
+        return Err("Cannot remove the sentinel member. Use UpdateSentinel proposal to change the sentinel.".to_string());
+    }
+    
+    // Verify the member exists as a regular board member
     if !is_board_member_local(&input.member_to_remove) {
         return Err("The specified address is not a board member".to_string());
     }
@@ -338,9 +353,11 @@ async fn create_remove_board_member_proposal(input: CreateRemoveBoardMemberPropo
         add_content_payload: None,
         update_token_limits_payload: None,
         delete_content_payload: None,
+        update_sentinel_payload: None,
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
+        board_member_yes_count: 0,
         support_amount: 0,
         supporter_count: 0,
         required_yes_votes,
@@ -354,7 +371,8 @@ async fn create_remove_board_member_proposal(input: CreateRemoveBoardMemberPropo
     Ok(id)
 }
 
-/// Create a proposal to update a board member's percentage share
+/// Create a proposal to update a board member's BPS share
+/// NOTE: Cannot update the sentinel's share - they always have 1 unit of VUC
 #[update]
 async fn create_update_board_member_share_proposal(input: CreateUpdateBoardMemberShareProposalInput) -> Result<u64, String> {
     let proposer = ic_cdk::caller();
@@ -367,11 +385,19 @@ async fn create_update_board_member_share_proposal(input: CreateUpdateBoardMembe
     if input.description.is_empty() || input.description.len() > 5000 {
         return Err("Description must be 1-5000 characters".to_string());
     }
-    if input.new_percentage == 0 || input.new_percentage > 99 {
-        return Err("New percentage must be between 1 and 99".to_string());
+    if input.new_share_bps < MIN_MEMBER_SHARE_BPS || input.new_share_bps > MAX_MEMBER_SHARE_BPS {
+        return Err(format!(
+            "Share must be between {} and {} BPS (0.01% to 99.00%)",
+            MIN_MEMBER_SHARE_BPS, MAX_MEMBER_SHARE_BPS
+        ));
     }
     
-    // Verify the member exists
+    // Cannot update sentinel's share
+    if is_sentinel_local(&input.member) {
+        return Err("Cannot update sentinel's share. Sentinel always has 1 unit of VUC.".to_string());
+    }
+    
+    // Verify the member exists as a regular board member
     if !is_board_member_local(&input.member) {
         return Err("The specified address is not a board member".to_string());
     }
@@ -423,15 +449,17 @@ async fn create_update_board_member_share_proposal(input: CreateUpdateBoardMembe
         remove_board_member_payload: None,
         update_board_member_payload: Some(UpdateBoardMemberSharePayload {
             member: input.member,
-            new_percentage: input.new_percentage,
+            new_share_bps: input.new_share_bps,
         }),
         update_governance_config_payload: None,
         add_content_payload: None,
         update_token_limits_payload: None,
         delete_content_payload: None,
+        update_sentinel_payload: None,
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
+        board_member_yes_count: 0,
         support_amount: 0,
         supporter_count: 0,
         required_yes_votes,
@@ -444,6 +472,103 @@ async fn create_update_board_member_share_proposal(input: CreateUpdateBoardMembe
     
     Ok(id)
 }
+
+/// Create a proposal to update the sentinel member
+/// The sentinel has exactly 1 unit of VUC voting power (not BPS-based)
+/// This role is used to satisfy "requires board member vote" without affecting outcomes
+#[update]
+async fn create_update_sentinel_proposal(input: CreateUpdateSentinelProposalInput) -> Result<u64, String> {
+    let proposer = ic_cdk::caller();
+    let now = ic_cdk::api::time();
+    
+    // Validate input
+    if input.title.is_empty() || input.title.len() > 200 {
+        return Err("Title must be 1-200 characters".to_string());
+    }
+    if input.description.is_empty() || input.description.len() > 5000 {
+        return Err("Description must be 1-5000 characters".to_string());
+    }
+    
+    // New sentinel cannot be anonymous
+    if input.new_sentinel == Principal::anonymous() {
+        return Err("Sentinel cannot be anonymous principal".to_string());
+    }
+    
+    // New sentinel cannot already be a regular board member
+    if BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(&input.new_sentinel)) {
+        return Err("New sentinel cannot be an existing regular board member. Remove them first.".to_string());
+    }
+    
+    // Check if proposer is a board member
+    let proposer_is_board_member = is_board_member_local(&proposer);
+
+    // Check voting power
+    let voting_power = fetch_voting_power(proposer).await?;
+    
+    let min_power = get_min_voting_power_to_propose();
+    if voting_power < min_power {
+        return Err(format!(
+            "Insufficient voting power to propose. Required: {}, You have: {}",
+            min_power / 100_000_000,
+            voting_power / 100_000_000
+        ));
+    }
+    
+    // Create proposal
+    let id = PROPOSAL_COUNT.with(|c| {
+        let mut cell = c.borrow_mut();
+        let current = *cell.get();
+        cell.set(current + 1).expect("Failed to increment proposal count");
+        current
+    });
+    
+    let (status, voting_ends_at, required_yes_votes) = if proposer_is_board_member {
+        let threshold = calculate_approval_threshold().await?;
+        (ProposalStatus::Active, now + get_voting_period(), threshold)
+    } else {
+        (ProposalStatus::Proposed, now + get_support_period(), 0)
+    };
+    
+    let proposal = Proposal {
+        id,
+        proposer,
+        created_at: now,
+        voting_ends_at,
+        proposal_type: ProposalType::UpdateSentinel,
+        title: input.title,
+        description: input.description,
+        external_link: input.external_link,
+        recipient: None,
+        amount: None,
+        token_type: None,
+        category: None,
+        board_member_payload: None,
+        remove_board_member_payload: None,
+        update_board_member_payload: None,
+        update_governance_config_payload: None,
+        add_content_payload: None,
+        update_token_limits_payload: None,
+        delete_content_payload: None,
+        update_sentinel_payload: Some(UpdateSentinelPayload {
+            new_sentinel: input.new_sentinel,
+        }),
+        votes_yes: 0,
+        votes_no: 0,
+        voter_count: 0,
+        board_member_yes_count: 0,
+        support_amount: 0,
+        supporter_count: 0,
+        required_yes_votes,
+        status,
+        execute_method: None,
+        execute_payload: None,
+    };
+    
+    PROPOSALS.with(|p| p.borrow_mut().insert(id, proposal));
+    
+    Ok(id)
+}
+
 
 /// Create a proposal to update governance configuration
 /// (min voting power, support threshold, approval percentage, timing settings)
@@ -554,9 +679,11 @@ async fn create_update_governance_config_proposal(input: CreateUpdateGovernanceC
         add_content_payload: None,
         update_token_limits_payload: None,
         delete_content_payload: None,
+        update_sentinel_payload: None,
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
+        board_member_yes_count: 0,
         support_amount: 0,
         supporter_count: 0,
         required_yes_votes,
@@ -648,9 +775,11 @@ async fn create_add_content_proposal(input: CreateAddContentProposalInput) -> Re
         }),
         update_token_limits_payload: None,
         delete_content_payload: None,
+        update_sentinel_payload: None,
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
+        board_member_yes_count: 0,
         support_amount: 0,
         supporter_count: 0,
         required_yes_votes,
@@ -750,9 +879,11 @@ async fn create_update_token_limits_proposal(input: CreateUpdateTokenLimitsPropo
             new_subscribed_limits: input.new_subscribed_limits,
         }),
         delete_content_payload: None,
+        update_sentinel_payload: None,
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
+        board_member_yes_count: 0,
         support_amount: 0,
         supporter_count: 0,
         required_yes_votes,
@@ -842,12 +973,14 @@ async fn create_delete_content_proposal(input: CreateDeleteContentProposalInput)
         votes_yes: 0,
         votes_no: 0,
         voter_count: 0,
+        board_member_yes_count: 0,
         support_amount: 0,
         supporter_count: 0,
         required_yes_votes,
         status,
         execute_method: None,
         execute_payload: None,
+        update_sentinel_payload: None,
     };
     
     PROPOSALS.with(|p| p.borrow_mut().insert(id, proposal));
@@ -960,6 +1093,9 @@ async fn vote(proposal_id: u64, approve: bool) -> Result<(), String> {
     // Update proposal
     if approve {
         proposal.votes_yes += voting_power;
+        if is_board_member_local(&voter) {
+            proposal.board_member_yes_count += 1;
+        }
     } else {
         proposal.votes_no += voting_power;
     }
@@ -1038,7 +1174,7 @@ fn finalize_proposal(proposal_id: u64) -> Result<ProposalStatus, String> {
         }
         
         // Determine outcome
-        if proposal.votes_yes >= approval_threshold {
+        if proposal.votes_yes >= approval_threshold && proposal.board_member_yes_count > 0 {
             proposal.status = ProposalStatus::Approved;
         } else {
             proposal.status = ProposalStatus::Rejected;
@@ -1068,6 +1204,7 @@ async fn execute_proposal(proposal_id: u64) -> Result<(), String> {
         ProposalType::AddContentFromStaging => execute_add_content_proposal_internal(&proposal).await?,
         ProposalType::UpdateTokenLimits => execute_update_token_limits_proposal_internal(&proposal).await?,
         ProposalType::DeleteContentNode => execute_delete_content_proposal_internal(&proposal).await?,
+        ProposalType::UpdateSentinel => execute_update_sentinel_proposal_internal(&proposal)?,
     }
     
     let mut proposal = proposal; // Get a mutable copy
@@ -1234,25 +1371,29 @@ async fn execute_delete_content_proposal_internal(proposal: &Proposal) -> Result
 /// Execute a board member addition proposal
 /// 
 /// This function:
-/// 1. Gets the current board member shares
+/// 1. Gets the current board member BPS shares (excluding sentinel)
 /// 2. Calculates proportional reduction for each existing member
-/// 3. Adds the new member with their allocated percentage
+/// 3. Adds the new member with their allocated BPS share
+/// Uses Largest Remainder Method for zero-dust redistribution
 fn execute_board_member_proposal_internal(proposal: &Proposal) -> Result<(), String> {
     let payload = proposal.board_member_payload.as_ref()
         .ok_or("Board member proposal missing payload")?;
     
-    // Validate percentage
-    if payload.percentage == 0 || payload.percentage > 99 {
-        return Err("Percentage must be between 1 and 99".to_string());
+    // Validate BPS
+    if payload.share_bps < MIN_MEMBER_SHARE_BPS || payload.share_bps > MAX_MEMBER_SHARE_BPS {
+        return Err(format!(
+            "Share must be between {} and {} BPS",
+            MIN_MEMBER_SHARE_BPS, MAX_MEMBER_SHARE_BPS
+        ));
     }
     
-    // Check if already a board member
-    if BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(&payload.new_member)) {
-        return Err("Address is already a board member".to_string());
+    // Check if already a board member (regular or sentinel)
+    if is_board_member_local(&payload.new_member) {
+        return Err("Address is already a board member or sentinel".to_string());
     }
     
-    // Get current board members and their shares
-    let current_shares: Vec<(Principal, u8)> = BOARD_MEMBER_SHARES.with(|b| {
+    // Get current board members and their shares (sentinel is not in this map)
+    let current_shares: Vec<(Principal, u16)> = BOARD_MEMBER_SHARES.with(|b| {
         b.borrow().iter().collect()
     });
     
@@ -1261,60 +1402,59 @@ fn execute_board_member_proposal_internal(proposal: &Proposal) -> Result<(), Str
     }
     
     // Calculate new shares for existing members using the Largest Remainder Method
-    let remaining_percentage = 100 - payload.percentage;
-    let mut new_shares: Vec<(Principal, u8)> = Vec::new();
+    // remaining = BPS_TOTAL - new_member_share
+    let remaining_bps = BPS_TOTAL - payload.share_bps;
+    let current_total: u32 = current_shares.iter().map(|(_, s)| *s as u32).sum();
     
-    // 1. Calculate the exact portion for each member (floor + remainder)
-    let mut distribution: Vec<(Principal, u8, u16)> = Vec::new();
-    let mut distributed_total: u16 = 0;
+    // Distribution: (Principal, floor_share, remainder_x1000)
+    let mut distribution: Vec<(Principal, u16, u32)> = Vec::new();
+    let mut floor_total: u32 = 0;
     
     for (member, old_share) in current_shares.iter() {
-        let raw_value = (*old_share as u16) * (remaining_percentage as u16);
-        let floor = (raw_value / 100) as u8;
-        let remainder = raw_value % 100;
+        // Scale: new_share = old_share * remaining_bps / current_total
+        // Use higher precision for remainder calculation
+        let scaled_x1000 = (*old_share as u64 * remaining_bps as u64 * 1000) / current_total as u64;
+        let floor = (scaled_x1000 / 1000) as u16;
+        let remainder = (scaled_x1000 % 1000) as u32;
         
         distribution.push((*member, floor, remainder));
-        distributed_total += floor as u16;
+        floor_total += floor as u32;
     }
     
-    // 2. Distribute the remaining points to those with the largest remainders
-    let points_needed = (remaining_percentage as u16).saturating_sub(distributed_total);
+    // Distribute remaining BPS to those with largest remainders
+    let points_needed = (remaining_bps as u32).saturating_sub(floor_total);
     
     // Sort by remainder descending, then by Principal for determinism
     distribution.sort_by(|a, b| {
         b.2.cmp(&a.2).then_with(|| a.0.cmp(&b.0))
     });
     
-    // 3. Assign final shares
+    // Assign final shares
+    let mut new_shares: Vec<(Principal, u16)> = Vec::new();
     for (i, (member, floor, _)) in distribution.iter().enumerate() {
-        let extra = if i < points_needed as usize { 1 } else { 0 };
+        let extra: u16 = if i < points_needed as usize { 1 } else { 0 };
         new_shares.push((*member, floor + extra));
     }
     
     // Add the new member
-    new_shares.push((payload.new_member, payload.percentage));
+    new_shares.push((payload.new_member, payload.share_bps));
     
-    // Verify total is exactly 100
-    let total: u16 = new_shares.iter().map(|(_, p)| *p as u16).sum();
-    if total != 100 {
-        // Adjust the largest share to make total exactly 100
-        let diff = total as i16 - 100;
-        if diff > 0 {
-            // Need to reduce by diff
+    // Verify total is exactly BPS_TOTAL
+    let total: u32 = new_shares.iter().map(|(_, p)| *p as u32).sum();
+    if total != BPS_TOTAL as u32 {
+        // Safety adjustment - should rarely happen with proper algorithm
+        let diff = total as i32 - BPS_TOTAL as i32;
+        if diff != 0 {
             let max_idx = new_shares.iter()
                 .enumerate()
                 .max_by_key(|(_, (_, p))| *p)
                 .map(|(i, _)| i)
                 .unwrap_or(0);
-            new_shares[max_idx].1 = new_shares[max_idx].1.saturating_sub(diff as u8);
-        } else {
-            // Need to increase by -diff
-            let max_idx = new_shares.iter()
-                .enumerate()
-                .max_by_key(|(_, (_, p))| *p)
-                .map(|(i, _)| i)
-                .unwrap_or(0);
-            new_shares[max_idx].1 = new_shares[max_idx].1.saturating_add((-diff) as u8);
+            if diff > 0 {
+                new_shares[max_idx].1 = new_shares[max_idx].1.saturating_sub(diff as u16);
+            } else {
+                new_shares[max_idx].1 = new_shares[max_idx].1.saturating_add((-diff) as u16);
+            }
         }
     }
     
@@ -1339,20 +1479,26 @@ fn execute_board_member_proposal_internal(proposal: &Proposal) -> Result<(), Str
 
 /// Execute a board member removal proposal
 /// 
-/// When removing a board member, their percentage share is distributed
-/// equally among the remaining board members.
+/// When removing a board member, their BPS share is redistributed
+/// proportionally among the remaining board members using Largest Remainder Method.
+/// NOTE: Cannot remove sentinel - use UpdateSentinel to change them.
 fn execute_remove_board_member_proposal_internal(proposal: &Proposal) -> Result<(), String> {
     let payload = proposal.remove_board_member_payload.as_ref()
         .ok_or("RemoveBoardMember proposal missing payload")?;
     
-    // Check if the member exists
+    // Cannot remove sentinel
+    if is_sentinel_local(&payload.member_to_remove) {
+        return Err("Cannot remove sentinel. Use UpdateSentinel proposal.".to_string());
+    }
+    
+    // Check if the member exists in regular shares
     let member_share_opt = BOARD_MEMBER_SHARES.with(|b| b.borrow().get(&payload.member_to_remove));
     if member_share_opt.is_none() {
         return Err("Board member not found".to_string());
     }
     
     // Get remaining board members (excluding the one to remove)
-    let remaining_members: Vec<(Principal, u8)> = BOARD_MEMBER_SHARES.with(|b| {
+    let remaining_members: Vec<(Principal, u16)> = BOARD_MEMBER_SHARES.with(|b| {
         b.borrow().iter()
             .filter(|(member, _)| *member != payload.member_to_remove)
             .collect()
@@ -1362,45 +1508,41 @@ fn execute_remove_board_member_proposal_internal(proposal: &Proposal) -> Result<
         return Err("Cannot remove the last board member".to_string());
     }
     
-    // Proportional Redistribution Logic
-    // Goal: Scale existing shares up so they total 100, maintaining relative ratios.
-    // Formula: NewShare = OldShare * (100 / OldTotal)
+    // Proportional Redistribution Logic using Largest Remainder Method
+    // Goal: Scale existing shares up so they total BPS_TOTAL, maintaining relative ratios.
     
-    let current_total: u16 = remaining_members.iter().map(|(_, s)| *s as u16).sum();
-    // Sanity check: This should be (100 - share_removed), but we calculate from source
+    let current_total: u32 = remaining_members.iter().map(|(_, s)| *s as u32).sum();
     
     if current_total == 0 {
-        // Edge case: multiple members but all have 0%? Should not happen if strictly enforced 1-100.
         return Err("Remaining members have 0 total share".to_string());
     }
     
-    // 1. Calculate ideal values and remainders
-    let mut distribution: Vec<(Principal, u8, u32)> = Vec::new(); // (Principal, Floor, Remainder)
-    let mut floor_total: u16 = 0;
+    // Calculate ideal values and remainders
+    let mut distribution: Vec<(Principal, u16, u32)> = Vec::new(); // (Principal, Floor, Remainder)
+    let mut floor_total: u32 = 0;
     
     for (member, current_share) in remaining_members.iter() {
-        // We want (current_share * 100) / current_total
-        // Calculate with higher precision for remainder
-        let value_x1000 = (*current_share as u32 * 100 * 1000) / current_total as u32;
-        let floor = (value_x1000 / 1000) as u8;
-        let remainder = value_x1000 % 1000;
+        // Scale: new_share = current_share * BPS_TOTAL / current_total
+        let value_x1000 = (*current_share as u64 * BPS_TOTAL as u64 * 1000) / current_total as u64;
+        let floor = (value_x1000 / 1000) as u16;
+        let remainder = (value_x1000 % 1000) as u32;
         
         distribution.push((*member, floor, remainder));
-        floor_total += floor as u16;
+        floor_total += floor as u32;
     }
     
-    // 2. Distribute points to those with largest remainders
-    let points_needed = 100_u16.saturating_sub(floor_total);
+    // Distribute remaining BPS to those with largest remainders
+    let points_needed = (BPS_TOTAL as u32).saturating_sub(floor_total);
     
-    // Sort: Remainder DESC, then Member ASC
+    // Sort: Remainder DESC, then Member ASC for determinism
     distribution.sort_by(|a, b| {
         b.2.cmp(&a.2).then_with(|| a.0.cmp(&b.0))
     });
     
-    let mut new_shares: Vec<(Principal, u8)> = Vec::new();
+    let mut new_shares: Vec<(Principal, u16)> = Vec::new();
     
     for (i, (member, floor, _)) in distribution.iter().enumerate() {
-        let extra = if i < points_needed as usize { 1 } else { 0 };
+        let extra: u16 = if i < points_needed as usize { 1 } else { 0 };
         new_shares.push((*member, floor + extra));
     }
     
@@ -1425,27 +1567,36 @@ fn execute_remove_board_member_proposal_internal(proposal: &Proposal) -> Result<
 
 /// Execute an update board member share proposal
 /// 
-/// Adjusts the specified board member's share to the new value,
+/// Adjusts the specified board member's share to the new BPS value,
 /// redistributing the difference across other members proportionally.
+/// Uses Largest Remainder Method for zero-dust redistribution.
 fn execute_update_board_member_share_proposal_internal(proposal: &Proposal) -> Result<(), String> {
     let payload = proposal.update_board_member_payload.as_ref()
         .ok_or("UpdateBoardMemberShare proposal missing payload")?;
     
-    // Validate new percentage
-    if payload.new_percentage == 0 || payload.new_percentage > 99 {
-        return Err("New percentage must be between 1 and 99".to_string());
+    // Cannot update sentinel's share
+    if is_sentinel_local(&payload.member) {
+        return Err("Cannot update sentinel's share. Sentinel always has 1 unit of VUC.".to_string());
+    }
+    
+    // Validate new BPS
+    if payload.new_share_bps < MIN_MEMBER_SHARE_BPS || payload.new_share_bps > MAX_MEMBER_SHARE_BPS {
+        return Err(format!(
+            "New share must be between {} and {} BPS",
+            MIN_MEMBER_SHARE_BPS, MAX_MEMBER_SHARE_BPS
+        ));
     }
     
     // Get current share
     let current_share = BOARD_MEMBER_SHARES.with(|b| b.borrow().get(&payload.member))
         .ok_or("Board member not found")?;
     
-    if payload.new_percentage == current_share {
+    if payload.new_share_bps == current_share {
         return Ok(()); // No change needed
     }
     
     // Get all other board members
-    let other_members: Vec<(Principal, u8)> = BOARD_MEMBER_SHARES.with(|b| {
+    let other_members: Vec<(Principal, u16)> = BOARD_MEMBER_SHARES.with(|b| {
         b.borrow().iter()
             .filter(|(member, _)| *member != payload.member)
             .collect()
@@ -1455,30 +1606,44 @@ fn execute_update_board_member_share_proposal_internal(proposal: &Proposal) -> R
         return Err("Cannot update share when there's only one board member".to_string());
     }
     
-    // Calculate the difference (unused here but kept for clarity)
-    let _diff = payload.new_percentage as i16 - current_share as i16;
-    let remaining_for_others = (100 - payload.new_percentage) as u16;
-    let current_others_total: u16 = other_members.iter().map(|(_, p)| *p as u16).sum();
+    // Calculate redistribution using Largest Remainder Method
+    let remaining_for_others = BPS_TOTAL - payload.new_share_bps;
+    let current_others_total: u32 = other_members.iter().map(|(_, p)| *p as u32).sum();
     
-    // Redistribute among other members proportionally
-    let mut new_shares: Vec<(Principal, u8)> = Vec::new();
-    let mut distributed_total: u16 = 0;
+    if current_others_total == 0 {
+        return Err("Other members have 0 total share".to_string());
+    }
     
-    for (i, (member, old_share)) in other_members.iter().enumerate() {
-        let new_share = if i == other_members.len() - 1 {
-            // Last member gets the remainder
-            remaining_for_others - distributed_total
-        } else {
-            let proportion = (*old_share as u128 * remaining_for_others as u128) / current_others_total as u128;
-            proportion as u16
-        };
+    // Distribution: (Principal, floor_share, remainder_x1000)
+    let mut distribution: Vec<(Principal, u16, u32)> = Vec::new();
+    let mut floor_total: u32 = 0;
+    
+    for (member, old_share) in other_members.iter() {
+        let scaled_x1000 = (*old_share as u64 * remaining_for_others as u64 * 1000) / current_others_total as u64;
+        let floor = (scaled_x1000 / 1000) as u16;
+        let remainder = (scaled_x1000 % 1000) as u32;
         
-        new_shares.push((*member, new_share as u8));
-        distributed_total += new_share;
+        distribution.push((*member, floor, remainder));
+        floor_total += floor as u32;
+    }
+    
+    // Distribute remaining BPS to those with largest remainders
+    let points_needed = (remaining_for_others as u32).saturating_sub(floor_total);
+    
+    // Sort: Remainder DESC, then Member ASC
+    distribution.sort_by(|a, b| {
+        b.2.cmp(&a.2).then_with(|| a.0.cmp(&b.0))
+    });
+    
+    let mut new_shares: Vec<(Principal, u16)> = Vec::new();
+    
+    for (i, (member, floor, _)) in distribution.iter().enumerate() {
+        let extra: u16 = if i < points_needed as usize { 1 } else { 0 };
+        new_shares.push((*member, floor + extra));
     }
     
     // Add the updated member
-    new_shares.push((payload.member, payload.new_percentage));
+    new_shares.push((payload.member, payload.new_share_bps));
     
     // Update the shares atomically
     BOARD_MEMBER_SHARES.with(|b| {
@@ -1492,6 +1657,32 @@ fn execute_update_board_member_share_proposal_internal(proposal: &Proposal) -> R
         for (member, share) in new_shares {
             map.insert(member, share);
         }
+    });
+    
+    Ok(())
+}
+
+/// Execute an update sentinel proposal
+/// 
+/// Changes the sentinel member to a new principal.
+/// The sentinel has exactly 1 unit of VUC voting power.
+fn execute_update_sentinel_proposal_internal(proposal: &Proposal) -> Result<(), String> {
+    let payload = proposal.update_sentinel_payload.as_ref()
+        .ok_or("UpdateSentinel proposal missing payload")?;
+    
+    // Validate new sentinel
+    if payload.new_sentinel == Principal::anonymous() {
+        return Err("Sentinel cannot be anonymous".to_string());
+    }
+    
+    // New sentinel cannot be a regular board member
+    if BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(&payload.new_sentinel)) {
+        return Err("New sentinel cannot be an existing regular board member".to_string());
+    }
+    
+    // Update sentinel
+    SENTINEL_MEMBER.with(|s| {
+        s.borrow_mut().set(payload.new_sentinel).expect("Failed to set sentinel member")
     });
     
     Ok(())
@@ -1669,9 +1860,10 @@ fn get_governance_config() -> (u64, u64, u64, u64, u64, u8) {
 
 /// Set all board member shares atomically (admin only)
 /// 
-/// This replaces ALL existing board members with the new list.
-/// Total percentages must equal exactly 100.
+/// This replaces ALL existing regular board members with the new list.
+/// Total BPS must equal exactly 10,000 (100%).
 /// Cannot be called if shares are locked.
+/// NOTE: This does NOT affect the sentinel - use set_sentinel_member for that.
 #[update]
 fn set_board_member_shares(shares: Vec<BoardMemberShare>) -> Result<(), String> {
     // Only controllers can set shares
@@ -1682,38 +1874,53 @@ fn set_board_member_shares(shares: Vec<BoardMemberShare>) -> Result<(), String> 
     // Check if locked
     let is_locked = BOARD_SHARES_LOCKED.with(|l| *l.borrow().get());
     if is_locked {
-        return Err("Board member shares are locked. Use governance proposals to add new members.".to_string());
+        return Err("Board member shares are locked. Use governance proposals to modify members.".to_string());
     }
     
+    // Filter out sentinel entries (they are for display only)
+    let regular_shares: Vec<&BoardMemberShare> = shares.iter()
+        .filter(|s| !s.is_sentinel)
+        .collect();
+    
     // Validate: no empty list
-    if shares.is_empty() {
-        return Err("Must have at least one board member".to_string());
+    if regular_shares.is_empty() {
+        return Err("Must have at least one regular board member".to_string());
     }
     
     // Validate: no duplicates
     let mut seen = std::collections::HashSet::new();
-    for share in &shares {
+    for share in &regular_shares {
         if !seen.insert(share.member) {
             return Err(format!("Duplicate member: {}", share.member));
         }
     }
     
-    // Validate: each percentage is 1-100
-    for share in &shares {
-        if share.percentage == 0 || share.percentage > 100 {
+    // Validate: member cannot also be sentinel
+    let sentinel = get_sentinel_local();
+    for share in &regular_shares {
+        if let Some(s) = sentinel {
+            if share.member == s {
+                return Err(format!("Member {} is the sentinel. Remove them as sentinel first.", share.member));
+            }
+        }
+    }
+    
+    // Validate: each share is within valid range
+    for share in &regular_shares {
+        if share.share_bps == 0 || share.share_bps > BPS_TOTAL {
             return Err(format!(
-                "Invalid percentage {} for {}. Must be 1-100.",
-                share.percentage, share.member
+                "Invalid BPS {} for {}. Must be 1-{}.",
+                share.share_bps, share.member, BPS_TOTAL
             ));
         }
     }
     
-    // Validate: total equals 100
-    let total: u16 = shares.iter().map(|s| s.percentage as u16).sum();
-    if total != 100 {
+    // Validate: total equals BPS_TOTAL
+    let total: u32 = regular_shares.iter().map(|s| s.share_bps as u32).sum();
+    if total != BPS_TOTAL as u32 {
         return Err(format!(
-            "Total percentages must equal 100. Got: {}",
-            total
+            "Total BPS must equal {}. Got: {}",
+            BPS_TOTAL, total
         ));
     }
     
@@ -1728,9 +1935,61 @@ fn set_board_member_shares(shares: Vec<BoardMemberShare>) -> Result<(), String> 
         }
         
         // Insert new shares
-        for share in shares {
-            map.insert(share.member, share.percentage);
+        for share in regular_shares {
+            map.insert(share.member, share.share_bps);
         }
+    });
+    
+    Ok(())
+}
+
+/// Set the sentinel member (admin only)
+/// 
+/// The sentinel has exactly 1 unit of VUC voting power.
+/// Cannot be set to an existing regular board member.
+/// Cannot be called if shares are locked.
+#[update]
+fn set_sentinel_member(new_sentinel: Principal) -> Result<(), String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can set sentinel member".to_string());
+    }
+    
+    // Check if locked
+    let is_locked = BOARD_SHARES_LOCKED.with(|l| *l.borrow().get());
+    if is_locked {
+        return Err("Board shares are locked. Use governance proposals to change sentinel.".to_string());
+    }
+    
+    // Cannot be anonymous
+    if new_sentinel == Principal::anonymous() {
+        return Err("Sentinel cannot be anonymous".to_string());
+    }
+    
+    // Cannot be an existing regular board member
+    if BOARD_MEMBER_SHARES.with(|b| b.borrow().contains_key(&new_sentinel)) {
+        return Err("Sentinel cannot be an existing regular board member".to_string());
+    }
+    
+    SENTINEL_MEMBER.with(|s| {
+        s.borrow_mut().set(new_sentinel).expect("Failed to set sentinel member")
+    });
+    
+    Ok(())
+}
+
+/// Clear the sentinel member (admin only)
+#[update]
+fn clear_sentinel_member() -> Result<(), String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can clear sentinel member".to_string());
+    }
+    
+    if are_board_shares_locked() {
+        return Err("Cannot clear sentinel: Board shares are locked".to_string());
+    }
+    
+    SENTINEL_MEMBER.with(|s| {
+        s.borrow_mut().set(Principal::anonymous()).expect("Failed to clear sentinel member")
     });
     
     Ok(())
@@ -1738,7 +1997,7 @@ fn set_board_member_shares(shares: Vec<BoardMemberShare>) -> Result<(), String> 
 
 /// Lock board member shares (admin only)
 /// 
-/// Once locked, shares can only be modified via governance proposals (AddBoardMember).
+/// Once locked, shares can only be modified via governance proposals.
 #[update]
 fn lock_board_member_shares() -> Result<(), String> {
     if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
@@ -1746,19 +2005,39 @@ fn lock_board_member_shares() -> Result<(), String> {
     }
     
     // Verify shares are set before locking
-    let total: u16 = BOARD_MEMBER_SHARES.with(|b| {
-        b.borrow().iter().map(|(_, pct)| pct as u16).sum()
+    let total: u32 = BOARD_MEMBER_SHARES.with(|b| {
+        b.borrow().iter().map(|(_, bps)| bps as u32).sum()
     });
     
-    if total != 100 {
+    if total != BPS_TOTAL as u32 {
         return Err(format!(
-            "Cannot lock: Board member shares must total 100%. Current total: {}",
-            total
+            "Cannot lock: Board member shares must total {} BPS (100%). Current total: {}",
+            BPS_TOTAL, total
         ));
+    }
+    
+    // Verify sentinel is set
+    let sentinel = get_sentinel_local();
+    if sentinel.is_none() {
+        return Err("Cannot lock: Sentinel member must be set before locking".to_string());
     }
     
     BOARD_SHARES_LOCKED.with(|l| {
         l.borrow_mut().set(true).expect("Failed to lock board member shares")
+    });
+    
+    Ok(())
+}
+
+/// Unlock board member shares (admin only)
+#[update]
+fn unlock_board_member_shares() -> Result<(), String> {
+    if !ic_cdk::api::is_controller(&ic_cdk::caller()) {
+        return Err("Unauthorized: Only controllers can unlock board member shares".to_string());
+    }
+    
+    BOARD_SHARES_LOCKED.with(|l| {
+        l.borrow_mut().set(false).expect("Failed to unlock board member shares")
     });
     
     Ok(())
@@ -1770,32 +2049,65 @@ fn are_board_shares_locked() -> bool {
     BOARD_SHARES_LOCKED.with(|l| *l.borrow().get())
 }
 
-/// Get all board members with their voting power percentages
+/// Get all board members with their BPS shares (includes sentinel)
 #[query]
 fn get_board_member_shares() -> Vec<BoardMemberShare> {
+    let mut result: Vec<BoardMemberShare> = Vec::new();
+    
+    // Add sentinel first if set
+    if let Some(sentinel) = get_sentinel_local() {
+        result.push(BoardMemberShare {
+            member: sentinel,
+            share_bps: 0, // Sentinel has 0 BPS (they have 1 unit of VUC instead)
+            is_sentinel: true,
+        });
+    }
+    
+    // Add regular board members
     BOARD_MEMBER_SHARES.with(|b| {
-        b.borrow().iter().map(|(member, percentage)| {
-            BoardMemberShare { member, percentage }
-        }).collect()
-    })
+        for (member, share_bps) in b.borrow().iter() {
+            result.push(BoardMemberShare {
+                member,
+                share_bps,
+                is_sentinel: false,
+            });
+        }
+    });
+    
+    result
 }
 
-/// Get a specific board member's percentage
+/// Get a specific board member's BPS share (None for sentinel or non-member)
 #[query]
-fn get_board_member_share(principal: Principal) -> Option<u8> {
+fn get_board_member_share(principal: Principal) -> Option<u16> {
     BOARD_MEMBER_SHARES.with(|b| b.borrow().get(&principal))
 }
 
-/// Get number of board members
+/// Get the sentinel member (None if not set)
 #[query]
-fn get_board_member_count() -> u64 {
-    BOARD_MEMBER_SHARES.with(|b| b.borrow().len())
+fn get_sentinel_member() -> Option<Principal> {
+    get_sentinel_local()
 }
 
-/// Check if a principal is a board member
+/// Get number of board members (including sentinel if set)
+#[query]
+fn get_board_member_count() -> u64 {
+    let regular_count = BOARD_MEMBER_SHARES.with(|b| b.borrow().len());
+    let sentinel_count = if get_sentinel_local().is_some() { 1 } else { 0 };
+    regular_count + sentinel_count
+}
+
+/// Check if a principal is a board member (includes sentinel)
 #[query]
 fn is_board_member(principal: Principal) -> bool {
     is_board_member_local(&principal)
+}
+
+/// Get all board member voting powers (includes sentinel if set)
+/// Uses cumulative partitioning for zero-dust calculation
+#[update] // Async call to staking hub required
+async fn get_all_board_member_voting_powers() -> Result<Vec<(Principal, u16, u64, bool)>, String> {
+    calculate_all_board_member_powers().await
 }
 
 // ============================================================================

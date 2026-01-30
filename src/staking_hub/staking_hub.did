@@ -1,199 +1,85 @@
-// ============================================================================
-// Staking Hub Candid Interface
-// ============================================================================
-// This canister manages global staking statistics and coordinates 
-// user_profile shard canisters. Simplified version without interest/penalties.
-
-// Arguments for canister initialization
-type InitArgs = record {
-    ledger_id : principal;
-    learning_content_id : principal;
-    user_profile_wasm : vec nat8;
-    archive_canister_wasm : opt vec nat8;
-};
-
-// Global statistics (simplified - no interest/tier tracking)
 type GlobalStats = record {
-    total_staked : nat64;
-    total_unstaked : nat64;
-    total_allocated : nat64;
+  total_staked : nat64;
+  total_allocated : nat64;
+  total_unstaked : nat64;
 };
-
-// Shard operational status
-type ShardStatus = variant {
-    Active;
-    Full;
+type InitArgs = record {
+  learning_content_id : principal;
+  archive_canister_wasm : opt blob;
+  ledger_id : principal;
+  user_profile_wasm : blob;
 };
-
-// Information about a user_profile shard canister
-type ShardInfo = record {
-    canister_id : principal;
-    created_at : nat64;
-    user_count : nat64;
-    status : ShardStatus;
-    archive_canister_id : opt principal;
-};
-
-// Board member share entry
-type BoardMemberShare = record {
-    member : principal;
-    percentage : nat8;
-};
-
-type TokenLimits = record {
-    max_daily_tokens : nat64;
-    max_weekly_tokens : nat64;
-    max_monthly_tokens : nat64;
-    max_yearly_tokens : nat64;
-};
-
-// Token limits and reward configuration
-type TokenLimitsConfig = record {
-    reward_amount : nat64;
-    pass_threshold_percent : nat8;
-    max_daily_attempts : nat8;
-    regular_limits : TokenLimits;
-    subscribed_limits : TokenLimits;
-    version : nat64;
-};
-
-// Quiz cache data for distribution
 type QuizCacheData = record {
-    content_id : text;
-    answer_hashes : vec blob;
-    question_count : nat8;
-    version : nat64;
+  question_count : nat8;
+  content_id : text;
+  version : nat64;
+  answer_hashes : vec blob;
 };
-
+type ShardInfo = record {
+  user_count : nat64;
+  status : ShardStatus;
+  canister_id : principal;
+  created_at : nat64;
+  archive_canister_id : opt principal;
+};
+type ShardStatus = variant { Full; Active };
+type TokenLimits = record {
+  max_monthly_tokens : nat64;
+  max_yearly_tokens : nat64;
+  max_daily_tokens : nat64;
+  max_weekly_tokens : nat64;
+};
+type TokenLimitsConfig = record {
+  reward_amount : nat64;
+  pass_threshold_percent : nat8;
+  max_daily_attempts : nat8;
+  regular_limits : TokenLimits;
+  version : nat64;
+  subscribed_limits : TokenLimits;
+};
 service : (InitArgs) -> {
-    // =========================================================================
-    // Auto-Scaling
-    // =========================================================================
-    // Ensures capacity by creating new shards when needed
-    "ensure_capacity": () -> (variant { Ok: opt principal; Err: text });
-    
-    // =========================================================================
-    // Shard Discovery Queries
-    // =========================================================================
-    "get_shards": () -> (vec ShardInfo) query;
-    "get_active_shards": () -> (vec ShardInfo) query;
-    "get_shard_for_new_user": () -> (opt principal) query;
-    "is_registered_shard": (principal) -> (bool) query;
-    "get_shard_count": () -> (nat64) query;
-    "get_archive_for_shard": (principal) -> (opt principal) query;
-    
-    // =========================================================================
-    // Shard Operations (Called ONLY by registered shards)
-    // =========================================================================
-    
-    // Update user count for load balancing
-    "update_shard_user_count": (nat64) -> (variant { Ok: null; Err: text });
-    
-    // Sync shard statistics (simplified)
-    // Args: staked_delta (int64), unstaked_delta, requested_allowance
-    // Returns: granted_allowance
-    "sync_shard": (int64, nat64, nat64) -> (variant { Ok: nat64; Err: text });
-    
-    // Process unstake request (no penalty - returns 100%)
-    "process_unstake": (principal, nat64) -> (variant { Ok: nat64; Err: text });
-    
-    // =========================================================================
-    // Admin Operations
-    // =========================================================================
-    "add_allowed_minter": (principal) -> ();
-    "register_shard": (principal, opt principal) -> ();
-
-    // Broadcast the subscription manager ID to all shards (controller only)
-    "admin_broadcast_subscription_manager": (principal) -> (variant { Ok: nat64; Err: text });
-
-    // Broadcast the KYC manager ID to all shards (controller only)
-    "admin_broadcast_kyc_manager": (principal) -> (variant { Ok: nat64; Err: text });
-    
-    // =========================================================================
-    // Quiz Cache & Config Distribution (called by learning_engine)
-    // =========================================================================
-    
-    // Distribute quiz cache data to all shards
-    "distribute_quiz_cache": (text, QuizCacheData) -> (variant { Ok: nat64; Err: text });
-    
-    // Distribute token limits update to all shards
-    "distribute_token_limits": (TokenLimitsConfig) -> (variant { Ok: nat64; Err: text });
-    
-    // Update global token limits (called by governance)
-    "update_token_limits": (opt nat64, opt nat8, opt nat8, opt TokenLimits, opt TokenLimits) -> (variant { Ok: null; Err: text });
-    
-    // Get current global token limits
-    "get_token_limits": () -> (TokenLimitsConfig) query;
-
-    // Get the current subscription manager ID
-    "get_subscription_manager_id": () -> (principal) query;
-
-    // Get the current KYC manager ID
-    "get_kyc_manager_id": () -> (principal) query;
-    
-    // =========================================================================
-    // Query Functions
-    // =========================================================================
-    "get_global_stats": () -> (GlobalStats) query;
-    "get_config": () -> (principal, principal, bool) query;
-    "get_limits": () -> (nat64, nat64) query;
-    
-    // =========================================================================
-    // Board Member Management (Weighted VUC Voting Power)
-    // =========================================================================
-    
-    // Set all board member shares atomically (controller only)
-    // Total percentages must equal exactly 100
-    // Cannot be called if shares are locked
-    "set_board_member_shares": (vec BoardMemberShare) -> (variant { Ok: null; Err: text });
-    
-    // Lock board member shares permanently (controller only)
-    // WARNING: Irreversible via admin! Future: governance can modify
-    "lock_board_member_shares": () -> (variant { Ok: null; Err: text });
-    
-    // Check if board member shares are locked
-    "are_board_shares_locked": () -> (bool) query;
-    
-    // Get all board members with their voting power percentages
-    "get_board_member_shares": () -> (vec BoardMemberShare) query;
-    
-    // Get a specific board member's percentage
-    "get_board_member_share": (principal) -> (opt nat8) query;
-    
-    // Get number of board members
-    "get_board_member_count": () -> (nat64) query;
-    
-    // Check if principal is a board member
-    "is_board_member": (principal) -> (bool) query;
-    
-    // =========================================================================
-    // User Registry
-    // =========================================================================
-    
-    // Register user's shard location (called by shards on registration)
-    "register_user_location": (principal) -> (variant { Ok: null; Err: text });
-    
-    // Get which shard a user is in
-    "get_user_shard": (principal) -> (opt principal) query;
-    
-    // Admin: manually set user's shard location
-    "admin_set_user_shard": (principal, principal) -> (variant { Ok: null; Err: text });
-    
-    // =========================================================================
-    // Voting Power Queries
-    // =========================================================================
-    
-    // Get VUC (Volume of Unmined Coins) - total board member voting power pool
-    "get_vuc": () -> (nat64) query;
-    
-    // Get total voting power in system (VUC + total_staked)
-    "get_total_voting_power": () -> (nat64) query;
-    
-    // Fetch voting power for any principal (async - queries shards)
-    // For board members: returns VUC * (percentage / 100)
-    // For users: returns staked_balance
-    "fetch_user_voting_power": (principal) -> (nat64);
-    
-    // Get tokenomics: (max_supply, total_allocated, vuc, total_voting_power)
-    "get_tokenomics": () -> (nat64, nat64, nat64, nat64) query;
+  add_allowed_minter : (principal) -> ();
+  admin_broadcast_kyc_manager : (principal) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  admin_broadcast_subscription_manager : (principal) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  admin_set_user_shard : (principal, principal) -> (variant { Ok; Err : text });
+  distribute_quiz_cache : (text, QuizCacheData) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  distribute_token_limits : (TokenLimitsConfig) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  ensure_capacity : () -> (variant { Ok : opt principal; Err : text });
+  fetch_user_voting_power : (principal) -> (nat64);
+  get_active_shards : () -> (vec ShardInfo) query;
+  get_archive_for_shard : (principal) -> (opt principal) query;
+  get_config : () -> (principal, principal, bool) query;
+  get_global_stats : () -> (GlobalStats) query;
+  get_kyc_manager_id : () -> (principal) query;
+  get_limits : () -> (nat64, nat64) query;
+  get_shard_count : () -> (nat64) query;
+  get_shard_for_new_user : () -> (opt principal) query;
+  get_shards : () -> (vec ShardInfo) query;
+  get_subscription_manager_id : () -> (principal) query;
+  get_token_limits : () -> (TokenLimitsConfig) query;
+  get_tokenomics : () -> (nat64, nat64, nat64, nat64) query;
+  get_total_voting_power : () -> (nat64) query;
+  get_user_shard : (principal) -> (opt principal) query;
+  get_vuc : () -> (nat64) query;
+  is_registered_shard : (principal) -> (bool) query;
+  process_unstake : (principal, nat64) -> (variant { Ok : nat64; Err : text });
+  register_shard : (principal, opt principal) -> ();
+  register_user_location : (principal) -> (variant { Ok; Err : text });
+  sync_shard : (int64, nat64, nat64) -> (variant { Ok : nat64; Err : text });
+  update_shard_user_count : (nat64) -> (variant { Ok; Err : text });
+  update_token_limits : (
+      opt nat64,
+      opt nat8,
+      opt nat8,
+      opt TokenLimits,
+      opt TokenLimits,
+    ) -> (variant { Ok; Err : text });
 }

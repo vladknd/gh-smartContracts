@@ -35,6 +35,7 @@ NC='\033[0m'
 success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 info() { echo -e "${YELLOW}[INFO]${NC} $1"; }
+warn() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 header() { echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"; echo -e "${BLUE}$1${NC}"; echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"; }
 
 cd "$PROJECT_DIR"
@@ -58,7 +59,8 @@ cargo build --release --target wasm32-unknown-unknown \
     -p staging_assets \
     -p media_assets \
     -p subscription_canister \
-    -p kyc_canister || error "Build failed"
+    -p kyc_canister \
+    -p sonic_adapter || error "Build failed"
 
 success "All canisters built successfully"
 
@@ -114,6 +116,9 @@ STAGING_ASSETS_ID=$(dfx canister id staging_assets --network "$NETWORK")
 MEDIA_ASSETS_ID=$(dfx canister id media_assets --network "$NETWORK")
 SUBSCRIPTION_CANISTER_ID=$(dfx canister id subscription_canister --network "$NETWORK")
 KYC_CANISTER_ID=$(dfx canister id kyc_canister --network "$NETWORK")
+INTERNET_IDENTITY_ID=$(dfx canister id internet_identity --network "$NETWORK")
+ICRC1_INDEX_ID=$(dfx canister id icrc1_index_canister --network "$NETWORK")
+SONIC_ADAPTER_ID=$(dfx canister id sonic_adapter --network "$NETWORK")
 DEFAULT=$(dfx identity get-principal)
 
 info "Canister IDs:"
@@ -155,6 +160,12 @@ success "GHC Ledger deployed"
 # Internet Identity
 info "Deploying Internet Identity..."
 dfx deploy internet_identity --network "$NETWORK"
+INTERNET_IDENTITY_ID=$(dfx canister id internet_identity --network "$NETWORK")
+
+# ICRC-1 Index
+info "Deploying ICRC-1 Indexer..."
+dfx deploy icrc1_index_canister --network "$NETWORK" --argument "(opt variant { Init = record { ledger_id = principal \"$LEDGER_ID\" } })"
+ICRC1_INDEX_ID=$(dfx canister id icrc1_index_canister --network "$NETWORK")
 
 # Learning Engine
 info "Deploying Learning Engine..."
@@ -249,7 +260,11 @@ info "Treasury ID: $TREASURY_ID"
 
 # Governance
 info "Deploying Governance..."
-dfx deploy governance_canister --network "$NETWORK" --argument "(record { staking_hub_id = principal \"$STAKING_HUB_ID\"; treasury_canister_id = principal \"$TREASURY_ID\" })"
+dfx deploy governance_canister --network "$NETWORK" --argument "(record { 
+    staking_hub_id = principal \"$STAKING_HUB_ID\"; 
+    treasury_canister_id = principal \"$TREASURY_ID\";
+    learning_engine_id = opt principal \"$LEARNING_ID\" 
+})"
 
 GOVERNANCE_ID=$(dfx canister id governance_canister --network "$NETWORK" 2>/dev/null || echo "not-deployed")
 info "Governance ID: $GOVERNANCE_ID"
@@ -337,6 +352,68 @@ dfx canister call user_profile get_archive_canister --network "$NETWORK"
 # SUMMARY
 # ==============================================================================
 
+# ==============================================================================
+# PHASE 8: Generate Frontend Configuration
+# ==============================================================================
+
+header "PHASE 8: Frontend Configuration"
+
+info "Generating ic.config.json..."
+
+# Determine host
+if [ "$NETWORK" == "ic" ]; then
+    HOST="https://ic0.app"
+else
+    HOST="http://localhost:4943"
+fi
+
+cat > ic.config.json <<EOF
+{
+    "network": "$NETWORK",
+    "host": "$HOST",
+    "canisters": {
+        "icrc1_index": "$ICRC1_INDEX_ID",
+        "user_profile": "$USER_PROFILE_ID",
+        "learning_engine": "$LEARNING_ID",
+        "staking_hub": "$STAKING_HUB_ID",
+        "treasury_canister": "$TREASURY_ID",
+        "governance_canister": "$GOVERNANCE_ID",
+        "ghc_ledger": "$LEDGER_ID",
+        "media_assets": "$MEDIA_ASSETS_ID",
+        "staging_assets": "$STAGING_ASSETS_ID",
+        "internet_identity": "$INTERNET_IDENTITY_ID",
+        "founder_vesting": "$FOUNDER_VESTING_ID",
+        "subscription_canister": "$SUBSCRIPTION_CANISTER_ID",
+        "kyc_canister": "$KYC_CANISTER_ID",
+        "archive_canister": "$ARCHIVE_ID",
+        "sonic_adapter": "$SONIC_ADAPTER_ID",
+        "ico_canister": "$ICO_ID"
+    },
+    "founders": [
+        {
+            "name": "founder1",
+            "principal": "$FOUNDER1",
+            "allocation": "350000000"
+        },
+        {
+            "name": "founder2",
+            "principal": "$FOUNDER2",
+            "allocation": "150000000"
+        }
+    ]
+}
+EOF
+
+success "Generated ic.config.json"
+
+# Run update_frontend.sh
+if [ -f "./scripts/update_frontend.sh" ]; then
+    info "Running update_frontend.sh..."
+    ./scripts/update_frontend.sh
+else
+    warn "update_frontend.sh not found, skipping sync"
+fi
+
 header "DEPLOYMENT COMPLETE"
 
 echo ""
@@ -353,12 +430,21 @@ echo "  │ Treasury            │ $TREASURY_ID"
 echo "  │ Governance          │ $GOVERNANCE_ID"
 echo "  │ Subscription        │ $SUBSCRIPTION_CANISTER_ID"
 echo "  │ KYC                 │ $KYC_CANISTER_ID"
+echo "  │ Internet Identity   │ $INTERNET_IDENTITY_ID"
+echo "  │ ICRC-1 Index        │ $ICRC1_INDEX_ID"
+echo "  │ Sonic Adapter       │ $SONIC_ADAPTER_ID"
+echo "  │ ICO Canister        │ $ICO_ID"
 echo "  └─────────────────────┴──────────────────────────────────────────┘"
 echo ""
 echo "Archive Configuration:"
 echo "  • Retention Limit: 100 transactions per user (kept locally)"
 echo "  • Trigger Threshold: 150 transactions (immediate archive)"
 echo "  • Periodic Check: Every 6 hours"
+echo ""
+echo "Frontend Connection:"
+echo "  • Network: $NETWORK"
+echo "  • Host:    $HOST"
+echo "  • Config:  ic.config.json (synchronized to dashboard)"
 echo ""
 echo "Notes:"
 echo "  • For auto-scaling with embedded WASMs, use the IC management canister"

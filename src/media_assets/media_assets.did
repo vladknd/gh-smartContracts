@@ -1,105 +1,46 @@
-// ============================================================================
-// Media Assets Canister Candid Interface
-// ============================================================================
-// Permanent storage for media files (videos, images, audio, PDFs)
-// Updated: January 2026
-
-type MediaType = variant {
-    Video;
-    Audio;
-    Image;
-    PDF;
-    Other;
-};
-
 type FileMetadata = record {
-    hash : text;
-    filename : text;
-    content_type : text;
-    media_type : MediaType;
-    size : nat64;
-    uploader : principal;
-    uploaded_at : nat64;
-    chunk_count : nat32;
+  hash : text;
+  media_type : MediaType;
+  size : nat64;
+  content_type : text;
+  filename : text;
+  chunk_count : nat32;
+  uploader : principal;
+  uploaded_at : nat64;
 };
-
+type InitArgs = record { allowed_uploaders : vec principal };
+type MediaType = variant { PDF; Image; Audio; Other; Video };
 type UploadSession = record {
-    session_id : text;
-    filename : text;
-    content_type : text;
-    media_type : MediaType;
-    expected_size : nat64;
-    uploaded_size : nat64;
-    uploader : principal;
-    started_at : nat64;
-    chunks_received : vec nat32;
+  uploaded_size : nat64;
+  session_id : text;
+  chunks_received : vec nat32;
+  media_type : MediaType;
+  content_type : text;
+  expected_size : nat64;
+  filename : text;
+  uploader : principal;
+  started_at : nat64;
 };
-
-type InitArgs = record {
-    allowed_uploaders : vec principal;
-};
-
 service : (InitArgs) -> {
-    // =========================================================================
-    // Upload Functions
-    // =========================================================================
-    
-    // Start a chunked upload session
-    "start_upload": (text, text, MediaType, nat64) -> (variant { Ok: text; Err: text });
-    
-    // Upload a chunk of data
-    "upload_chunk": (text, nat32, blob) -> (variant { Ok: null; Err: text });
-    
-    // Finalize upload and get file hash
-    "finalize_upload": (text) -> (variant { Ok: text; Err: text });
-    
-    // Simple single-request upload for small files
-    "upload_file": (text, text, MediaType, blob) -> (variant { Ok: text; Err: text });
-    
-    // Cancel an upload session
-    "cancel_upload": (text) -> (variant { Ok: null; Err: text });
-    
-    // =========================================================================
-    // Query Functions
-    // =========================================================================
-    
-    // Get file metadata by hash
-    "get_file_metadata": (text) -> (opt FileMetadata) query;
-    
-    // Get a specific chunk of a file
-    "get_file_chunk": (text, nat32) -> (opt blob) query;
-    
-    // Get entire file (small files only)
-    "get_file": (text) -> (variant { Ok: blob; Err: text }) query;
-    
-    // Get URL for a file
-    "get_file_url": (text) -> (variant { Ok: text; Err: text }) query;
-    
-    // Check if file exists
-    "file_exists": (text) -> (bool) query;
-    
-    // Get upload session status
-    "get_upload_session": (text) -> (opt UploadSession) query;
-    
-    // List files (paginated)
-    "list_files": (nat64, nat64) -> (vec FileMetadata) query;
-    
-    // Get file count
-    "get_file_count": () -> (nat64) query;
-    
-    // Get total storage used
-    "get_total_storage": () -> (nat64) query;
-    
-    // =========================================================================
-    // Admin Functions
-    // =========================================================================
-    
-    // Add allowed uploader (controller only)
-    "add_allowed_uploader": (principal) -> (variant { Ok: null; Err: text });
-    
-    // Remove allowed uploader (controller only)
-    "remove_allowed_uploader": (principal) -> (variant { Ok: null; Err: text });
-    
-    // Get list of allowed uploaders
-    "get_allowed_uploaders": () -> (vec principal) query;
+  add_allowed_uploader : (principal) -> (variant { Ok; Err : text });
+  cancel_upload : (text) -> (variant { Ok; Err : text });
+  file_exists : (text) -> (bool) query;
+  finalize_upload : (text) -> (variant { Ok : text; Err : text });
+  get_allowed_uploaders : () -> (vec principal) query;
+  get_file : (text) -> (variant { Ok : blob; Err : text }) query;
+  get_file_chunk : (text, nat32) -> (opt blob) query;
+  get_file_count : () -> (nat64) query;
+  get_file_metadata : (text) -> (opt FileMetadata) query;
+  get_file_url : (text) -> (variant { Ok : text; Err : text }) query;
+  get_total_storage : () -> (nat64) query;
+  get_upload_session : (text) -> (opt UploadSession) query;
+  list_files : (nat64, nat64) -> (vec FileMetadata) query;
+  remove_allowed_uploader : (principal) -> (variant { Ok; Err : text });
+  start_upload : (text, text, MediaType, nat64) -> (
+      variant { Ok : text; Err : text },
+    );
+  upload_chunk : (text, nat32, blob) -> (variant { Ok; Err : text });
+  upload_file : (text, text, MediaType, blob) -> (
+      variant { Ok : text; Err : text },
+    );
 }

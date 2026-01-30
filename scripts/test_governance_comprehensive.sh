@@ -41,35 +41,58 @@ fi
 
 
 # ============================================================================
-# PHASE 2: BOARD MANAGEMENT
+# PHASE 2: BOARD MANAGEMENT (BPS SYSTEM)
 # ============================================================================
-log_header "PHASE 2: Board Management"
+log_header "PHASE 2: Board Management (BPS System)"
 
 USER_P=$(dfx identity get-principal)
 
-log_step "Setting initial board members (Controller Only)"
+log_step "Setting initial board members (Controller Only) - Using BPS"
 # Ensure we are controller
 dfx canister update-settings governance_canister --add-controller "$USER_P" &>/dev/null || true
 
-RES=$(dfx canister call governance_canister set_board_member_shares "(vec { record { member = principal \"$USER_P\"; percentage = 100 } })" 2>&1 || true)
+# First unlock if locked
+dfx canister call governance_canister --candid src/governance_canister/governance_canister.did unlock_board_member_shares &>/dev/null || true
+
+# API: set_board_member_shares(Vec<BoardMemberShare>)
+# 10000 BPS = 100.00%
+RES=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did set_board_member_shares "(
+    vec { 
+        record { member = principal \"$USER_P\"; share_bps = 10000 : nat16; is_sentinel = false } 
+    }
+)" 2>&1 || true)
 if [[ "$RES" == *"Ok"* ]]; then
-    log_pass "Initial board configuration successful"
+    log_pass "Initial board configuration successful (10000 BPS)"
 elif [[ "$RES" == *"locked"* ]]; then
-    log_info "Board shares already locked (idempotent)"
+    dfx canister call governance_canister --candid src/governance_canister/governance_canister.did unlock_board_member_shares &>/dev/null || true
+    RES=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did set_board_member_shares "(
+        vec { 
+            record { member = principal \"$USER_P\"; share_bps = 10000 : nat16; is_sentinel = false } 
+        }
+    )" 2>&1 || true)
+    if [[ "$RES" == *"Ok"* ]]; then
+        log_pass "Board configuration successful after unlock"
+    else
+        log_fail "Board configuration failed after unlock: $RES"
+    fi
 else
     log_fail "Board configuration failed: $RES"
 fi
 
-SHARES=$(dfx canister call governance_canister get_board_member_shares)
+SHARES=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did get_board_member_shares)
 if [[ "$SHARES" == *"$USER_P"* ]]; then
     log_pass "User is a board member"
 else
     log_fail "User is not in board members: $SHARES"
 fi
 
+log_step "Setting sentinel member (Required for locking)"
+SENTINEL_P="rrkah-fqaaa-aaaaa-aaaaq-cai"
+dfx canister call governance_canister --candid src/governance_canister/governance_canister.did set_sentinel_member "(principal \"$SENTINEL_P\")"
+
 log_step "Locking board member shares"
-dfx canister call governance_canister lock_board_member_shares
-LOCKED=$(dfx canister call governance_canister are_board_shares_locked)
+dfx canister call governance_canister --candid src/governance_canister/governance_canister.did lock_board_member_shares
+LOCKED=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did are_board_shares_locked)
 if [[ "$LOCKED" == "(true)" ]]; then
     log_pass "Board shares locked successfully"
 else
@@ -77,7 +100,11 @@ else
 fi
 
 log_step "Verifying Restricted Access (Security Check)"
-ATTACK=$(dfx canister call governance_canister set_board_member_shares "(vec { record { member = principal \"$USER_P\"; percentage = 50 } })" 2>&1 || true)
+ATTACK=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did set_board_member_shares "(
+    vec { 
+        record { member = principal \"$USER_P\"; share_bps = 5000 : nat16; is_sentinel = false } 
+    }
+)" 2>&1 || true)
 if [[ "$ATTACK" == *"ocked"* || "$ATTACK" == *"nauthorized"* ]]; then
     log_pass "Security: Locked configuration cannot be bypassed"
 else
@@ -93,7 +120,7 @@ log_step "Initializing Treasury Allowance"
 dfx canister call treasury_canister force_execute_mmcr '()' &>/dev/null
 
 log_step "Creating a Treasury Proposal (Operations)"
-PROP_ID=$(dfx canister call governance_canister create_treasury_proposal '(record { 
+PROP_ID=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did create_treasury_proposal '(record { 
     title="Marketing Campaign"; 
     description="Boost token visibility"; 
     recipient=principal "2vxsx-fae"; 
@@ -105,10 +132,10 @@ PROP_ID=$(dfx canister call governance_canister create_treasury_proposal '(recor
 log_info "Proposal Created: ID $PROP_ID"
 
 log_step "Supporting Proposal (if needed)"
-STATUS=$(dfx canister call governance_canister get_proposal "($PROP_ID)")
+STATUS=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did get_proposal "($PROP_ID)")
 if [[ "$STATUS" == *"status = variant { Proposed }"* ]]; then
-    dfx canister call governance_canister support_proposal "($PROP_ID)"
-    STATUS=$(dfx canister call governance_canister get_proposal "($PROP_ID)")
+    dfx canister call governance_canister --candid src/governance_canister/governance_canister.did support_proposal "($PROP_ID)"
+    STATUS=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did get_proposal "($PROP_ID)")
 fi
 
 if [[ "$STATUS" == *"status = variant { Active }"* ]]; then
@@ -118,8 +145,8 @@ else
 fi
 
 log_step "Voting on Proposal (YES)"
-dfx canister call governance_canister vote "($PROP_ID, true)"
-VOTES=$(dfx canister call governance_canister get_proposal "($PROP_ID)")
+dfx canister call governance_canister --candid src/governance_canister/governance_canister.did vote "($PROP_ID, true)"
+VOTES=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did get_proposal "($PROP_ID)")
 if [[ "$VOTES" == *"votes_yes"* ]]; then
     log_pass "Vote recorded with Board Member weight (VUC)"
 else
@@ -127,9 +154,9 @@ else
 fi
 
 log_step "Finalizing Voting Period (Admin Hack)"
-dfx canister call governance_canister admin_expire_proposal "($PROP_ID)"
-dfx canister call governance_canister finalize_proposal "($PROP_ID)"
-STATUS=$(dfx canister call governance_canister get_proposal "($PROP_ID)")
+dfx canister call governance_canister --candid src/governance_canister/governance_canister.did admin_expire_proposal "($PROP_ID)"
+dfx canister call governance_canister --candid src/governance_canister/governance_canister.did finalize_proposal "($PROP_ID)"
+STATUS=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did get_proposal "($PROP_ID)")
 if [[ "$STATUS" == *"status = variant { Approved }"* ]]; then
     log_pass "Proposal successfully Finalized -> Approved"
 else
@@ -142,8 +169,8 @@ fi
 log_header "PHASE 4: Execution & Settlement"
 
 log_step "Executing Approved Proposal (Governance -> Treasury)"
-EXEC=$(dfx canister call governance_canister execute_proposal "($PROP_ID)" 2>&1)
-STATUS=$(dfx canister call governance_canister get_proposal "($PROP_ID)")
+EXEC=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did execute_proposal "($PROP_ID)" 2>&1)
+STATUS=$(dfx canister call governance_canister --candid src/governance_canister/governance_canister.did get_proposal "($PROP_ID)")
 if [[ "$STATUS" == *"status = variant { Executed }"* ]]; then
     log_pass "Proposal successfully Executed"
 else

@@ -9,72 +9,72 @@ Once the system is fully initialized and locked, day-to-day management moves to 
 
 ---
 
-## 1. Board Member Initialization
+## 1. Board Member & Sentinel Initialization
 
-**Goal**: Assign the initial board members (e.g., the first 3 founders) and then LOCK the configuration.
-**Critical**: After locking, board members can **only** be added or removed via `AddBoardMember` governance proposals. This ensures decentralization.
+**Goal**: Assign the sentinel member and initial board members, then LOCK the configuration.
+**Critical**: Once locked, membership can **only** be changed via governance proposals.
 
-### Step 1: Assign Initial Board Members
-Use `set_board_member_shares` on the `governance_canister`.
-
-**Rules:**
-- Total percentage sum MUST equal exactly `100`.
-- All percentages must be integers (`1` to `100`).
-
-**Command (Bash):**
-```bash
-# Example: 3 Founders
-# Founder 1: 50%
-# Founder 2: 30%
-# Founder 3: 20%
-
-FOUNDER1="n7kyi-a2ccw-erzef-tzywo-kuqyh-4x6on-6ltec-flkee-5zcdi-62drw-gae"
-FOUNDER2="vlg44-yhcay-gabeb-4qse6-k4tvu-ujdun-jyzjc-aq5nm-45hye-2qsr5-3ae"
-FOUNDER3="zgmvl-h4shw-3tgr2-sunlv-nujve-qh7o4-mwolg-hmais-ymglc-yt4q7-cqe"
-
-dfx canister call governance_canister set_board_member_shares "(vec {
-  record { member = principal \"$FOUNDER1\"; percentage = 60 };
-  record { member = principal \"$FOUNDER2\"; percentage = 30 };
-  record { member = principal \"$FOUNDER3\"; percentage = 10 };
-})"
-```
-
-### Step 2: Verify Configuration
-Check that the shares are set correctly.
-
-```bash
-dfx canister call governance_canister get_board_member_shares
-```
-
-### Step 3: Lock Board Configuration
-Once the initial board is verified, you **MUST** lock it to transfer control to the governance protocol.
+### Step 1: Set the Sentinel Member
+The **Sentinel** Role is special: they always have exactly **1 unit of voting power** (1 e8s). This ensures someone always has "loading power" even if zero tokens are staked.
 
 **Command:**
 ```bash
+SENTINEL="txfzn-yybdp-iygwe-ugtgi-v5lrs-l7ru7-gcbf7-zcp7a-alp22-i54sp-uae"
+
+dfx canister call governance_canister set_sentinel_member "(principal \"$SENTINEL\")"
+```
+
+### Step 2: Assign Regular Board Member Shares
+Use `set_board_member_shares`. These members share the **Voting Unit Capacity (VUC)** pool based on **Basis Points (BPS)** (10,000 = 100.00%).
+
+**Rules:**
+- Total BPS must equal exactly **10,000**.
+- Each record must set `is_sentinel = false`.
+- The Sentinel principal **cannot** be in this list.
+
+**Command (Bash):**
+```bash
+# Example: 3 Regular Founders
+# Founder 1: 60% (6000 BPS)
+# Founder 2: 30% (3000 BPS)
+# Founder 3: 10% (1000 BPS)
+FOUNDER1="2kqdk-6gsni-zdcwc-pvwtw-a23zt-lh6li-tfoi3-ao3ct-yrrxx-kpsdx-dqe"
+FOUNDER2="nb6zq-6blt3-uedgt-5ig4p-nybsn-3m7qo-f2hmn-he7ag-yyn3j-tiu4v-lae"
+FOUNDER3="myoet-kkxy7-i5aiu-5mkcc-2fb7k-qlhaq-5wz4h-zuw5i-unnn6-fhwl7-jae"
+
+dfx canister call governance_canister set_board_member_shares "(vec {
+  record { member = principal \"$FOUNDER1\"; share_bps = 6000:nat16; is_sentinel = false };
+  record { member = principal \"$FOUNDER2\"; share_bps = 3000:nat16; is_sentinel = false };
+  record { member = principal \"$FOUNDER3\"; share_bps = 1000:nat16; is_sentinel = false };
+})"
+```
+
+### Step 3: Verify & Lock Board
+Verify actual voting power and lock the configuration.
+
+```bash
+# Verify actual voting power in GHC
+dfx canister call governance_canister get_all_board_member_voting_powers
+
+# Lock board (requires Sentinel + 10,000 total regular BPS)
 dfx canister call governance_canister lock_board_member_shares
 ```
 
-**Verify Lock Status:**
-```bash
-dfx canister call governance_canister are_board_shares_locked
-# Output should be: (true)
-```
+**Note**: Before locking, use `unlock_board_member_shares` or `clear_sentinel_member` for emergency fixes.
 
 ---
 
 ## 2. Testing & Debugging (Admin Only)
 
-These commands are strictly for testing and debugging purposes. They allow skipping voting delays.
+These commands allow skipping voting delays during development.
 
-### Force Proposal Status
-Useful for testing execution logic without waiting 2 weeks for voting.
-
+### Skip Voting Periods
 ```bash
-# Force Approve Proposal ID 1
+# Force Approve/Reject (Status override)
 dfx canister call governance_canister admin_set_proposal_status '(0 : nat64, variant { Approved })'
 
-# Force Reject Proposal ID 1
-dfx canister call governance_canister admin_set_proposal_status '(0 : nat64, variant { Rejected })'
+# Force Expiration (Set end time to past)
+dfx canister call governance_canister admin_expire_proposal '(0 : nat64)'
 ```
 
 ---
@@ -127,16 +127,19 @@ dfx canister install governance_canister --mode upgrade
 ```
 
 ### Re-Linking Canisters (If IDs Change)
-If you redeploy a canister and its ID changes, you may need to update the references in other canisters.
+If you redeploy a canister and its ID changes, update the internal references:
 
 **Governance Canister:**
 ```bash
 # Update Treasury Link
 dfx canister call governance_canister set_treasury_canister_id '(principal "NEW_TREASURY_ID")'
+
+# Update Learning Engine Link
+dfx canister call governance_canister set_learning_engine_id '(principal "NEW_LE_ID")'
 ```
 
 **Treasury Canister:**
 ```bash
 # Update Governance Link
-dfx canister call treasury_canister set_governance_canister_id '(principal "NEW_GOVERNANCE_ID")'
+dfx canister call treasury_canister set_governance_canister_id '(principal "NEW_GOV_ID")'
 ```

@@ -2,9 +2,6 @@ import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
-/**
- * Eastern Time components: (year, month, day, hour, minute, second, is_dst)
- */
 export interface EasternTimeInfo {
   'day' : number,
   'month' : number,
@@ -24,9 +21,6 @@ export interface InitArgs {
   'ledger_id' : Principal,
   'governance_canister_id' : Principal,
 }
-/**
- * MMCR execution check result: (can_execute, message)
- */
 export interface MMCRExecutionCheck {
   'can_execute' : boolean,
   'message' : string,
@@ -35,22 +29,11 @@ export interface MMCRStatus {
   'last_release_timestamp' : bigint,
   'releases_completed' : bigint,
   'next_scheduled_year' : number,
-  /**
-   * Next scheduled MMCR date
-   */
   'next_scheduled_month' : number,
   'seconds_until_next' : bigint,
   'next_release_amount' : bigint,
   'releases_remaining' : bigint,
 }
-/**
- * ============================================================================
- * Treasury Canister Candid Interface
- * ============================================================================
- * Token custody, balance tracking, and transfer execution
- * Created: January 2026
- * Updated: January 2026 - Added calendar-based MMCR scheduling (1st of month at 12am ET)
- */
 export type TokenType = { 'GHC' : null } |
   { 'ICP' : null } |
   { 'USDC' : null };
@@ -62,9 +45,6 @@ export interface TreasuryState {
   'last_mmcr_year' : number,
   'allowance' : bigint,
   'last_mmcr_timestamp' : bigint,
-  /**
-   * Calendar-based tracking for MMCR scheduling
-   */
   'last_mmcr_month' : number,
 }
 export interface _SERVICE {

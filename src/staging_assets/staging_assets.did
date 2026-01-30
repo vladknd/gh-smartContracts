@@ -1,156 +1,76 @@
-// ============================================================================
-// Staging Assets Canister Candid Interface
-// ============================================================================
-// Temporary storage for content before governance approval
-// Updated: January 2026
-
-// ============================================================================
-// Content Types (matching Learning Engine)
-// ============================================================================
-
-type MediaType = variant {
-    Video;
-    Audio;
-    Image;
-    PDF;
-};
-
-type MediaContent = record {
-    media_type : MediaType;
-    url : text;
-    thumbnail_url : opt text;
-    duration_seconds : opt nat32;
-    file_hash : opt text;
-};
-
-type QuizQuestion = record {
-    question : text;
-    options : vec text;
-    answer : nat8;
-};
-
-type QuizData = record {
-    questions : vec QuizQuestion;
-};
-
 type ContentNode = record {
-    id : text;
-    parent_id : opt text;
-    order : nat32;
-    display_type : text;
-    title : text;
-    description : opt text;
-    content : opt text;
-    paraphrase : opt text;
-    media : opt MediaContent;
-    quiz : opt QuizData;
-    created_at : nat64;
-    updated_at : nat64;
-    version : nat64;
+  id : text;
+  media : opt MediaContent;
+  title : text;
+  updated_at : nat64;
+  content : opt text;
+  order : nat32;
+  paraphrase : opt text;
+  quiz : opt QuizData;
+  description : opt text;
+  created_at : nat64;
+  display_type : text;
+  version : nat64;
+  parent_id : opt text;
 };
-
-// ============================================================================
-// Staging-Specific Types
-// ============================================================================
-
-type StagingStatus = variant {
-    Pending;
-    ProposalCreated;
-    Loading;
-    Loaded;
-    Rejected;
-};
-
-type StagedContentInfo = record {
-    content_hash : text;
-    title : text;
-    description : text;
-    node_count : nat32;
-    stager : principal;
-    staged_at : nat64;
-    proposal_id : opt nat64;
-    status : StagingStatus;
-};
-
 type InitArgs = record {
-    governance_canister_id : principal;
-    learning_engine_id : principal;
+  learning_engine_id : principal;
+  governance_canister_id : principal;
 };
-
+type MediaContent = record {
+  url : text;
+  duration_seconds : opt nat32;
+  media_type : MediaType;
+  file_hash : opt text;
+  thumbnail_url : opt text;
+};
+type MediaType = variant { PDF; Image; Audio; Video };
+type QuizData = record { questions : vec QuizQuestion };
+type QuizQuestion = record {
+  question : text;
+  answer : nat8;
+  options : vec text;
+};
+type StagedContentInfo = record {
+  stager : principal;
+  status : StagingStatus;
+  staged_at : nat64;
+  title : text;
+  node_count : nat32;
+  content_hash : text;
+  description : text;
+  proposal_id : opt nat64;
+};
+type StagingStatus = variant {
+  ProposalCreated;
+  Rejected;
+  Loaded;
+  Loading;
+  Pending;
+};
 service : (InitArgs) -> {
-    // =========================================================================
-    // Staging Functions
-    // =========================================================================
-    
-    // Stage content for governance approval (returns content_hash)
-    "stage_content": (text, text, vec ContentNode) -> (variant { Ok: text; Err: text });
-    
-    // Associate a proposal with staged content
-    "set_proposal_id": (text, nat64) -> (variant { Ok: null; Err: text });
-    
-    // Mark content as loading (governance only)
-    "mark_loading": (text) -> (variant { Ok: null; Err: text });
-    
-    // Mark content as loaded (learning engine only)
-    "mark_loaded": (text) -> (variant { Ok: null; Err: text });
-    
-    // Mark content as rejected (governance only)
-    "mark_rejected": (text) -> (variant { Ok: null; Err: text });
-    
-    // Delete staged content (after load or rejection)
-    "delete_staged_content": (text) -> (variant { Ok: null; Err: text });
-    
-    // =========================================================================
-    // Content Retrieval (for Learning Engine)
-    // =========================================================================
-    
-    // Get a chunk of content nodes
-    "get_content_chunk": (text, nat32, nat32) -> (vec ContentNode) query;
-    
-    // Get all content nodes
-    "get_all_content_nodes": (text) -> (variant { Ok: vec ContentNode; Err: text }) query;
-    
-    // =========================================================================
-    // Query Functions
-    // =========================================================================
-    
-    // Get staged content info (without nodes)
-    "get_staged_content_info": (text) -> (opt StagedContentInfo) query;
-    
-    // Check if staged content exists
-    "staged_content_exists": (text) -> (bool) query;
-    
-    // List all staged content
-    "list_staged_content": () -> (vec StagedContentInfo) query;
-    
-    // Get staged content by stager
-    "get_staged_by_stager": (principal) -> (vec StagedContentInfo) query;
-    
-    // Get count of staged content
-    "get_staged_count": () -> (nat64) query;
-    
-    // =========================================================================
-    // Admin Functions
-    // =========================================================================
-    
-    // Add allowed stager (controller only)
-    "add_allowed_stager": (principal) -> (variant { Ok: null; Err: text });
-    
-    // Remove allowed stager (controller only)
-    "remove_allowed_stager": (principal) -> (variant { Ok: null; Err: text });
-    
-    // Get list of allowed stagers
-    "get_allowed_stagers": () -> (vec principal) query;
-    
-    // Update governance canister ID (controller only)
-    "set_governance_canister_id": (principal) -> (variant { Ok: null; Err: text });
-    
-    // Update learning engine ID (controller only)
-    "set_learning_engine_id": (principal) -> (variant { Ok: null; Err: text });
-    
-    // Get governance canister ID
-    "get_governance_canister_id": () -> (principal) query;
-    
-    // Get learning engine ID
-    "get_learning_engine_id": () -> (principal) query;
+  add_allowed_stager : (principal) -> (variant { Ok; Err : text });
+  delete_staged_content : (text) -> (variant { Ok; Err : text });
+  get_all_content_nodes : (text) -> (
+      variant { Ok : vec ContentNode; Err : text },
+    ) query;
+  get_allowed_stagers : () -> (vec principal) query;
+  get_content_chunk : (text, nat32, nat32) -> (vec ContentNode) query;
+  get_governance_canister_id : () -> (principal) query;
+  get_learning_engine_id : () -> (principal) query;
+  get_staged_by_stager : (principal) -> (vec StagedContentInfo) query;
+  get_staged_content_info : (text) -> (opt StagedContentInfo) query;
+  get_staged_count : () -> (nat64) query;
+  list_staged_content : () -> (vec StagedContentInfo) query;
+  mark_loaded : (text) -> (variant { Ok; Err : text });
+  mark_loading : (text) -> (variant { Ok; Err : text });
+  mark_rejected : (text) -> (variant { Ok; Err : text });
+  remove_allowed_stager : (principal) -> (variant { Ok; Err : text });
+  set_governance_canister_id : (principal) -> (variant { Ok; Err : text });
+  set_learning_engine_id : (principal) -> (variant { Ok; Err : text });
+  set_proposal_id : (text, nat64) -> (variant { Ok; Err : text });
+  stage_content : (text, text, vec ContentNode) -> (
+      variant { Ok : text; Err : text },
+    );
+  staged_content_exists : (text) -> (bool) query;
 }

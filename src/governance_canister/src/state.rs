@@ -42,13 +42,25 @@ thread_local! {
     
     // Board Member Management
     // Board members exercise VUC (Volume of Unmined Coins) voting power
-    // Each member has a percentage share of the total VUC
+    // Regular members have a BPS share of the total VUC
+    // The sentinel member has exactly 1 unit of VUC
     
-    /// Board member voting power shares: Principal -> percentage (1-100)
-    /// Each board member gets (percentage / 100) * VUC voting power
-    /// Total of all percentages must equal exactly 100
-    pub static BOARD_MEMBER_SHARES: RefCell<StableBTreeMap<Principal, u8, Memory>> = RefCell::new(
+    /// Board member voting power shares: Principal -> share in basis points (0-10000)
+    /// Each board member gets (share_bps / 10000) * VUC voting power
+    /// Total of all shares must equal exactly 10,000 BPS (100%)
+    /// NOTE: The sentinel is NOT stored here - they are stored in SENTINEL_MEMBER
+    pub static BOARD_MEMBER_SHARES: RefCell<StableBTreeMap<Principal, u16, Memory>> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(6))))
+    );
+    
+    /// The Sentinel Member: A special board member with exactly 1 unit of VUC voting power
+    /// This member exists to satisfy the "requires board member vote" rule without 
+    /// significantly affecting voting outcomes. They are NOT included in BPS calculations.
+    pub static SENTINEL_MEMBER: RefCell<StableCell<Principal, Memory>> = RefCell::new(
+        StableCell::init(
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(15))),
+            Principal::anonymous()
+        ).unwrap()
     );
     
     /// Lock flag for board member shares

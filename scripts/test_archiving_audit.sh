@@ -48,7 +48,7 @@ log_step "Governance Setup (Tokens & Content)"
 
 # 2a. Setup voting power
 log_info "Setting up Board Member permissions..."
-dfx canister call governance_canister set_board_member_shares "(vec { record { member = principal \"$DEFAULT_PRINCIPAL\"; percentage = 100 : nat8 } })" >/dev/null
+dfx canister call governance_canister set_board_member_shares "(vec { record { member = principal \"$DEFAULT_PRINCIPAL\"; share_bps = 10000 : nat16; is_sentinel = false } })" --candid src/governance_canister/governance_canister.did >/dev/null
 
 # 2b. Enable high activity (Update Token Limits via Proposal)
 log_info "Proposing higher daily attempts (200) for stress testing..."

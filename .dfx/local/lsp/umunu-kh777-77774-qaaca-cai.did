@@ -1,6 +1,6 @@
 type AddBoardMemberPayload = record {
+  share_bps : nat16;
   new_member : principal;
-  percentage : nat8;
 };
 type AddContentFromStagingPayload = record {
   unit_count : nat32;
@@ -9,7 +9,11 @@ type AddContentFromStagingPayload = record {
   staging_canister : principal;
   content_title : text;
 };
-type BoardMemberShare = record { member : principal; percentage : nat8 };
+type BoardMemberShare = record {
+  member : principal;
+  is_sentinel : bool;
+  share_bps : nat16;
+};
 type CreateAddContentProposalInput = record {
   external_link : opt text;
   title : text;
@@ -24,8 +28,8 @@ type CreateBoardMemberProposalInput = record {
   external_link : opt text;
   title : text;
   description : text;
+  share_bps : nat16;
   new_member : principal;
-  percentage : nat8;
 };
 type CreateDeleteContentProposalInput = record {
   external_link : opt text;
@@ -54,7 +58,7 @@ type CreateUpdateBoardMemberShareProposalInput = record {
   external_link : opt text;
   title : text;
   description : text;
-  new_percentage : nat8;
+  new_share_bps : nat16;
 };
 type CreateUpdateGovernanceConfigProposalInput = record {
   external_link : opt text;
@@ -66,6 +70,12 @@ type CreateUpdateGovernanceConfigProposalInput = record {
   new_support_threshold : opt nat64;
   new_voting_period_days : opt nat16;
   new_resubmission_cooldown_days : opt nat16;
+};
+type CreateUpdateSentinelProposalInput = record {
+  external_link : opt text;
+  title : text;
+  description : text;
+  new_sentinel : principal;
 };
 type CreateUpdateTokenLimitsProposalInput = record {
   external_link : opt text;
@@ -99,6 +109,7 @@ type Proposal = record {
   required_yes_votes : nat64;
   voting_ends_at : nat64;
   supporter_count : nat64;
+  update_sentinel_payload : opt UpdateSentinelPayload;
   category : opt ProposalCategory;
   proposer : principal;
   voter_count : nat64;
@@ -128,6 +139,7 @@ type ProposalStatus = variant {
   Executed;
 };
 type ProposalType = variant {
+  UpdateSentinel;
   UpdateGovernanceConfig;
   UpdateBoardMemberShare;
   AddContentFromStaging;
@@ -153,7 +165,7 @@ type TokenLimits = record {
 type TokenType = variant { GHC; ICP; USDC };
 type UpdateBoardMemberSharePayload = record {
   member : principal;
-  new_percentage : nat8;
+  new_share_bps : nat16;
 };
 type UpdateGovernanceConfigPayload = record {
   new_support_period_days : opt nat16;
@@ -163,6 +175,7 @@ type UpdateGovernanceConfigPayload = record {
   new_voting_period_days : opt nat16;
   new_resubmission_cooldown_days : opt nat16;
 };
+type UpdateSentinelPayload = record { new_sentinel : principal };
 type UpdateTokenLimitsPayload = record {
   new_pass_threshold : opt nat8;
   new_max_attempts : opt nat8;
@@ -183,6 +196,7 @@ service : {
       variant { Ok; Err : text },
     );
   are_board_shares_locked : () -> (bool) query;
+  clear_sentinel_member : () -> (variant { Ok; Err : text });
   create_add_content_proposal : (CreateAddContentProposalInput) -> (
       variant { Ok : nat64; Err : text },
     );
@@ -204,15 +218,21 @@ service : {
   create_update_governance_config_proposal : (
       CreateUpdateGovernanceConfigProposalInput,
     ) -> (variant { Ok : nat64; Err : text });
+  create_update_sentinel_proposal : (CreateUpdateSentinelProposalInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
   create_update_token_limits_proposal : (
       CreateUpdateTokenLimitsProposalInput,
     ) -> (variant { Ok : nat64; Err : text });
   execute_proposal : (nat64) -> (variant { Ok; Err : text });
   finalize_proposal : (nat64) -> (variant { Ok : ProposalStatus; Err : text });
   get_active_proposals : () -> (vec Proposal) query;
+  get_all_board_member_voting_powers : () -> (
+      variant { Ok : vec record { principal; nat16; nat64; bool }; Err : text },
+    );
   get_all_proposals : () -> (vec Proposal) query;
   get_board_member_count : () -> (nat64) query;
-  get_board_member_share : (principal) -> (opt nat8) query;
+  get_board_member_share : (principal) -> (opt nat16) query;
   get_board_member_shares : () -> (vec BoardMemberShare) query;
   get_governance_config : () -> (nat64, nat64, nat64, nat64, nat64, nat8) query;
   get_learning_engine_id : () -> (principal) query;
@@ -220,6 +240,7 @@ service : {
   get_proposal : (nat64) -> (opt Proposal) query;
   get_proposal_supporters : (nat64) -> (vec SupportRecord) query;
   get_proposal_votes : (nat64) -> (vec VoteRecord) query;
+  get_sentinel_member : () -> (opt principal) query;
   get_staking_hub_id : () -> (principal) query;
   get_treasury_canister_id : () -> (principal) query;
   get_user_voting_power : (principal) -> (variant { Ok : nat64; Err : text });
@@ -230,7 +251,9 @@ service : {
       variant { Ok; Err : text },
     );
   set_learning_engine_id : (principal) -> (variant { Ok; Err : text });
+  set_sentinel_member : (principal) -> (variant { Ok; Err : text });
   set_treasury_canister_id : (principal) -> (variant { Ok; Err : text });
   support_proposal : (nat64) -> (variant { Ok; Err : text });
+  unlock_board_member_shares : () -> (variant { Ok; Err : text });
   vote : (nat64, bool) -> (variant { Ok; Err : text });
 }

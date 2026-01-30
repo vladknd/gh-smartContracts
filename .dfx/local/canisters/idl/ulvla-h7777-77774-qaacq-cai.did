@@ -1,26 +1,24 @@
-type InitArgs = record {
-  admin_principal : principal;
-  treasury_principal : principal;
-  ghc_ledger_id : principal;
-  ckusdc_ledger_id : principal;
-  price_per_token_e6 : nat;
-  ghc_decimals : nat8;
-};
-
 type IcoState = record {
-  admin_principal : principal;
-  ghc_ledger_id : principal;
-  ckusdc_ledger_id : principal;
   price_per_token_e6 : nat;
+  total_sold_ghc : nat;
+  ghc_ledger_id : principal;
   ghc_decimals : nat8;
   total_raised_usdc : nat;
-  total_sold_ghc : nat;
+  ckusdc_ledger_id : principal;
+  admin_principal : principal;
 };
-
+type InitArgs = record {
+  price_per_token_e6 : nat;
+  ghc_ledger_id : principal;
+  ghc_decimals : nat8;
+  treasury_principal : principal;
+  ckusdc_ledger_id : principal;
+  admin_principal : principal;
+};
 service : (InitArgs) -> {
-  buy_ghc : (amount_ghc : nat) -> (variant { Ok : text; Err : text });
-  withdraw_usdc : (destination : principal, amount : nat) -> (variant { Ok : text; Err : text });
-  withdraw_ghc : (destination : principal, amount : nat) -> (variant { Ok : text; Err : text });
+  buy_ghc : (nat) -> (variant { Ok : text; Err : text });
   end_sale : () -> (variant { Ok : text; Err : text });
   get_ico_stats : () -> (IcoState) query;
+  withdraw_ghc : (principal, nat) -> (variant { Ok : text; Err : text });
+  withdraw_usdc : (principal, nat) -> (variant { Ok : text; Err : text });
 }

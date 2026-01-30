@@ -38,11 +38,11 @@ pub enum ProposalCategory {
 pub enum ProposalType {
     /// Treasury spending proposal - transfers tokens to recipient
     Treasury,
-    /// Add a new board member with specified percentage share
+    /// Add a new board member with specified share in basis points
     AddBoardMember,
-    /// Remove a board member and redistribute their share equally
+    /// Remove a board member and redistribute their share proportionally
     RemoveBoardMember,
-    /// Update an existing board member's percentage share
+    /// Update an existing board member's share in basis points
     UpdateBoardMemberShare,
     /// Update governance configuration (thresholds, approval percentage)
     UpdateGovernanceConfig,
@@ -52,16 +52,19 @@ pub enum ProposalType {
     UpdateTokenLimits,
     /// Delete a content node
     DeleteContentNode,
+    /// Update the sentinel member (the member with 1 unit of voting power)
+    UpdateSentinel,
 }
 
 /// Payload for AddBoardMember proposals
+/// Uses Basis Points (BPS) where 10,000 BPS = 100.00%
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct AddBoardMemberPayload {
     /// Wallet address of the new board member
     pub new_member: Principal,
-    /// Percentage share to allocate to the new member (1-99)
-    /// This percentage is taken equally from all existing members
-    pub percentage: u8,
+    /// Share in basis points (1-9900, where 100 = 1.00%, 10000 = 100%)
+    /// This share is taken proportionally from existing members (excluding sentinel)
+    pub share_bps: u16,
 }
 
 /// Payload for RemoveBoardMember proposals
@@ -72,13 +75,22 @@ pub struct RemoveBoardMemberPayload {
 }
 
 /// Payload for UpdateBoardMemberShare proposals
+/// Uses Basis Points (BPS) where 10,000 BPS = 100.00%
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct UpdateBoardMemberSharePayload {
-    /// Wallet address of the board member to update
+    /// Wallet address of the board member to update (cannot be sentinel)
     pub member: Principal,
-    /// New percentage share (1-99)
+    /// New share in basis points (1-9900, where 100 = 1.00%)
     /// The difference is taken from or distributed to other members proportionally
-    pub new_percentage: u8,
+    pub new_share_bps: u16,
+}
+
+/// Payload for UpdateSentinel proposals
+/// The sentinel is a special board member with exactly 1 unit of voting power
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct UpdateSentinelPayload {
+    /// New wallet address for the sentinel role
+    pub new_sentinel: Principal,
 }
 
 /// Payload for UpdateGovernanceConfig proposals
@@ -199,10 +211,14 @@ pub struct Proposal {
     pub update_token_limits_payload: Option<UpdateTokenLimitsPayload>,
     pub delete_content_payload: Option<DeleteContentNodePayload>,
     
+    // Sentinel payload
+    pub update_sentinel_payload: Option<UpdateSentinelPayload>,
+    
     // Voting state
     pub votes_yes: u64,
     pub votes_no: u64,
     pub voter_count: u64,
+    pub board_member_yes_count: u32,
     
     // Support state (for Proposed phase)
     pub support_amount: u64,
@@ -300,24 +316,31 @@ pub struct CreateTreasuryProposalInput {
 }
 
 /// Input for creating a board member proposal
+/// Uses Basis Points (BPS) where 10,000 BPS = 100.00%
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct CreateBoardMemberProposalInput {
     pub title: String,
     pub description: String,
     /// Wallet address of the new board member to add
     pub new_member: Principal,
-    /// Percentage share to allocate to the new member (1-99)
-    /// This percentage is taken equally from all existing members
-    pub percentage: u8,
+    /// Share in basis points (1-9900, where 100 = 1.00%)
+    /// This share is taken proportionally from existing members (excluding sentinel)
+    pub share_bps: u16,
     pub external_link: Option<String>,
 }
 
 /// Board member share entry for query results and admin input
+/// Uses Basis Points (BPS) where 10,000 BPS = 100.00%
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct BoardMemberShare {
     pub member: Principal,
-    pub percentage: u8,
+    /// Share in basis points (0-10000)
+    pub share_bps: u16,
+    /// Is this the sentinel member (1 unit of VUC, not BPS-based)
+    pub is_sentinel: bool,
 }
+
+impl BoardMemberShare {}
 
 /// Treasury transfer input (for calling treasury canister)
 #[derive(CandidType, Deserialize, Clone, Debug)]
@@ -388,14 +411,25 @@ pub struct CreateRemoveBoardMemberProposalInput {
 }
 
 /// Input for creating an UpdateBoardMemberShare proposal
+/// Uses Basis Points (BPS) where 10,000 BPS = 100.00%
 #[derive(CandidType, Deserialize, Clone, Debug)]
 pub struct CreateUpdateBoardMemberShareProposalInput {
     pub title: String,
     pub description: String,
-    /// Wallet address of the board member to update
+    /// Wallet address of the board member to update (cannot be sentinel)
     pub member: Principal,
-    /// New percentage share (1-99)
-    pub new_percentage: u8,
+    /// New share in basis points (1-9900, where 100 = 1.00%)
+    pub new_share_bps: u16,
+    pub external_link: Option<String>,
+}
+
+/// Input for creating an UpdateSentinel proposal
+#[derive(CandidType, Deserialize, Clone, Debug)]
+pub struct CreateUpdateSentinelProposalInput {
+    pub title: String,
+    pub description: String,
+    /// New wallet address for the sentinel role
+    pub new_sentinel: Principal,
     pub external_link: Option<String>,
 }
 

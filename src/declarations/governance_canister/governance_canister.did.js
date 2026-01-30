@@ -25,8 +25,8 @@ export const idlFactory = ({ IDL }) => {
     'external_link' : IDL.Opt(IDL.Text),
     'title' : IDL.Text,
     'description' : IDL.Text,
+    'share_bps' : IDL.Nat16,
     'new_member' : IDL.Principal,
-    'percentage' : IDL.Nat8,
   });
   const CreateDeleteContentProposalInput = IDL.Record({
     'external_link' : IDL.Opt(IDL.Text),
@@ -69,7 +69,7 @@ export const idlFactory = ({ IDL }) => {
     'external_link' : IDL.Opt(IDL.Text),
     'title' : IDL.Text,
     'description' : IDL.Text,
-    'new_percentage' : IDL.Nat8,
+    'new_share_bps' : IDL.Nat16,
   });
   const CreateUpdateGovernanceConfigProposalInput = IDL.Record({
     'external_link' : IDL.Opt(IDL.Text),
@@ -82,26 +82,27 @@ export const idlFactory = ({ IDL }) => {
     'new_voting_period_days' : IDL.Opt(IDL.Nat16),
     'new_resubmission_cooldown_days' : IDL.Opt(IDL.Nat16),
   });
-  const CreateUpdateQuizConfigProposalInput = IDL.Record({
+  const CreateUpdateSentinelProposalInput = IDL.Record({
+    'external_link' : IDL.Opt(IDL.Text),
+    'title' : IDL.Text,
+    'description' : IDL.Text,
+    'new_sentinel' : IDL.Principal,
+  });
+  const TokenLimits = IDL.Record({
+    'max_monthly_tokens' : IDL.Nat64,
+    'max_yearly_tokens' : IDL.Nat64,
+    'max_daily_tokens' : IDL.Nat64,
+    'max_weekly_tokens' : IDL.Nat64,
+  });
+  const CreateUpdateTokenLimitsProposalInput = IDL.Record({
     'external_link' : IDL.Opt(IDL.Text),
     'new_pass_threshold' : IDL.Opt(IDL.Nat8),
     'title' : IDL.Text,
-    'new_max_daily_quizzes' : IDL.Opt(IDL.Nat8),
-    'new_max_weekly_quizzes' : IDL.Opt(IDL.Nat8),
-    'new_max_yearly_quizzes' : IDL.Opt(IDL.Nat16),
     'new_max_attempts' : IDL.Opt(IDL.Nat8),
     'description' : IDL.Text,
-    'new_max_monthly_quizzes' : IDL.Opt(IDL.Nat8),
     'new_reward_amount' : IDL.Opt(IDL.Nat64),
-  });
-  const UpdateGlobalQuizConfigPayload = IDL.Record({
-    'new_pass_threshold' : IDL.Opt(IDL.Nat8),
-    'new_max_daily_quizzes' : IDL.Opt(IDL.Nat8),
-    'new_max_weekly_quizzes' : IDL.Opt(IDL.Nat8),
-    'new_max_yearly_quizzes' : IDL.Opt(IDL.Nat16),
-    'new_max_attempts' : IDL.Opt(IDL.Nat8),
-    'new_max_monthly_quizzes' : IDL.Opt(IDL.Nat8),
-    'new_reward_amount' : IDL.Opt(IDL.Nat64),
+    'new_regular_limits' : IDL.Opt(TokenLimits),
+    'new_subscribed_limits' : IDL.Opt(TokenLimits),
   });
   const AddContentFromStagingPayload = IDL.Record({
     'unit_count' : IDL.Nat32,
@@ -110,22 +111,13 @@ export const idlFactory = ({ IDL }) => {
     'staging_canister' : IDL.Principal,
     'content_title' : IDL.Text,
   });
-  const QuizQuestion = IDL.Record({
-    'question' : IDL.Text,
-    'answer' : IDL.Nat8,
-    'options' : IDL.Vec(IDL.Text),
-  });
-  const UpdateQuizQuestionsPayload = IDL.Record({
-    'content_id' : IDL.Text,
-    'new_questions' : IDL.Vec(QuizQuestion),
-  });
   const DeleteContentNodePayload = IDL.Record({
     'content_id' : IDL.Text,
     'reason' : IDL.Text,
   });
   const AddBoardMemberPayload = IDL.Record({
+    'share_bps' : IDL.Nat16,
     'new_member' : IDL.Principal,
-    'percentage' : IDL.Nat8,
   });
   const UpdateGovernanceConfigPayload = IDL.Record({
     'new_support_period_days' : IDL.Opt(IDL.Nat16),
@@ -135,26 +127,27 @@ export const idlFactory = ({ IDL }) => {
     'new_voting_period_days' : IDL.Opt(IDL.Nat16),
     'new_resubmission_cooldown_days' : IDL.Opt(IDL.Nat16),
   });
+  const UpdateSentinelPayload = IDL.Record({ 'new_sentinel' : IDL.Principal });
   const RemoveBoardMemberPayload = IDL.Record({
     'member_to_remove' : IDL.Principal,
   });
-  const UpdateContentNodePayload = IDL.Record({
-    'content_id' : IDL.Text,
-    'new_title' : IDL.Opt(IDL.Text),
-    'new_content' : IDL.Opt(IDL.Text),
-    'new_paraphrase' : IDL.Opt(IDL.Text),
+  const UpdateTokenLimitsPayload = IDL.Record({
+    'new_pass_threshold' : IDL.Opt(IDL.Nat8),
+    'new_max_attempts' : IDL.Opt(IDL.Nat8),
+    'new_reward_amount' : IDL.Opt(IDL.Nat64),
+    'new_regular_limits' : IDL.Opt(TokenLimits),
+    'new_subscribed_limits' : IDL.Opt(TokenLimits),
   });
   const UpdateBoardMemberSharePayload = IDL.Record({
     'member' : IDL.Principal,
-    'new_percentage' : IDL.Nat8,
+    'new_share_bps' : IDL.Nat16,
   });
   const ProposalType = IDL.Variant({
+    'UpdateSentinel' : IDL.Null,
     'UpdateGovernanceConfig' : IDL.Null,
     'UpdateBoardMemberShare' : IDL.Null,
-    'UpdateContentNode' : IDL.Null,
-    'UpdateGlobalQuizConfig' : IDL.Null,
     'AddContentFromStaging' : IDL.Null,
-    'UpdateQuizQuestions' : IDL.Null,
+    'UpdateTokenLimits' : IDL.Null,
     'DeleteContentNode' : IDL.Null,
     'Treasury' : IDL.Null,
     'AddBoardMember' : IDL.Null,
@@ -165,11 +158,9 @@ export const idlFactory = ({ IDL }) => {
     'status' : ProposalStatus,
     'external_link' : IDL.Opt(IDL.Text),
     'title' : IDL.Text,
-    'update_quiz_config_payload' : IDL.Opt(UpdateGlobalQuizConfigPayload),
     'add_content_payload' : IDL.Opt(AddContentFromStagingPayload),
     'votes_no' : IDL.Nat64,
     'recipient' : IDL.Opt(IDL.Principal),
-    'update_quiz_questions_payload' : IDL.Opt(UpdateQuizQuestionsPayload),
     'description' : IDL.Text,
     'delete_content_payload' : IDL.Opt(DeleteContentNodePayload),
     'created_at' : IDL.Nat64,
@@ -178,12 +169,13 @@ export const idlFactory = ({ IDL }) => {
     'required_yes_votes' : IDL.Nat64,
     'voting_ends_at' : IDL.Nat64,
     'supporter_count' : IDL.Nat64,
+    'update_sentinel_payload' : IDL.Opt(UpdateSentinelPayload),
     'category' : IDL.Opt(ProposalCategory),
     'proposer' : IDL.Principal,
     'voter_count' : IDL.Nat64,
     'votes_yes' : IDL.Nat64,
     'remove_board_member_payload' : IDL.Opt(RemoveBoardMemberPayload),
-    'update_content_payload' : IDL.Opt(UpdateContentNodePayload),
+    'update_token_limits_payload' : IDL.Opt(UpdateTokenLimitsPayload),
     'update_board_member_payload' : IDL.Opt(UpdateBoardMemberSharePayload),
     'amount' : IDL.Opt(IDL.Nat64),
     'token_type' : IDL.Opt(TokenType),
@@ -192,7 +184,8 @@ export const idlFactory = ({ IDL }) => {
   });
   const BoardMemberShare = IDL.Record({
     'member' : IDL.Principal,
-    'percentage' : IDL.Nat8,
+    'is_sentinel' : IDL.Bool,
+    'share_bps' : IDL.Nat16,
   });
   const SupportRecord = IDL.Record({
     'supporter' : IDL.Principal,
@@ -219,6 +212,11 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'are_board_shares_locked' : IDL.Func([], [IDL.Bool], ['query']),
+    'clear_sentinel_member' : IDL.Func(
+        [],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
+        [],
+      ),
     'create_add_content_proposal' : IDL.Func(
         [CreateAddContentProposalInput],
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
@@ -254,8 +252,13 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
         [],
       ),
-    'create_update_quiz_config_proposal' : IDL.Func(
-        [CreateUpdateQuizConfigProposalInput],
+    'create_update_sentinel_proposal' : IDL.Func(
+        [CreateUpdateSentinelProposalInput],
+        [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
+        [],
+      ),
+    'create_update_token_limits_proposal' : IDL.Func(
+        [CreateUpdateTokenLimitsProposalInput],
         [IDL.Variant({ 'Ok' : IDL.Nat64, 'Err' : IDL.Text })],
         [],
       ),
@@ -270,11 +273,23 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'get_active_proposals' : IDL.Func([], [IDL.Vec(Proposal)], ['query']),
+    'get_all_board_member_voting_powers' : IDL.Func(
+        [],
+        [
+          IDL.Variant({
+            'Ok' : IDL.Vec(
+              IDL.Tuple(IDL.Principal, IDL.Nat16, IDL.Nat64, IDL.Bool)
+            ),
+            'Err' : IDL.Text,
+          }),
+        ],
+        [],
+      ),
     'get_all_proposals' : IDL.Func([], [IDL.Vec(Proposal)], ['query']),
     'get_board_member_count' : IDL.Func([], [IDL.Nat64], ['query']),
     'get_board_member_share' : IDL.Func(
         [IDL.Principal],
-        [IDL.Opt(IDL.Nat8)],
+        [IDL.Opt(IDL.Nat16)],
         ['query'],
       ),
     'get_board_member_shares' : IDL.Func(
@@ -304,6 +319,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(VoteRecord)],
         ['query'],
       ),
+    'get_sentinel_member' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
     'get_staking_hub_id' : IDL.Func([], [IDL.Principal], ['query']),
     'get_treasury_canister_id' : IDL.Func([], [IDL.Principal], ['query']),
     'get_user_voting_power' : IDL.Func(
@@ -328,6 +344,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),
+    'set_sentinel_member' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
+        [],
+      ),
     'set_treasury_canister_id' : IDL.Func(
         [IDL.Principal],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
@@ -335,6 +356,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'support_proposal' : IDL.Func(
         [IDL.Nat64],
+        [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
+        [],
+      ),
+    'unlock_board_member_shares' : IDL.Func(
+        [],
         [IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text })],
         [],
       ),

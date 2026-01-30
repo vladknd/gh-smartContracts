@@ -28,16 +28,6 @@ export interface MediaContent {
   'file_hash' : [] | [string],
   'thumbnail_url' : [] | [string],
 }
-/**
- * ============================================================================
- * Staging Assets Canister Candid Interface
- * ============================================================================
- * Temporary storage for content before governance approval
- * Updated: January 2026
- * ============================================================================
- * Content Types (matching Learning Engine)
- * ============================================================================
- */
 export type MediaType = { 'PDF' : null } |
   { 'Image' : null } |
   { 'Audio' : null } |
@@ -58,11 +48,6 @@ export interface StagedContentInfo {
   'description' : string,
   'proposal_id' : [] | [bigint],
 }
-/**
- * ============================================================================
- * Staging-Specific Types
- * ============================================================================
- */
 export type StagingStatus = { 'ProposalCreated' : null } |
   { 'Rejected' : null } |
   { 'Loaded' : null } |

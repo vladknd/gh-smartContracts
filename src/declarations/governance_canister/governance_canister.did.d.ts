@@ -3,8 +3,8 @@ import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
 export interface AddBoardMemberPayload {
+  'share_bps' : number,
   'new_member' : Principal,
-  'percentage' : number,
 }
 export interface AddContentFromStagingPayload {
   'unit_count' : number,
@@ -15,7 +15,8 @@ export interface AddContentFromStagingPayload {
 }
 export interface BoardMemberShare {
   'member' : Principal,
-  'percentage' : number,
+  'is_sentinel' : boolean,
+  'share_bps' : number,
 }
 export interface CreateAddContentProposalInput {
   'external_link' : [] | [string],
@@ -31,8 +32,8 @@ export interface CreateBoardMemberProposalInput {
   'external_link' : [] | [string],
   'title' : string,
   'description' : string,
+  'share_bps' : number,
   'new_member' : Principal,
-  'percentage' : number,
 }
 export interface CreateDeleteContentProposalInput {
   'external_link' : [] | [string],
@@ -47,11 +48,6 @@ export interface CreateRemoveBoardMemberProposalInput {
   'description' : string,
   'member_to_remove' : Principal,
 }
-/**
- * ============================================================================
- * Proposal Creation Input Types
- * ============================================================================
- */
 export interface CreateTreasuryProposalInput {
   'external_link' : [] | [string],
   'title' : string,
@@ -66,14 +62,11 @@ export interface CreateUpdateBoardMemberShareProposalInput {
   'external_link' : [] | [string],
   'title' : string,
   'description' : string,
-  'new_percentage' : number,
+  'new_share_bps' : number,
 }
 export interface CreateUpdateGovernanceConfigProposalInput {
   'external_link' : [] | [string],
   'title' : string,
-  /**
-   * Timing Configuration (in days, 1-365)
-   */
   'new_support_period_days' : [] | [number],
   'new_approval_percentage' : [] | [number],
   'description' : string,
@@ -82,17 +75,21 @@ export interface CreateUpdateGovernanceConfigProposalInput {
   'new_voting_period_days' : [] | [number],
   'new_resubmission_cooldown_days' : [] | [number],
 }
-export interface CreateUpdateQuizConfigProposalInput {
+export interface CreateUpdateSentinelProposalInput {
+  'external_link' : [] | [string],
+  'title' : string,
+  'description' : string,
+  'new_sentinel' : Principal,
+}
+export interface CreateUpdateTokenLimitsProposalInput {
   'external_link' : [] | [string],
   'new_pass_threshold' : [] | [number],
   'title' : string,
-  'new_max_daily_quizzes' : [] | [number],
-  'new_max_weekly_quizzes' : [] | [number],
-  'new_max_yearly_quizzes' : [] | [number],
   'new_max_attempts' : [] | [number],
   'description' : string,
-  'new_max_monthly_quizzes' : [] | [number],
   'new_reward_amount' : [] | [bigint],
+  'new_regular_limits' : [] | [TokenLimits],
+  'new_subscribed_limits' : [] | [TokenLimits],
 }
 export interface DeleteContentNodePayload {
   'content_id' : string,
@@ -108,11 +105,9 @@ export interface Proposal {
   'status' : ProposalStatus,
   'external_link' : [] | [string],
   'title' : string,
-  'update_quiz_config_payload' : [] | [UpdateGlobalQuizConfigPayload],
   'add_content_payload' : [] | [AddContentFromStagingPayload],
   'votes_no' : bigint,
   'recipient' : [] | [Principal],
-  'update_quiz_questions_payload' : [] | [UpdateQuizQuestionsPayload],
   'description' : string,
   'delete_content_payload' : [] | [DeleteContentNodePayload],
   'created_at' : bigint,
@@ -121,12 +116,13 @@ export interface Proposal {
   'required_yes_votes' : bigint,
   'voting_ends_at' : bigint,
   'supporter_count' : bigint,
+  'update_sentinel_payload' : [] | [UpdateSentinelPayload],
   'category' : [] | [ProposalCategory],
   'proposer' : Principal,
   'voter_count' : bigint,
   'votes_yes' : bigint,
   'remove_board_member_payload' : [] | [RemoveBoardMemberPayload],
-  'update_content_payload' : [] | [UpdateContentNodePayload],
+  'update_token_limits_payload' : [] | [UpdateTokenLimitsPayload],
   'update_board_member_payload' : [] | [UpdateBoardMemberSharePayload],
   'amount' : [] | [bigint],
   'token_type' : [] | [TokenType],
@@ -145,26 +141,15 @@ export type ProposalStatus = { 'Active' : null } |
   { 'Rejected' : null } |
   { 'Proposed' : null } |
   { 'Executed' : null };
-export type ProposalType = { 'UpdateGovernanceConfig' : null } |
+export type ProposalType = { 'UpdateSentinel' : null } |
+  { 'UpdateGovernanceConfig' : null } |
   { 'UpdateBoardMemberShare' : null } |
-  { 'UpdateContentNode' : null } |
-  { 'UpdateGlobalQuizConfig' : null } |
   { 'AddContentFromStaging' : null } |
-  { 'UpdateQuizQuestions' : null } |
+  { 'UpdateTokenLimits' : null } |
   { 'DeleteContentNode' : null } |
   { 'Treasury' : null } |
   { 'AddBoardMember' : null } |
   { 'RemoveBoardMember' : null };
-/**
- * ============================================================================
- * Content Governance Payloads
- * ============================================================================
- */
-export interface QuizQuestion {
-  'question' : string,
-  'answer' : number,
-  'options' : Array<string>,
-}
 export interface RemoveBoardMemberPayload { 'member_to_remove' : Principal }
 export interface SupportRecord {
   'supporter' : Principal,
@@ -172,39 +157,20 @@ export interface SupportRecord {
   'timestamp' : bigint,
   'support_amount' : bigint,
 }
-/**
- * ============================================================================
- * Governance Canister Candid Interface
- * ============================================================================
- * Proposal lifecycle, voting, board member management, and content governance
- * Updated: January 2026
- */
+export interface TokenLimits {
+  'max_monthly_tokens' : bigint,
+  'max_yearly_tokens' : bigint,
+  'max_daily_tokens' : bigint,
+  'max_weekly_tokens' : bigint,
+}
 export type TokenType = { 'GHC' : null } |
   { 'ICP' : null } |
   { 'USDC' : null };
 export interface UpdateBoardMemberSharePayload {
   'member' : Principal,
-  'new_percentage' : number,
-}
-export interface UpdateContentNodePayload {
-  'content_id' : string,
-  'new_title' : [] | [string],
-  'new_content' : [] | [string],
-  'new_paraphrase' : [] | [string],
-}
-export interface UpdateGlobalQuizConfigPayload {
-  'new_pass_threshold' : [] | [number],
-  'new_max_daily_quizzes' : [] | [number],
-  'new_max_weekly_quizzes' : [] | [number],
-  'new_max_yearly_quizzes' : [] | [number],
-  'new_max_attempts' : [] | [number],
-  'new_max_monthly_quizzes' : [] | [number],
-  'new_reward_amount' : [] | [bigint],
+  'new_share_bps' : number,
 }
 export interface UpdateGovernanceConfigPayload {
-  /**
-   * Timing Configuration
-   */
   'new_support_period_days' : [] | [number],
   'new_approval_percentage' : [] | [number],
   'new_min_voting_power' : [] | [bigint],
@@ -212,9 +178,13 @@ export interface UpdateGovernanceConfigPayload {
   'new_voting_period_days' : [] | [number],
   'new_resubmission_cooldown_days' : [] | [number],
 }
-export interface UpdateQuizQuestionsPayload {
-  'content_id' : string,
-  'new_questions' : Array<QuizQuestion>,
+export interface UpdateSentinelPayload { 'new_sentinel' : Principal }
+export interface UpdateTokenLimitsPayload {
+  'new_pass_threshold' : [] | [number],
+  'new_max_attempts' : [] | [number],
+  'new_reward_amount' : [] | [bigint],
+  'new_regular_limits' : [] | [TokenLimits],
+  'new_subscribed_limits' : [] | [TokenLimits],
 }
 export interface VoteRecord {
   'voter' : Principal,
@@ -235,6 +205,11 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'are_board_shares_locked' : ActorMethod<[], boolean>,
+  'clear_sentinel_member' : ActorMethod<
+    [],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
   'create_add_content_proposal' : ActorMethod<
     [CreateAddContentProposalInput],
     { 'Ok' : bigint } |
@@ -270,8 +245,13 @@ export interface _SERVICE {
     { 'Ok' : bigint } |
       { 'Err' : string }
   >,
-  'create_update_quiz_config_proposal' : ActorMethod<
-    [CreateUpdateQuizConfigProposalInput],
+  'create_update_sentinel_proposal' : ActorMethod<
+    [CreateUpdateSentinelProposalInput],
+    { 'Ok' : bigint } |
+      { 'Err' : string }
+  >,
+  'create_update_token_limits_proposal' : ActorMethod<
+    [CreateUpdateTokenLimitsProposalInput],
     { 'Ok' : bigint } |
       { 'Err' : string }
   >,
@@ -286,6 +266,11 @@ export interface _SERVICE {
       { 'Err' : string }
   >,
   'get_active_proposals' : ActorMethod<[], Array<Proposal>>,
+  'get_all_board_member_voting_powers' : ActorMethod<
+    [],
+    { 'Ok' : Array<[Principal, number, bigint, boolean]> } |
+      { 'Err' : string }
+  >,
   'get_all_proposals' : ActorMethod<[], Array<Proposal>>,
   'get_board_member_count' : ActorMethod<[], bigint>,
   'get_board_member_share' : ActorMethod<[Principal], [] | [number]>,
@@ -303,6 +288,7 @@ export interface _SERVICE {
   'get_proposal' : ActorMethod<[bigint], [] | [Proposal]>,
   'get_proposal_supporters' : ActorMethod<[bigint], Array<SupportRecord>>,
   'get_proposal_votes' : ActorMethod<[bigint], Array<VoteRecord>>,
+  'get_sentinel_member' : ActorMethod<[], [] | [Principal]>,
   'get_staking_hub_id' : ActorMethod<[], Principal>,
   'get_treasury_canister_id' : ActorMethod<[], Principal>,
   'get_user_voting_power' : ActorMethod<
@@ -327,6 +313,11 @@ export interface _SERVICE {
     { 'Ok' : null } |
       { 'Err' : string }
   >,
+  'set_sentinel_member' : ActorMethod<
+    [Principal],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
   'set_treasury_canister_id' : ActorMethod<
     [Principal],
     { 'Ok' : null } |
@@ -334,6 +325,11 @@ export interface _SERVICE {
   >,
   'support_proposal' : ActorMethod<
     [bigint],
+    { 'Ok' : null } |
+      { 'Err' : string }
+  >,
+  'unlock_board_member_shares' : ActorMethod<
+    [],
     { 'Ok' : null } |
       { 'Err' : string }
   >,

@@ -1,184 +1,137 @@
-// ============================================================================
-// User Profile Candid Interface
-// ============================================================================
-// This canister manages user profiles, quiz submissions, and staking state.
-// It operates as a "shard" that syncs with the central staking_hub.
-// Simplified version without interest/tier tracking.
-
-// User profile (simplified - no interest/tier fields)
-type UserProfile = record {
-    // Personal Information
-    email : text;
-    name : text;
-    education : text;
-    gender : text;
-    
-    // Economy State
-    staked_balance : nat64;
-    transaction_count : nat64;
-};
-
-type UserTimeStats = record {
-    last_active_day : nat64;
-    
-    // Daily
-    daily_quizzes : nat8;
-    daily_earnings : nat64;
-    
-    // Weekly
-    weekly_quizzes : nat8;
-    weekly_earnings : nat64;
-    
-    // Monthly
-    monthly_quizzes : nat8;
-    monthly_earnings : nat64;
-    
-    // Yearly
-    yearly_quizzes : nat16;
-    yearly_earnings : nat64;
-};
-
-type InitArgs = record {
-    staking_hub_id : principal;
-    learning_content_id : principal;
-};
-
-type UserProfileUpdate = record {
-    email : text;
-    name : text;
-    education : text;
-    gender : text;
-};
-
-type TransactionType = variant {
-    QuizReward;
-    Unstake;
-};
-
-type TransactionRecord = record {
-    timestamp : nat64;
-    tx_type : TransactionType;
-    amount : nat64;
-};
-
-// Paginated transaction response with archive info
-type TransactionPage = record {
-    transactions : vec TransactionRecord;
-    total_count : nat64;
-    local_count : nat64;
-    archived_count : nat64;
-    archive_canister_id : principal;
-    source : text;  // "local" or "archive"
-};
-
-// Archive configuration info
 type ArchiveConfig = record {
-    retention_limit : nat64;       // Transactions kept locally per user
-    trigger_threshold : nat64;     // Threshold for immediate archive
-    check_interval_secs : nat64;   // Periodic archive check interval
-    archive_canister_id : principal;
-    is_configured : bool;
+  trigger_threshold : nat64;
+  is_configured : bool;
+  archive_canister_id : opt principal;
+  retention_limit : nat64;
+  check_interval_secs : nat64;
 };
-
-// Cached quiz configuration (stored locally, updated via staking_hub)
-type CachedQuizConfig = record {
-    reward_amount : nat64;
-    pass_threshold_percent : nat8;
-    max_daily_attempts : nat8;
-    max_daily_quizzes : nat8;
-    max_weekly_quizzes : nat8;
-    max_monthly_quizzes : nat8;
-    max_yearly_quizzes : nat16;
-    version : nat64;
+type InitArgs = record {
+  learning_content_id : principal;
+  staking_hub_id : principal;
 };
-
-// Verification tier for users
-type VerificationTier = variant {
-    None;   // Fresh user
-    Human;  // DecideID verified
-    KYC;    // Full legal KYC
+type QuizCacheData = record {
+  question_count : nat8;
+  content_id : text;
+  version : nat64;
+  answer_hashes : vec blob;
 };
-
-// Summary of a registered user for admin listing
-type UserSummary = record {
-    user_principal : principal;
-    name : text;
-    email : text;
-    staked_balance : nat64;
-    verification_tier : VerificationTier;
+type TokenLimits = record {
+  max_monthly_tokens : nat64;
+  max_yearly_tokens : nat64;
+  max_daily_tokens : nat64;
+  max_weekly_tokens : nat64;
 };
-
-// Result of admin user listing with pagination info
+type TokenLimitsConfig = record {
+  reward_amount : nat64;
+  pass_threshold_percent : nat8;
+  max_daily_attempts : nat8;
+  regular_limits : TokenLimits;
+  version : nat64;
+  subscribed_limits : TokenLimits;
+};
+type TransactionPage = record {
+  has_archive_data : bool;
+  source : text;
+  total_pages : nat32;
+  current_page : nat32;
+  archive_canister_id : opt principal;
+  transactions : vec TransactionRecord;
+  archived_count : nat64;
+  local_count : nat64;
+  total_count : nat64;
+};
+type TransactionRecord = record {
+  timestamp : nat64;
+  tx_type : TransactionType;
+  amount : nat64;
+};
+type TransactionType = variant { Unstake; QuizReward };
 type UserListResult = record {
-    users : vec UserSummary;
-    total_count : nat64;
-    page : nat32;
-    page_size : nat32;
-    has_more : bool;
+  page_size : nat32;
+  page : nat32;
+  total_pages : nat32;
+  users : vec UserSummary;
+  total_count : nat64;
+  has_more : bool;
 };
-
+type UserProfile = record {
+  name : text;
+  education : text;
+  email : text;
+  staked_balance : nat64;
+  archived_transaction_count : nat64;
+  gender : text;
+  verification_tier : VerificationTier;
+  transaction_count : nat64;
+  is_subscribed : bool;
+};
+type UserProfileUpdate = record {
+  name : text;
+  education : text;
+  email : text;
+  gender : text;
+};
+type UserSummary = record {
+  user_principal : principal;
+  name : text;
+  email : text;
+  staked_balance : nat64;
+  verification_tier : VerificationTier;
+  is_subscribed : bool;
+};
+type UserTimeStats = record {
+  weekly_earnings : nat64;
+  monthly_earnings : nat64;
+  daily_earnings : nat64;
+  last_active_day : nat64;
+  weekly_quizzes : nat8;
+  yearly_quizzes : nat16;
+  monthly_quizzes : nat8;
+  daily_quizzes : nat8;
+  yearly_earnings : nat64;
+};
+type VerificationTier = variant { KYC; None; Human };
 service : (InitArgs) -> {
-    // =========================================================================
-    // User Registration & Profile
-    // =========================================================================
-    register_user : (UserProfileUpdate) -> (variant { Ok : null; Err : text });
-    update_profile : (UserProfileUpdate) -> (variant { Ok : null; Err : text });
-    get_profile : (principal) -> (opt UserProfile) query;
-    
-    // =========================================================================
-    // Quiz & Learning
-    // =========================================================================
-    submit_quiz : (text, vec nat8) -> (variant { Ok : nat64; Err : text });
-    is_quiz_completed : (principal, text) -> (bool) query;
-    
-    // Quiz config caching (updated by staking_hub when governance proposals pass)
-    receive_quiz_config : (CachedQuizConfig) -> ();
-    get_cached_quiz_config : () -> (CachedQuizConfig) query;
-    
-    // =========================================================================
-    // User Stats
-    // =========================================================================
-    get_user_stats : (principal) -> (UserTimeStats) query;
-    get_user_daily_status : (principal) -> (UserTimeStats) query;
-    
-    // =========================================================================
-    // Economy Functions
-    // =========================================================================
-    // Unstake returns 100% (no penalty)
-    unstake : (nat64) -> (variant { Ok : nat64; Err : text });
-    
-    // =========================================================================
-    // Transaction History
-    // =========================================================================
-    get_user_transactions : (principal) -> (vec TransactionRecord) query;
-    get_transactions_page : (principal, nat32) -> (TransactionPage) query;
-    
-    // =========================================================================
-    // Archive Operations
-    // =========================================================================
-    set_archive_canister : (principal) -> (variant { Ok : null; Err : text });
-    get_archive_canister : () -> (principal) query;
-    get_archive_config : () -> (ArchiveConfig) query;
-    trigger_archive : () -> (variant { Ok : nat64; Err : text });
-    
-    // =========================================================================
-    // Shard Metrics
-    // =========================================================================
-    get_user_count : () -> (nat64) query;
-    
-    // =========================================================================
-    // Debug / Testing
-    // =========================================================================
-    debug_force_sync : () -> (variant { Ok : null; Err : text });
-    
-    // =========================================================================
-    // Admin Debug Endpoints (Controller-Only)
-    // =========================================================================
-    // For debugging authentication issues
-    admin_list_all_users : (nat32, nat32) -> (variant { Ok : UserListResult; Err : text }) query;
-    admin_get_user_details : (principal) -> (variant { Ok : opt UserProfile; Err : text }) query;
-    
-    // Public debug helpers
-    whoami : () -> (principal) query;
-    is_user_registered : (principal) -> (bool) query;
+  admin_get_user_details : (principal) -> (
+      variant { Ok : opt UserProfile; Err : text },
+    ) query;
+  admin_list_all_users : (nat32, nat32) -> (
+      variant { Ok : UserListResult; Err : text },
+    ) query;
+  admin_set_kyc_status : (principal, VerificationTier) -> (
+      variant { Ok; Err : text },
+    );
+  admin_set_subscription : (principal, bool) -> (variant { Ok; Err : text });
+  admin_set_user_stats : (principal, UserTimeStats) -> (
+      variant { Ok; Err : text },
+    );
+  debug_force_sync : () -> (variant { Ok; Err : text });
+  debug_trigger_archive : () -> (variant { Ok : nat64; Err : text });
+  get_archive_canister : () -> (principal) query;
+  get_archive_config : () -> (ArchiveConfig) query;
+  get_kyc_manager_id : () -> (principal) query;
+  get_profile : (principal) -> (opt UserProfile) query;
+  get_subscription_manager_id : () -> (principal) query;
+  get_token_limits : () -> (TokenLimitsConfig) query;
+  get_transactions_page : (principal, nat32) -> (TransactionPage) query;
+  get_user_count : () -> (nat64) query;
+  get_user_stats : (principal) -> (UserTimeStats) query;
+  get_user_transactions : (principal) -> (vec TransactionRecord) query;
+  internal_set_kyc_status : (principal, VerificationTier) -> (
+      variant { Ok; Err : text },
+    );
+  internal_set_subscription : (principal, bool) -> (variant { Ok; Err : text });
+  internal_sync_kyc_manager : (principal) -> ();
+  internal_sync_subscription_manager : (principal) -> ();
+  is_quiz_completed : (principal, text) -> (bool) query;
+  is_user_registered : (principal) -> (bool) query;
+  receive_full_quiz_cache : (vec record { text; QuizCacheData }) -> ();
+  receive_quiz_cache : (text, QuizCacheData) -> ();
+  receive_token_limits : (TokenLimitsConfig) -> ();
+  register_user : (UserProfileUpdate) -> (variant { Ok; Err : text });
+  set_archive_canister : (principal) -> (variant { Ok; Err : text });
+  submit_quiz : (text, blob) -> (variant { Ok : nat64; Err : text });
+  unstake : (nat64) -> (variant { Ok : nat64; Err : text });
+  update_profile : (UserProfileUpdate) -> (variant { Ok; Err : text });
+  whoami : () -> (principal) query;
 }

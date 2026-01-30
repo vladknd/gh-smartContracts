@@ -1,150 +1,86 @@
-// ============================================================================
-// Treasury Canister Candid Interface
-// ============================================================================
-// Token custody, balance tracking, and transfer execution
-// Created: January 2026
-// Updated: January 2026 - Added calendar-based MMCR scheduling (1st of month at 12am ET)
-
-type TokenType = variant {
-    GHC;
-    USDC;
-    ICP;
-};
-
-type TreasuryState = record {
-    balance : nat64;
-    allowance : nat64;
-    total_transferred : nat64;
-    mmcr_count : nat64;
-    last_mmcr_timestamp : nat64;
-    genesis_timestamp : nat64;
-    // Calendar-based tracking for MMCR scheduling
-    last_mmcr_month : nat8;
-    last_mmcr_year : nat16;
-};
-
-type MMCRStatus = record {
-    releases_completed : nat64;
-    releases_remaining : nat64;
-    last_release_timestamp : nat64;
-    next_release_amount : nat64;
-    seconds_until_next : nat64;
-    // Next scheduled MMCR date
-    next_scheduled_month : nat8;
-    next_scheduled_year : nat16;
-};
-
-type ExecuteTransferInput = record {
-    recipient : principal;
-    amount : nat64;
-    token_type : TokenType;
-    proposal_id : nat64;
-};
-
-type InitArgs = record {
-    ledger_id : principal;
-    governance_canister_id : principal;
-};
-
-// Eastern Time components: (year, month, day, hour, minute, second, is_dst)
 type EasternTimeInfo = record {
-    year : nat16;
-    month : nat8;
-    day : nat8;
-    hour : nat8;
-    minute : nat8;
-    second : nat8;
-    is_dst : bool;
+  day : nat8;
+  month : nat8;
+  hour : nat8;
+  year : nat16;
+  minute : nat8;
+  second : nat8;
+  is_dst : bool;
 };
-
-// MMCR execution check result: (can_execute, message)
-type MMCRExecutionCheck = record {
-    can_execute : bool;
-    message : text;
+type ExecuteTransferInput = record {
+  recipient : principal;
+  proposal_id : nat64;
+  amount : nat64;
+  token_type : TokenType;
 };
-
+type InitArgs = record {
+  ledger_id : principal;
+  governance_canister_id : principal;
+};
+type MMCRExecutionCheck = record { can_execute : bool; message : text };
+type MMCRStatus = record {
+  last_release_timestamp : nat64;
+  releases_completed : nat64;
+  next_scheduled_year : nat16;
+  next_scheduled_month : nat8;
+  seconds_until_next : nat64;
+  next_release_amount : nat64;
+  releases_remaining : nat64;
+};
+type TokenType = variant { GHC; ICP; USDC };
+type TreasuryState = record {
+  balance : nat64;
+  total_transferred : nat64;
+  genesis_timestamp : nat64;
+  mmcr_count : nat64;
+  last_mmcr_year : nat16;
+  allowance : nat64;
+  last_mmcr_timestamp : nat64;
+  last_mmcr_month : nat8;
+};
 service : (InitArgs) -> {
-    // =========================================================================
-    // Treasury State Queries
-    // =========================================================================
-    
-    "get_treasury_state": () -> (TreasuryState) query;
-    "get_spendable_balance": () -> (nat64) query;
-    "get_treasury_balance": () -> (nat64) query;
-    "can_transfer": (nat64, TokenType) -> (bool) query;
-    
-    // =========================================================================
-    // Transfer Execution (Governance Canister Only)
-    // =========================================================================
-    
-    // Execute a transfer from treasury - only callable by governance canister
-    "execute_transfer": (ExecuteTransferInput) -> (variant { Ok: nat64; Err: text });
-    
-    // =========================================================================
-    // MMCR (Monthly Minimum Capital Release)
-    // =========================================================================
-    // MMCR executes on the 1st of each month at 12:00 AM Eastern Time
-    // Handles EST (UTC-5) and EDT (UTC-4) transitions automatically
-    
-    "execute_mmcr": () -> (variant { Ok: nat64; Err: text });
-    "get_mmcr_status": () -> (MMCRStatus) query;
-    
-    // =========================================================================
-    // Time Utility Queries
-    // =========================================================================
-    
-    // Get current time in Eastern Time zone (for debugging/display)
-    // Returns: (year, month, day, hour, minute, second, is_dst)
-    "get_current_eastern_time": () -> (nat16, nat8, nat8, nat8, nat8, nat8, bool) query;
-    
-    // Check if MMCR can execute right now
-    // Returns: (can_execute, message)
-    "can_execute_mmcr_now": () -> (bool, text) query;
-    
-    // =========================================================================
-    // Configuration
-    // =========================================================================
-    
-    "get_governance_canister_id": () -> (principal) query;
-    "get_ledger_id": () -> (principal) query;
-    
-    // =========================================================================
-    // Admin Functions (Controller Only)
-    // =========================================================================
-    
-    "set_governance_canister_id": (principal) -> (variant { Ok: null; Err: text });
-    
-    // =========================================================================
-    // Testing Functions (Controller Only / Query)
-    // =========================================================================
-    // These functions are for testing the MMCR scheduling logic
-    
-    // Force execute MMCR bypassing calendar check (CONTROLLER ONLY)
-    // Use for testing - still enforces 25-day minimum interval and 240 max releases
-    "force_execute_mmcr": () -> (variant { Ok: nat64; Err: text });
-    
-    // Simulate MMCR execution at a specific UTC timestamp (no state change)
-    // Returns: (would_execute, message, month_et, year_et)
-    "simulate_mmcr_at_time": (nat64) -> (bool, text, nat8, nat16) query;
-    
-    // Test date parsing: convert UTC timestamp to date components
-    // Returns: (year, month, day, hour, minute, second, is_dst, eastern_hour)
-    "test_date_parsing": (nat64) -> (nat16, nat8, nat8, nat8, nat8, nat8, bool, nat8) query;
-    
-    // Test DST boundaries for a specific year
-    // Returns: (start_month, start_day, end_month, end_day)
-    "test_dst_boundaries": (nat16) -> (nat8, nat8, nat8, nat8) query;
-    
-    // Test MMCR window detection for a specific date/time in Eastern Time
-    // Input: (year, month, day, hour, minute) - all in ET
-    // Returns: (is_in_window, utc_timestamp, message)
-    "test_mmcr_window": (nat16, nat8, nat8, nat8, nat8) -> (bool, nat64, text) query;
-    
-    // Get test timestamps for midnight ET on 1st of each month
-    // Returns: vec of (month, utc_timestamp, is_dst)
-    "get_test_timestamps_for_year": (nat16) -> (vec record { nat8; nat64; bool }) query;
-    
-    // Reset MMCR state for testing (CONTROLLER ONLY)
-    // WARNING: Resets count and timestamp - use with caution!
-    "reset_mmcr_for_testing": () -> (variant { Ok: text; Err: text });
+  can_execute_mmcr_now : () -> (bool, text) query;
+  can_transfer : (nat64, TokenType) -> (bool) query;
+  execute_mmcr : () -> (variant { Ok : nat64; Err : text });
+  execute_transfer : (ExecuteTransferInput) -> (
+      variant { Ok : nat64; Err : text },
+    );
+  force_execute_mmcr : () -> (variant { Ok : nat64; Err : text });
+  get_current_eastern_time : () -> (
+      nat16,
+      nat8,
+      nat8,
+      nat8,
+      nat8,
+      nat8,
+      bool,
+    ) query;
+  get_governance_canister_id : () -> (principal) query;
+  get_ledger_id : () -> (principal) query;
+  get_mmcr_status : () -> (MMCRStatus) query;
+  get_spendable_balance : () -> (nat64) query;
+  get_test_timestamps_for_year : (nat16) -> (
+      vec record { nat8; nat64; bool },
+    ) query;
+  get_treasury_balance : () -> (nat64) query;
+  get_treasury_state : () -> (TreasuryState) query;
+  reset_mmcr_for_testing : () -> (variant { Ok : text; Err : text });
+  set_governance_canister_id : (principal) -> (variant { Ok; Err : text });
+  simulate_mmcr_at_time : (nat64) -> (bool, text, nat8, nat16) query;
+  test_date_parsing : (nat64) -> (
+      nat16,
+      nat8,
+      nat8,
+      nat8,
+      nat8,
+      nat8,
+      bool,
+      nat8,
+    ) query;
+  test_dst_boundaries : (nat16) -> (nat8, nat8, nat8, nat8) query;
+  test_mmcr_window : (nat16, nat8, nat8, nat8, nat8) -> (
+      bool,
+      nat64,
+      text,
+    ) query;
 }

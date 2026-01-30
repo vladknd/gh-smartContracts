@@ -29,3 +29,17 @@ pub const DEFAULT_RESUBMISSION_COOLDOWN_NANOS: u64 = 180 * 24 * 60 * 60 * 1_000_
 
 /// Nanoseconds per day (for converting days to nanos)
 pub const NANOS_PER_DAY: u64 = 24 * 60 * 60 * 1_000_000_000;
+
+// ============================================================================
+// BOARD MEMBER SHARE CONSTANTS (Basis Points System)
+// ============================================================================
+
+/// Total basis points representing 100% (10,000 BPS = 100.00%)
+/// This provides precision to 0.01%
+pub const BPS_TOTAL: u16 = 10_000;
+
+/// Minimum share for a regular board member (1 BPS = 0.01%)
+pub const MIN_MEMBER_SHARE_BPS: u16 = 1;
+
+/// Maximum share for any single board member (99.00%)
+pub const MAX_MEMBER_SHARE_BPS: u16 = 9_900;
